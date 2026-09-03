@@ -25,6 +25,29 @@ docker compose up -d
 > still resolves to the native one — which surfaces as a confusing `password authentication
 > failed` from Spring, not as a port conflict.
 
+**1b. Reference data** (once)
+
+The kanji dictionary and stroke-order diagrams aren't in the repo — they're third-party
+CC BY-SA data, fetched into a gitignored `data/`. Grab the latest release assets:
+
+- `kanjidic2-en-*.json.zip` from
+  [scriptin/jmdict-simplified](https://github.com/scriptin/jmdict-simplified/releases) (~1 MB)
+- `kanjivg-*-main.zip` from
+  [KanjiVG/kanjivg](https://github.com/KanjiVG/kanjivg/releases) (~12 MB)
+
+Extract both into `data/`, so you have `data/kanjidic2-en-*.json` and `data/kanji/*.svg`. Then
+load them:
+
+```bash
+cd backend
+./mvnw spring-boot:run -Dspring-boot.run.arguments=--import-kanji
+```
+
+The importer upserts and exits when finished, so it's safe to re-run against a newer release.
+Expect ~10,400 characters and ~6,400 diagrams — the gap is real, roughly a third of the
+characters KANJIDIC2 knows have no KanjiVG drawing, plus ~290 KanjiVG files that are kana and
+have no KANJIDIC2 entry at all.
+
 **2. Backend**
 
 ```bash
@@ -65,7 +88,10 @@ below 18px, because dense kanji become illegible at the sizes and contrast that 
 The one exception is `--nn-jp-known`, the dimmed colour marking already-saved words. Use the
 `.jp` / `.jp-sm` / `.jp-lg` helpers in `index.css` rather than setting fonts and sizes ad hoc.
 
-## Temporary scaffolding
+**Attribution is a licence condition**, not a courtesy. KANJIDIC2 (EDRDG) and KanjiVG
+(© Ulrich Apel) are both CC BY-SA and are credited in the app footer. The KanjiVG credit is
+also embedded in each stored SVG by the importer, so it survives being copied around.
 
-The `ping` table, its entity/repository/controller, and the type specimen in `App.tsx` exist
-only to prove the stack is wired end to end. Delete them once the first real feature lands.
+**Stroke-order SVGs are recoloured at import time**, not in CSS: strokes become
+`currentColor` and the stroke numbers `var(--nn-kaki)`. KanjiVG sets those as inline styles,
+and an inline style beats any rule a stylesheet could apply.

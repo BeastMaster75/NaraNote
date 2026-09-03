@@ -11,12 +11,17 @@
 	<groupId>com.naranote</groupId>
 	<artifactId>naranote</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>naranote</name>
+	<name>NaraNote</name>
 	<description>Japanese study companion</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>
 	<dependencies>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.20.0</version>
+		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>

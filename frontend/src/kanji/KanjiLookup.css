@@ -1,0 +1,151 @@
+.lookup {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.lookup-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.lookup-input {
+  width: 5.5rem;
+  padding: 0.5rem 0.9rem;
+  text-align: center;
+  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-pill);
+  caret-color: var(--nn-kaki);
+}
+
+.lookup-examples {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  cursor: pointer;
+  padding: 0.3rem 0.7rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-pill);
+  line-height: 1.2;
+}
+
+.chip:hover {
+  border-color: var(--nn-kaki);
+}
+
+.kanji {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1.5rem 1.6rem;
+  border-radius: var(--nn-r-lg);
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  box-shadow: var(--nn-shadow);
+}
+
+.kanji-hero {
+  display: flex;
+  align-items: center;
+  gap: 1.75rem;
+  flex-wrap: wrap;
+}
+
+.kanji-glyph {
+  font-family: var(--nn-font-jp-serif);
+  font-size: 108px;
+  line-height: 1;
+  color: var(--nn-jp);
+}
+
+.kanji-facts {
+  display: flex;
+  gap: 1.75rem;
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.fact dt {
+  font-family: var(--nn-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nn-ink-3);
+}
+
+.fact dd {
+  margin: 0.25rem 0 0;
+  font-family: var(--nn-font-display);
+  font-size: 22px;
+  line-height: 1.1;
+  color: var(--nn-ink);
+}
+
+.kanji-body {
+  display: flex;
+  gap: 2rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.kanji-text {
+  flex: 1 1 18rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.kanji-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.kanji-meanings {
+  margin: 0;
+  font-size: 16px;
+  color: var(--nn-ink);
+}
+
+.readings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Readings are Japanese, so they inherit the full-contrast .jp-sm colour and
+   never the softened Latin text colours around them. */
+.reading {
+  padding: 0.2rem 0.65rem;
+  background: var(--nn-sunk);
+  border-radius: var(--nn-r-sm);
+}
+
+.kanji-strokes {
+  flex: 0 0 auto;
+}
+
+/* KanjiVG ships a fixed 109x109 box; let it scale, and let the strokes take the
+   card's text colour via the currentColor rewritten at import time. */
+.stroke-order {
+  width: 240px;
+  max-width: 100%;
+  color: var(--nn-jp);
+}
+
+.stroke-order svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}

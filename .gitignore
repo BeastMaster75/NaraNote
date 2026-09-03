@@ -1,3 +1,7 @@
+# Third-party reference data — fetched, not committed.
+# See docs/development.md for the download step.
+data/
+
 # Secrets and local overrides
 .env
 *.local.yaml

@@ -23,17 +23,8 @@
   font-size: 2.4rem;
 }
 
-.mark {
-  width: 44px;
-  height: 44px;
+.head svg {
   flex: none;
-  display: grid;
-  place-items: center;
-  border-radius: 14px;
-  background: var(--nn-kaki);
-  color: var(--nn-on-accent);
-  font-family: var(--nn-font-jp-serif);
-  font-size: 24px;
 }
 
 .card {
@@ -56,8 +47,10 @@
   color: var(--nn-ink-3);
 }
 
-.plain {
-  margin: 0;
+.credits {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--nn-line-soft);
 }
 
 .muted {

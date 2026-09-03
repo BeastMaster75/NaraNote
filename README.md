@@ -1,10 +1,10 @@
-# Naranote
+# NaraNote
 
 A study companion for people learning Japanese.
 
 Anki is very good at reviewing flashcards and quite bad at making them. Looking a word up,
 finding a sentence it lives in, typing it all into a card — it's slow enough that most people
-just don't, and the word gets forgotten instead. Naranote is the other half of that: the part
+just don't, and the word gets forgotten instead. NaraNote is the other half of that: the part
 where you collect what you meet, so reviewing it later is easy.
 
 ## What you do with it
@@ -26,7 +26,7 @@ with the correct strokes numbered so you can see exactly where you went wrong. F
 can't check handwriting; you have to mark yourself, and marking yourself is how bad habits set
 in.
 
-**Take it to Anki.** Everything you collect exports as a deck. Naranote doesn't try to replace
+**Take it to Anki.** Everything you collect exports as a deck. NaraNote doesn't try to replace
 Anki's reviewing — it just makes the cards worth reviewing.
 
 ## Status

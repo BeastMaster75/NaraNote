@@ -1,0 +1,11 @@
+/* Brand constants.
+   Deliberately separate from tokens.css: these do NOT change with the theme.
+   The logo is persimmon-on-cream on a light page and on a dark one alike —
+   a mark that recolours itself isn't a mark. Themed UI colour lives in
+   tokens.css and is re-lifted from the design export; this file is hand-owned
+   and safe to edit. */
+
+:root {
+  --nn-brand-persimmon: #d9541f; /* 柿色 — the tile */
+  --nn-brand-cream: #f7f2e6;     /* 生成り — the strokes */
+}
