@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: naranote
+
+  datasource:
+    url: jdbc:postgresql://localhost:5433/naranote
+    username: ${POSTGRES_USER:naranote}
+    password: ${POSTGRES_PASSWORD:naranote}
+
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: 8080

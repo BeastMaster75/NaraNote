@@ -1,0 +1,21 @@
+# Secrets and local overrides
+.env
+*.local.yaml
+*.local.yml
+
+# Backend
+target/
+
+# Frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# OS
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# IDE
+.idea
+.vscode

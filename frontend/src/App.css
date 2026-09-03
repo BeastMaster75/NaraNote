@@ -1,0 +1,102 @@
+.shell {
+  max-width: 46rem;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.head-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.head h1 {
+  font-size: 2.4rem;
+}
+
+.mark {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+  font-family: var(--nn-font-jp-serif);
+  font-size: 24px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem 1.4rem;
+  border-radius: var(--nn-r-lg);
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  box-shadow: var(--nn-shadow);
+}
+
+.kicker {
+  font-family: var(--nn-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nn-ink-3);
+}
+
+.plain {
+  margin: 0;
+}
+
+.muted {
+  margin: 0;
+  color: var(--nn-ink-2);
+}
+
+.small {
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.error {
+  margin: 0;
+  color: var(--nn-bengara);
+}
+
+code {
+  font-family: var(--nn-font-mono);
+  font-size: 0.92em;
+  padding: 1px 5px;
+  border-radius: var(--nn-r-sm);
+  background: var(--nn-sunk);
+}
+
+.btn {
+  flex: none;
+  cursor: pointer;
+  font-family: var(--nn-font-ui);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nn-ink-2);
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-pill);
+  background: transparent;
+}
+
+.btn:hover {
+  color: var(--nn-ink);
+  background: var(--nn-sunk);
+}

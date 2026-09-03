@@ -1,0 +1,95 @@
+/* ─────────────────────────────────────────────────────────────────────────
+   Naranote design tokens — lifted from the Claude Design export
+   (`Naranote UI design system/Naranote.dc.html`).
+
+   Palette: 日本の伝統色 (traditional Japanese colours).
+
+   The governing rule: warmth lives in the chrome — grounds, cards, spacing,
+   accents. Japanese text itself is always full contrast and never below
+   18px, because dense kanji (鬱 is 29 strokes) turn to mud at the sizes and
+   contrast that flatter Latin UI.
+
+   Re-lift this file wholesale if the design changes. Don't edit values here
+   and in the design doc separately.
+   ───────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* ground — warm paper, never white */
+  --nn-paper: #f7f2e6;      /* 生成り kinari — unbleached cream, app ground */
+  --nn-raised: #fdf8ea;     /* 鳥の子 torinoko — eggshell, cards above ground */
+  --nn-sunk: #efe6d2;       /* recessed wells, inputs, table headers */
+  --nn-line: #ddd1b9;       /* hairline dividers, cell borders */
+  --nn-line-soft: #e8dec9;
+
+  /* accents */
+  --nn-kaki: #d9541f;       /* 柿色 persimmon — primary action, "new" */
+  --nn-kaki-tint: #f8e2d3;
+  --nn-bengara: #8f2e14;    /* 弁柄 red ochre — errors, stroke-order faults */
+  --nn-bengara-tint: #f2ddd5;
+  --nn-yamabuki: #c98708;   /* 山吹 kerria yellow — outstanding / due */
+  --nn-yamabuki-tint: #f7e9c6;
+  --nn-matcha: #6d7a4e;     /* passed / correct */
+  --nn-matcha-tint: #e5e9d5;
+
+  /* text — Latin UI text may be soft; Japanese never is */
+  --nn-ink: #231f1a;        /* Latin primary */
+  --nn-ink-2: #6b6151;      /* Latin secondary — NOT for Japanese */
+  --nn-ink-3: #8d8371;      /* Latin tertiary, meta, numerals */
+  --nn-jp: #141110;         /* Japanese text — always maximum contrast */
+  --nn-jp-known: #7b7263;   /* the ONE licensed soft Japanese: already-saved words */
+  --nn-on-accent: #fffaf0;
+
+  /* type */
+  --nn-font-jp: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", YuGothic, "Meiryo", sans-serif;
+  --nn-font-jp-serif: "Hiragino Mincho ProN", "Yu Mincho", YuMincho, "Noto Serif JP", serif;
+  --nn-font-ui: "Figtree", system-ui, sans-serif;
+  --nn-font-display: "Caprasimo", Georgia, serif;
+  --nn-font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+
+  /* Japanese type scale — 18px floor, enforced */
+  --nn-jp-sm: 18px;         /* smallest Japanese permitted anywhere */
+  --nn-jp-body: 19px;       /* sentences, definitions, table cells */
+  --nn-jp-lg: 26px;         /* headwords, word detail */
+  --nn-jp-xl: 44px;         /* kanji in lists, day-card headwords */
+  --nn-jp-study: 168px;     /* the kanji under study */
+  --nn-jp-lh: 2;            /* line-height for ruby-bearing text */
+  --nn-ruby: 0.46em;        /* furigana size relative to its base */
+
+  --nn-r-sm: 10px;
+  --nn-r-md: 18px;
+  --nn-r-lg: 26px;
+  --nn-r-pill: 999px;
+
+  --nn-shadow: 0 1px 2px rgba(60, 45, 25, 0.07);
+  --nn-shadow-lift: 0 6px 20px rgba(60, 45, 25, 0.1);
+}
+
+/* Dark theme is driven entirely by this attribute, set on <html> in main.tsx
+   from the system preference. Keeping it attribute-only means one definition
+   of the dark palette rather than a duplicate inside a media query. */
+[data-theme='dark'] {
+  --nn-paper: #1b1815;      /* 墨 sumi ground */
+  --nn-raised: #262117;
+  --nn-sunk: #141210;
+  --nn-line: #3b342b;
+  --nn-line-soft: #2e2823;
+
+  --nn-kaki: #f0793c;
+  --nn-kaki-tint: #3a2317;
+  --nn-bengara: #d1583a;
+  --nn-bengara-tint: #361a14;
+  --nn-yamabuki: #efb63c;
+  --nn-yamabuki-tint: #332711;
+  --nn-matcha: #a4b47a;
+  --nn-matcha-tint: #232817;
+
+  --nn-ink: #f2e9d7;
+  --nn-ink-2: #a79c88;
+  --nn-ink-3: #867c6b;
+  --nn-jp: #fdf8ec;
+  --nn-jp-known: #8a8071;
+  --nn-on-accent: #1b1815;
+
+  --nn-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --nn-shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.45);
+}

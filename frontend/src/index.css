@@ -1,0 +1,100 @@
+@import './styles/tokens.css';
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--nn-paper);
+  color: var(--nn-ink);
+  font-family: var(--nn-font-ui);
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--nn-font-display);
+  font-weight: 400;
+  line-height: 1.12;
+  margin: 0;
+}
+
+a {
+  color: var(--nn-kaki);
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  color: var(--nn-bengara);
+}
+
+/* Furigana. Ruby needs the taller --nn-jp-lh on its container to breathe;
+   see the .jp-ruby helper below. */
+ruby {
+  ruby-position: over;
+  ruby-align: center;
+}
+
+rt {
+  font-size: var(--nn-ruby);
+  font-weight: 400;
+  color: inherit;
+  opacity: 0.78;
+  letter-spacing: 0.02em;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--nn-kaki);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--nn-kaki-tint);
+}
+
+/* ── Japanese text helpers ──────────────────────────────────────────────
+   Use these rather than setting font-family and size ad hoc. Every one of
+   them pins colour to --nn-jp, which is the point: Japanese never inherits
+   a softened Latin text colour. */
+
+.jp {
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-body);
+  color: var(--nn-jp);
+}
+
+.jp-sm {
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-sm);
+  color: var(--nn-jp);
+}
+
+.jp-lg {
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-lg);
+  color: var(--nn-jp);
+}
+
+/* For any Japanese carrying furigana. */
+.jp-ruby {
+  line-height: var(--nn-jp-lh);
+}
+
+/* The single sanctioned exception to full-contrast Japanese: words the user
+   has already saved, dimmed so a pasted sentence reads as a diff of what
+   they know. Do not reuse this colour for anything else. */
+.jp-known {
+  color: var(--nn-jp-known);
+}
