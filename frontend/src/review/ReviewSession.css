@@ -1,9 +1,10 @@
+/* Width comes from the .focus column now, which centres the whole session
+   rather than just capping this one card and leaving it against the left edge. */
 .review-card {
   align-items: center;
   text-align: center;
   gap: 0.6rem;
   padding: 2.5rem 1.5rem;
-  max-width: 46rem;
 }
 
 .review-term {
@@ -45,6 +46,12 @@
   font-family: var(--nn-font-ui);
   font-size: 11.5px;
   color: var(--nn-ink-3);
+}
+
+.session-done-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 kbd {

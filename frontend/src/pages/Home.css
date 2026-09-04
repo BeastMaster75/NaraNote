@@ -1,64 +1,307 @@
 .home {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 1.25rem;
 }
 
-.calendar {
-  flex: 1;
-  min-width: 0;
+/* ── Opening band: capture on the left, what to do next on the right ────────
+   The page used to open on a calendar, which is a report about study already
+   done. The first thing on screen is now the box you paste into, because that
+   is what the app is for. */
+
+.hero {
+  display: grid;
+  /* min() so the columns can still shrink below their preferred width on a
+     phone — a bare minmax(36rem, …) cannot, and forces horizontal overflow. */
+  grid-template-columns: minmax(min(34rem, 100%), 1.9fr) minmax(min(19rem, 100%), 1fr);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.hero-capture,
+.rightnow {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem 1.4rem 1.5rem;
+  gap: 0.9rem;
+  padding: 1.4rem 1.5rem 1.5rem;
   background: var(--nn-raised);
   border: 1px solid var(--nn-line-soft);
   border-radius: var(--nn-r-lg);
   box-shadow: var(--nn-shadow);
 }
 
-.calendar-head {
+.hero-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.hero-head h2 {
+  font-family: var(--nn-font-display);
+  font-size: 2.1rem;
+  font-weight: 400;
+  line-height: 1;
+  margin: 0;
+  color: var(--nn-ink);
+}
+
+.hero-head p {
+  margin: 0;
+}
+
+/* Grows to whatever height the right-hand column takes, so the two cards end
+   flush instead of leaving a gap under the shorter one. */
+.hero-textarea {
+  flex: 1;
+  min-height: 8.5rem;
+  resize: vertical;
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border-radius: var(--nn-r-md);
+  border: 1px solid var(--nn-line);
+  background: var(--nn-sunk);
+  color: var(--nn-jp);
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-body);
+  line-height: 1.85;
+}
+
+.hero-textarea:focus-visible {
+  outline: 2px solid var(--nn-kaki);
+  outline-offset: 1px;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.hero-source {
+  flex: 1;
+  min-width: 10rem;
+  padding: 0.55rem 0.9rem;
+  border-radius: var(--nn-r-pill);
+  border: 1px solid var(--nn-line);
+  background: var(--nn-sunk);
+  color: var(--nn-ink);
+  font-family: var(--nn-font-ui);
+  font-size: 13px;
+}
+
+/* ── Right Now ─────────────────────────────────────────────────────────── */
+
+.rightnow-list {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.rightnow-tile {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: var(--nn-r-md);
+  border: 1px solid var(--nn-line-soft);
+  background: var(--nn-paper);
+  text-decoration: none;
+  color: inherit;
+}
+
+.rightnow-tile:hover {
+  border-color: var(--nn-kaki);
+  background: var(--nn-kaki-tint);
+}
+
+.rightnow-count {
+  font-family: var(--nn-font-display);
+  font-size: 1.45rem;
+  line-height: 1;
+  min-width: 1.6ch;
+  text-align: center;
+  color: var(--nn-kaki);
+}
+
+.rightnow-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rightnow-title {
+  font-weight: 600;
+  color: var(--nn-ink);
+}
+
+.rightnow-detail {
+  font-size: 12.5px;
+  color: var(--nn-ink-2);
+}
+
+/* Due work is the urgent kind; everything else is an observation about the
+   collection and should not shout in the same colour. */
+.rightnow-tile.s-untouched .rightnow-count,
+.rightnow-tile.s-struggling .rightnow-count {
+  color: var(--nn-yamabuki);
+}
+
+.rightnow-clear {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 0.8rem;
+}
+
+.rightnow-note {
+  margin: 0;
+  padding-top: 0.7rem;
+  border-top: 1px solid var(--nn-line-soft);
+  color: var(--nn-ink-3);
+}
+
+/* ── Recently collected ────────────────────────────────────────────────────
+   The collection is the payoff of the whole app, and the home page showed
+   none of it. */
+
+/* A column in the lower row, so its two blocks stack. It turns back into a row
+   at the width where the lower row drops to two columns and this spans both. */
+.recent {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  min-width: 0;
+}
+
+.recent-block {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.15rem 1.4rem 1.3rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+  box-shadow: var(--nn-shadow);
+}
+
+.recent-kanji {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recent-glyph {
+  display: grid;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-paper);
+  border: 1px solid var(--nn-line-soft);
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-xl);
+  line-height: 1;
+  color: var(--nn-jp);
+  text-decoration: none;
+}
+
+.recent-glyph:hover {
+  border-color: var(--nn-kaki);
+  background: var(--nn-kaki-tint);
+}
+
+.recent-words {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recent-word {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--nn-line-soft);
+}
+
+.recent-word:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.recent-term {
+  color: var(--nn-jp);
+  white-space: nowrap;
+}
+
+.recent-meaning {
+  color: var(--nn-ink-2);
+  font-size: 13.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Lower band: the record, and the things you chose to do ─────────────── */
+
+/* Everything below the hero, in one row: what you've collected, the record, and
+   your tasks. Three bands stacked made home 1376px and the only page that
+   scrolled.
+ *
+ * Stretched, not start-aligned: these three are rarely the same natural height,
+ * and letting the short ones end early leaves holes along the bottom. */
+.home-lower {
+  display: grid;
+  grid-template-columns:
+    minmax(min(18rem, 100%), 0.9fr)
+    minmax(min(26rem, 100%), 1.4fr)
+    minmax(min(17rem, 100%), 19rem);
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.activity {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.4rem 1.4rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+  box-shadow: var(--nn-shadow);
+}
+
+.activity-head {
   display: flex;
   align-items: center;
   gap: 1rem;
   flex-wrap: wrap;
 }
 
-.calendar-month {
-  font-family: var(--nn-font-display);
-  font-size: 1.6rem;
-  font-weight: 400;
-  margin: 0;
-  color: var(--nn-ink);
-}
-
-.calendar-year {
-  font-family: var(--nn-font-mono);
-  font-size: 0.85rem;
-  letter-spacing: 0.06em;
-  color: var(--nn-ink-3);
-}
-
-.calendar-nav {
-  display: flex;
-  gap: 0.35rem;
-}
-
-.calendar-nav .btn {
-  width: 2rem;
-  padding: 0.3rem 0;
-  text-align: center;
-  line-height: 1;
-  font-size: 16px;
-}
-
-.calendar-totals {
+.activity-totals {
   display: flex;
   gap: 1.25rem;
   margin: 0 0 0 auto;
 }
 
-.calendar-totals dt {
+.activity-totals dt {
   font-family: var(--nn-font-mono);
   font-size: 9.5px;
   font-weight: 600;
@@ -67,7 +310,7 @@
   color: var(--nn-ink-3);
 }
 
-.calendar-totals dd {
+.activity-totals dd {
   margin: 0.15rem 0 0;
   font-family: var(--nn-font-display);
   font-size: 1.3rem;
@@ -75,156 +318,147 @@
   color: var(--nn-ink);
 }
 
-.calendar-cta {
-  text-decoration: none;
-}
-
-.calendar-grid {
+/* Weekday labels down the left, month labels along the top, cells filling the
+   rest — the top-left corner is deliberately empty. */
+.activity-body {
   display: grid;
-  grid-template-columns: repeat(7, 1fr);
-  gap: 6px;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 5px 8px;
 }
 
-.calendar-weekday {
+.activity-months {
+  grid-column: 2;
+  grid-row: 1;
+  display: grid;
+  /* Same track sizing and distribution as the cells below, or the month labels
+     drift out of line with the columns they name. */
+  grid-template-columns: repeat(26, minmax(0, 40px));
+  justify-content: space-between;
+  gap: 4px;
+}
+
+.activity-months span,
+.activity-weekdays span {
   font-family: var(--nn-font-mono);
   font-size: 9.5px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--nn-ink-3);
-  padding-bottom: 4px;
+  white-space: nowrap;
 }
 
-/* A button, not a div: clicking a day selects it, so it must be focusable and
-   reachable from the keyboard like any other control. */
-.calendar-cell {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
-  min-height: 86px;
-  padding: 7px 8px;
-  border-radius: var(--nn-r-sm);
-  background: var(--nn-paper);
-  border: 1px solid var(--nn-line-soft);
+.activity-weekdays {
+  grid-column: 1;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+
+/* Columns cap at 40px and the leftover width goes into the gaps rather than into
+   the cells. Cells are square, so an uncapped 1fr column on a wide screen would
+   make the card as tall as it is wide — a 26-week strip turning into a wall. */
+.activity-grid {
+  grid-column: 2;
+  grid-row: 2;
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 40px);
+  justify-content: space-between;
+  gap: 4px;
+}
+
+/* A button, not a div: clicking a day selects it for the task panel, so it has
+   to be focusable and reachable from the keyboard like any other control. */
+.activity-cell {
+  aspect-ratio: 1;
+  min-width: 0;
+  padding: 0;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  background: var(--nn-sunk);
   cursor: pointer;
-  text-align: left;
-  font: inherit;
-  color: inherit;
 }
 
-.calendar-cell:hover:not(.is-blank) {
+.activity-cell.level-1 {
+  background: var(--nn-matcha-tint);
+}
+
+.activity-cell.level-2 {
+  background: color-mix(in srgb, var(--nn-matcha) 45%, var(--nn-matcha-tint));
+}
+
+.activity-cell.level-3 {
+  background: var(--nn-matcha);
+}
+
+.activity-cell.has-task {
+  box-shadow: inset 0 0 0 2px var(--nn-yamabuki);
+}
+
+.activity-cell.is-today {
+  border-color: var(--nn-kaki);
+}
+
+.activity-cell.is-selected {
+  border-color: var(--nn-kaki);
+  background: var(--nn-kaki);
+}
+
+/* Days that haven't happened yet are still clickable — that is how you plan a
+   task for Friday — but they shouldn't read as an empty record. */
+.activity-cell.is-future {
+  background: transparent;
+  border-color: var(--nn-line-soft);
+  border-style: dashed;
+}
+
+.activity-cell:hover {
   border-color: var(--nn-ink-3);
 }
 
-.calendar-cell.is-selected {
-  border-color: var(--nn-kaki);
-  background: var(--nn-kaki-tint);
-}
+/* Three columns need roughly 1500px before the activity strip gets squeezed.
+   Below that the collected blocks span the full width as a row of two, with the
+   record and the tasks beneath them. */
+@media (max-width: 1500px) {
+  .home-lower {
+    grid-template-columns: minmax(min(26rem, 100%), 1fr) minmax(min(17rem, 100%), 19rem);
+  }
 
-.chip-task {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: var(--nn-r-sm);
-  white-space: nowrap;
-  background: var(--nn-yamabuki-tint);
-  color: var(--nn-yamabuki);
-}
-
-.calendar-note {
-  margin-top: 0.25rem;
-}
-
-.calendar-cell.is-blank {
-  background: transparent;
-  border-color: transparent;
-}
-
-.calendar-cell.has-activity {
-  border-color: var(--nn-line);
-}
-
-.calendar-cell.is-today {
-  border-color: var(--nn-kaki);
-}
-
-.calendar-daynum {
-  font-family: var(--nn-font-mono);
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--nn-ink-2);
-}
-
-.calendar-today {
-  font-family: var(--nn-font-mono);
-  font-size: 8.5px;
-  font-weight: 700;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 1px 5px;
-  border-radius: var(--nn-r-pill);
-  background: var(--nn-kaki);
-  color: var(--nn-on-accent);
-}
-
-.chip-drawn,
-.chip-added {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: var(--nn-r-sm);
-  white-space: nowrap;
-}
-
-.chip-drawn {
-  background: var(--nn-matcha-tint);
-  color: var(--nn-matcha);
-}
-
-.chip-reviewed {
-  font-size: 10px;
-  font-weight: 600;
-  padding: 2px 6px;
-  border-radius: var(--nn-r-sm);
-  white-space: nowrap;
-  background: var(--nn-sunk);
-  color: var(--nn-ink-2);
-}
-
-.chip-added {
-  background: var(--nn-kaki-tint);
-  color: var(--nn-bengara);
-}
-
-/* Cells grow with the grid, or a wide calendar ends up as short letterboxes. */
-@media (min-width: 1200px) {
-  .calendar-cell {
-    min-height: 112px;
+  .recent {
+    grid-column: 1 / -1;
+    flex-direction: row;
   }
 }
 
-/* Seven calendar columns need roughly 500px to stay readable; the panel is 336.
-   Below their combined width the two stack rather than squeezing. */
-@media (max-width: 880px) {
-  .home {
+@media (max-width: 1100px) {
+  .hero,
+  .home-lower {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .recent {
     flex-direction: column;
   }
-}
 
-@media (max-width: 640px) {
-  .calendar-cell {
-    min-height: 60px;
-    padding: 5px;
+  /* Twenty-six columns sharing a phone's width gives 6px cells, which are too
+     small to see and far too small to tap. Below the stacking point the cells
+     keep a fixed size and the strip scrolls inside its own card instead — the
+     page itself must never scroll sideways. */
+  .activity-body {
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
   }
 
-  .chip-drawn,
-  .chip-added {
-    font-size: 9px;
-    padding: 1px 4px;
+  .activity-grid {
+    grid-auto-columns: 18px;
   }
 
-  .calendar-totals {
-    margin-left: 0;
+  .activity-months {
+    grid-template-columns: repeat(26, 18px);
   }
 }

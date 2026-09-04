@@ -1,10 +1,12 @@
-/* Fills the available width up to a cap, rather than sitting in a narrow
-   reading column. At 1920 the old 62rem cap used 54% of the screen.
-   Line length is controlled per-element below, not by starving the page. */
+/* Edge to edge. There is deliberately no max-width: a cap on an app shell is
+   either a left margin (which is what the old uncentred 1600px cap turned out to
+   be) or a pair of empty gutters, and Fares wants neither.
+ *
+ * Width is controlled where it means something instead: prose keeps its own
+ * measure below, and focused single-task screens take a centred .focus column. */
 .page {
   width: 100%;
-  max-width: 1600px;
-  padding: 2rem 2.5rem 3rem;
+  padding: 2rem 2.5rem 2rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -25,6 +27,17 @@
 .card > p,
 .page > p.muted {
   max-width: 62ch;
+}
+
+/* A focused page centres its heading along with its column. Left-aligned above a
+   centred card, the title reads as a stray label sitting on its own rather than
+   as the heading of what's below it. */
+.page:has(> .focus) .page-head {
+  text-align: center;
+}
+
+.page:has(> .focus) .page-head p {
+  margin-inline: auto;
 }
 
 @media (max-width: 900px) {

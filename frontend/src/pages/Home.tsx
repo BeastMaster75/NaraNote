@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router'
 import { Page } from '../components/Page'
 import { TaskPanel, type Suggestion, type Task } from '../tasks/TaskPanel'
 import './Home.css'
@@ -10,39 +11,101 @@ type ActivityDay = {
   added: number
 }
 
-const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+type RecentWord = {
+  id: number
+  term: string
+  reading: string | null
+  meaning: string
+}
+
+type RecentKanji = {
+  literal: string
+  meanings: string[]
+}
+
+/**
+ * Half a year of small cells rather than one month of large ones. The month grid
+ * this replaces was five rows of 112px cells that were empty most days — the
+ * single biggest patch of dead space on the page — and it showed less.
+ */
+const WEEKS = 26
+const WEEKDAYS = ['Mon', '', 'Wed', '', 'Fri', '', 'Sun']
+
+const SAMPLE =
+  'その古い家の窓から、山吹色の光が漏れていた。彼は毎朝六時に起きて、川沿いを走ることにしている。'
+
+function dayKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate(),
+  ).padStart(2, '0')}`
+}
 
 function monthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`
 }
 
-function dayKey(date: Date) {
-  return `${monthKey(date)}-${String(date.getDate()).padStart(2, '0')}`
+/**
+ * One column per week, Monday-first, ending on the Sunday of the current week —
+ * so today always sits in the last column rather than drifting by weekday.
+ */
+function stripWeeks() {
+  const today = new Date()
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+  // getDay() is Sunday-first; shift to a Monday-first index, then run on to that
+  // week's Sunday. Six minus the index, not seven — seven lands on the Monday
+  // after, which slides every row one place off its weekday label.
+  end.setDate(end.getDate() + (6 - ((end.getDay() + 6) % 7)))
+
+  const weeks: Date[][] = []
+  for (let week = WEEKS - 1; week >= 0; week -= 1) {
+    const column: Date[] = []
+    for (let day = 6; day >= 0; day -= 1) {
+      const date = new Date(end)
+      date.setDate(end.getDate() - (week * 7 + day))
+      column.push(date)
+    }
+    weeks.push(column)
+  }
+  return weeks
 }
 
 export function Home() {
-  const [month, setMonth] = useState(() => {
-    const now = new Date()
-    return new Date(now.getFullYear(), now.getMonth(), 1)
-  })
+  const navigate = useNavigate()
   const [activity, setActivity] = useState<Map<string, ActivityDay>>(new Map())
   const [tasks, setTasks] = useState<Task[]>([])
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [words, setWords] = useState<RecentWord[]>([])
+  const [kanji, setKanji] = useState<RecentKanji[]>([])
+  const [text, setText] = useState('')
+  const [source, setSource] = useState('')
 
+  const weeks = stripWeeks()
+  const days = weeks.flat()
+
+  // The strip spans seven or so calendar months and /api/activity is per-month,
+  // so fetch each month it touches and merge them into one lookup.
   useEffect(() => {
+    const months = [...new Set(days.map(monthKey))]
     let cancelled = false
-    fetch(`/api/activity?month=${monthKey(month)}`)
-      .then((response) => (response.ok ? (response.json() as Promise<ActivityDay[]>) : []))
-      .then((days) => !cancelled && setActivity(new Map(days.map((d) => [d.date, d]))))
-      .catch(() => undefined)
+    Promise.all(
+      months.map((month) =>
+        fetch(`/api/activity?month=${month}`)
+          .then((response) => (response.ok ? (response.json() as Promise<ActivityDay[]>) : []))
+          .catch(() => [] as ActivityDay[]),
+      ),
+    ).then((results) => {
+      if (cancelled) return
+      setActivity(new Map(results.flat().map((day) => [day.date, day])))
+    })
     return () => {
       cancelled = true
     }
-  }, [month])
+    // days is derived from the clock, not from state — recomputing it every
+    // render would refetch forever, so this deliberately runs once.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
-  // Tasks and suggestions are refetched together: completing a task can change
-  // nothing about suggestions, but practising from one changes both.
   const reload = useCallback(() => {
     fetch('/api/tasks')
       .then((response) => (response.ok ? (response.json() as Promise<Task[]>) : []))
@@ -56,10 +119,18 @@ export function Home() {
 
   useEffect(reload, [reload])
 
-  const first = new Date(month.getFullYear(), month.getMonth(), 1)
-  const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate()
-  // getDay() is Sunday-first; shift so the grid starts on Monday.
-  const leadingBlanks = (first.getDay() + 6) % 7
+  useEffect(() => {
+    fetch('/api/vocab')
+      .then((response) => (response.ok ? (response.json() as Promise<RecentWord[]>) : []))
+      .then((all) => setWords(all.slice(0, 4)))
+      .catch(() => undefined)
+    fetch('/api/library')
+      .then((response) => (response.ok ? (response.json() as Promise<RecentKanji[]>) : []))
+      // Ten fits two rows in the narrower column the restructure gave this block.
+      .then((all) => setKanji(all.slice(0, 10)))
+      .catch(() => undefined)
+  }, [])
+
   const todayKey = dayKey(new Date())
 
   const totals = [...activity.values()].reduce(
@@ -77,117 +148,243 @@ export function Home() {
     openTasksByDate.set(task.dueDate, (openTasksByDate.get(task.dueDate) ?? 0) + 1)
   }
 
-  // Note: the "practise N due" prompt lives only in the task panel. It used to be
-  // duplicated as a calendar CTA, which read as padding.
-  return (
-    <Page title="NaraNote" subtitle="Collect the Japanese You Meet">
-      <div className="home">
-        <section className="calendar">
-          <header className="calendar-head">
-            <h3 className="calendar-month">
-              {month.toLocaleString(undefined, { month: 'long' })}{' '}
-              <span className="calendar-year">{month.getFullYear()}</span>
-            </h3>
+  function mine(input: string) {
+    if (!input.trim()) return
+    // Router state rather than a query string: a mined passage is a paragraph,
+    // and paragraphs of Japanese make for a hostile URL.
+    navigate('/mine', { state: { text: input, source: source.trim() || null } })
+  }
 
-            <div className="calendar-nav">
+  return (
+    <Page>
+      <div className="home">
+        <section className="hero">
+          <div className="hero-capture">
+            <header className="hero-head">
+              <h2>NaraNote</h2>
+              <p className="muted">Collect the Japanese You Meet</p>
+            </header>
+
+            <textarea
+              className="hero-textarea jp"
+              value={text}
+              onChange={(event) => setText(event.target.value)}
+              placeholder="日本語をここに貼り付けてください"
+              rows={5}
+              aria-label="Japanese text to mine"
+            />
+
+            <div className="hero-actions">
+              <input
+                className="hero-source"
+                value={source}
+                onChange={(event) => setSource(event.target.value)}
+                placeholder="Where it's from (optional)"
+                aria-label="Source"
+              />
               <button
                 type="button"
-                className="btn"
-                aria-label="Previous month"
-                onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                className="btn is-primary"
+                onClick={() => mine(text)}
+                disabled={!text.trim()}
               >
-                ‹
+                Mine It
               </button>
-              <button
-                type="button"
-                className="btn"
-                aria-label="Next month"
-                onClick={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
-              >
-                ›
+              <button type="button" className="btn" onClick={() => mine(SAMPLE)}>
+                Try an Example
               </button>
             </div>
-
-            <dl className="calendar-totals">
-              <div>
-                <dt>Drawn</dt>
-                <dd>{totals.drawn}</dd>
-              </div>
-              <div>
-                <dt>Reviewed</dt>
-                <dd>{totals.reviewed}</dd>
-              </div>
-              <div>
-                <dt>Added</dt>
-                <dd>{totals.added}</dd>
-              </div>
-            </dl>
-
-          </header>
-
-          <div className="calendar-grid">
-            {WEEKDAYS.map((day) => (
-              <div key={day} className="calendar-weekday">
-                {day}
-              </div>
-            ))}
-
-            {Array.from({ length: leadingBlanks }, (_, i) => (
-              <div key={`blank-${i}`} className="calendar-cell is-blank" />
-            ))}
-
-            {Array.from({ length: daysInMonth }, (_, i) => {
-              const dayNumber = i + 1
-              const key = `${monthKey(month)}-${String(dayNumber).padStart(2, '0')}`
-              const day = activity.get(key)
-              const openTasks = openTasksByDate.get(key) ?? 0
-              const classes = [
-                'calendar-cell',
-                key === todayKey && 'is-today',
-                (day || openTasks) && 'has-activity',
-                selectedDate === key && 'is-selected',
-              ]
-                .filter(Boolean)
-                .join(' ')
-
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  className={classes}
-                  aria-pressed={selectedDate === key}
-                  onClick={() => setSelectedDate(selectedDate === key ? null : key)}
-                >
-                  <span className="calendar-daynum">{dayNumber}</span>
-                  {key === todayKey && <span className="calendar-today">today</span>}
-                  {openTasks > 0 && (
-                    <span className="chip-task">
-                      {openTasks} {openTasks === 1 ? 'task' : 'tasks'}
-                    </span>
-                  )}
-                  {day && day.drawn > 0 && <span className="chip-drawn">{day.drawn} drawn</span>}
-                  {day && day.reviewed > 0 && (
-                    <span className="chip-reviewed">{day.reviewed} reviewed</span>
-                  )}
-                  {day && day.added > 0 && <span className="chip-added">{day.added} added</span>}
-                </button>
-              )
-            })}
           </div>
 
-          <p className="muted small calendar-note">
-            Activity fills itself in from what you did. Click a day to plan it.
-          </p>
+          <RightNow suggestions={suggestions} />
         </section>
 
-        <TaskPanel
-          tasks={tasks}
-          suggestions={suggestions}
-          selectedDate={selectedDate}
-          onClearDate={() => setSelectedDate(null)}
-          onChanged={reload}
-        />
+        {/* One row, not two bands: three bands stacked put home at 1376px and
+            made it the only page that scrolled. Rendered unconditionally so the
+            column count doesn't change under a fresh account — the empty states
+            say what to do instead. */}
+        <div className="home-lower">
+          <section className="recent">
+            <div className="recent-block">
+              <h3 className="kicker">Kanji You Added</h3>
+              <ul className="recent-kanji">
+                {kanji.map((entry) => (
+                  <li key={entry.literal}>
+                    <Link
+                      to={`/kanji/${entry.literal}`}
+                      className="recent-glyph"
+                      title={entry.meanings.slice(0, 3).join(', ')}
+                    >
+                      {entry.literal}
+                    </Link>
+                  </li>
+                ))}
+                {kanji.length === 0 && (
+                  <li className="muted small">
+                    None yet — find one on the <Link to="/kanji">kanji page</Link>.
+                  </li>
+                )}
+              </ul>
+            </div>
+
+            <div className="recent-block">
+              <h3 className="kicker">Words You Saved</h3>
+              <ul className="recent-words">
+                {words.map((word) => (
+                  <li key={word.id} className="recent-word">
+                    <span className="recent-term jp-sm">{word.term}</span>
+                    <span className="recent-meaning">{word.meaning}</span>
+                  </li>
+                ))}
+                {words.length === 0 && (
+                  <li className="muted small">
+                    None yet — paste something above and save what you don&rsquo;t know.
+                  </li>
+                )}
+              </ul>
+            </div>
+          </section>
+
+          <section className="activity">
+            <header className="activity-head">
+              <h3 className="kicker">Last Six Months</h3>
+              <dl className="activity-totals">
+                <div>
+                  <dt>Drawn</dt>
+                  <dd>{totals.drawn}</dd>
+                </div>
+                <div>
+                  <dt>Reviewed</dt>
+                  <dd>{totals.reviewed}</dd>
+                </div>
+                <div>
+                  <dt>Added</dt>
+                  <dd>{totals.added}</dd>
+                </div>
+              </dl>
+            </header>
+
+            <div className="activity-body">
+              <div className="activity-weekdays" aria-hidden="true">
+                {WEEKDAYS.map((day, index) => (
+                  <span key={index}>{day}</span>
+                ))}
+              </div>
+
+              <div className="activity-months" aria-hidden="true">
+                {weeks.map((week, index) => {
+                  // Label a column only where its week starts a new month, which
+                  // is what makes the strip readable without a cell per date.
+                  const isNew =
+                    index === 0 || week[0].getMonth() !== weeks[index - 1][0].getMonth()
+                  return (
+                    <span key={index}>
+                      {isNew ? week[0].toLocaleString(undefined, { month: 'short' }) : ''}
+                    </span>
+                  )
+                })}
+              </div>
+
+              <div className="activity-grid">
+                {days.map((date) => {
+                  const key = dayKey(date)
+                  const day = activity.get(key)
+                  const openTasks = openTasksByDate.get(key) ?? 0
+                  const count = day ? day.drawn + day.reviewed + day.added : 0
+                  const level = count === 0 ? 0 : count < 5 ? 1 : count < 15 ? 2 : 3
+                  const classes = [
+                    'activity-cell',
+                    `level-${level}`,
+                    key === todayKey && 'is-today',
+                    openTasks > 0 && 'has-task',
+                    selectedDate === key && 'is-selected',
+                    date > new Date() && 'is-future',
+                  ]
+                    .filter(Boolean)
+                    .join(' ')
+
+                  const parts = [
+                    day?.drawn && `${day.drawn} drawn`,
+                    day?.reviewed && `${day.reviewed} reviewed`,
+                    day?.added && `${day.added} added`,
+                    openTasks > 0 && `${openTasks} ${openTasks === 1 ? 'task' : 'tasks'}`,
+                  ].filter(Boolean)
+
+                  return (
+                    <button
+                      key={key}
+                      type="button"
+                      className={classes}
+                      aria-pressed={selectedDate === key}
+                      title={`${key}${parts.length ? ` — ${parts.join(', ')}` : ''}`}
+                      onClick={() => setSelectedDate(selectedDate === key ? null : key)}
+                    >
+                      <span className="visually-hidden">{key}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+
+            <p className="muted small">
+              Activity fills itself in from what you did. Click a day to plan it.
+            </p>
+          </section>
+
+          <TaskPanel
+            tasks={tasks}
+            selectedDate={selectedDate}
+            onClearDate={() => setSelectedDate(null)}
+            onChanged={reload}
+          />
+        </div>
       </div>
     </Page>
+  )
+}
+
+/**
+ * What the app thinks you should do, computed server-side and never stored.
+ * Nothing here can be ticked off — each entry exists only while it is true.
+ */
+function RightNow({ suggestions }: { suggestions: Suggestion[] }) {
+  return (
+    <aside className="rightnow">
+      <h3 className="kicker">Right Now</h3>
+
+      {suggestions.length === 0 ? (
+        <div className="rightnow-clear">
+          <p className="muted small">
+            Nothing is due. Everything you have saved is scheduled further out.
+          </p>
+          <Link to="/collection" className="btn">
+            See Collection
+          </Link>
+        </div>
+      ) : (
+        <ul className="rightnow-list">
+          {suggestions.map((suggestion) => (
+            <li key={suggestion.kind}>
+              <Link
+                to={suggestion.action}
+                className={`rightnow-tile s-${suggestion.kind.toLowerCase()}`}
+              >
+                {suggestion.count > 0 && (
+                  <span className="rightnow-count">{suggestion.count}</span>
+                )}
+                <span className="rightnow-text">
+                  <span className="rightnow-title">{suggestion.title}</span>
+                  <span className="rightnow-detail">{suggestion.detail}</span>
+                </span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      <p className="rightnow-note small">
+        These aren&rsquo;t ticked off — they disappear when they&rsquo;re no longer true.
+      </p>
+    </aside>
   )
 }

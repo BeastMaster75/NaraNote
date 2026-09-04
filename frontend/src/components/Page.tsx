@@ -2,7 +2,12 @@ import type { ReactNode } from 'react'
 import './Page.css'
 
 type PageProps = {
-  title: string
+  /**
+   * Omitted by pages that carry their own heading inside the content — the home
+   * page puts the title inside its opening band rather than stranding it above
+   * one, which would leave a line of text alone in the top-left corner.
+   */
+  title?: string
   subtitle?: string
   children: ReactNode
 }
@@ -17,10 +22,12 @@ type PageProps = {
 export function Page({ title, subtitle, children }: PageProps) {
   return (
     <div className="page">
-      <header className="page-head">
-        <h2>{title}</h2>
-        {subtitle && <p className="muted">{subtitle}</p>}
-      </header>
+      {title && (
+        <header className="page-head">
+          <h2>{title}</h2>
+          {subtitle && <p className="muted">{subtitle}</p>}
+        </header>
+      )}
       {children}
     </div>
   )

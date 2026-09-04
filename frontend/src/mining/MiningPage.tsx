@@ -1,6 +1,7 @@
-import { useState } from 'react'
-import { Link } from 'react-router'
+import { useEffect, useRef, useState } from 'react'
+import { Link, useLocation } from 'react-router'
 import { Page } from '../components/Page'
+import { useUser } from '../user/UserContext'
 import './MiningPage.css'
 
 type Sense = { partOfSpeech: string[]; glosses: string[] }
@@ -41,14 +42,34 @@ function sentenceText(sentence: Sentence) {
   return sentence.tokens.map((token) => token.surface).join('')
 }
 
+/** What the home page's paste box hands over when it navigates here. */
+type HandOff = { text?: string; source?: string | null }
+
 export function MiningPage() {
-  const [text, setText] = useState('')
-  const [source, setSource] = useState('')
+  const { me } = useUser()
+  const handOff = useLocation().state as HandOff | null
+  const [text, setText] = useState(handOff?.text ?? '')
+  const [source, setSource] = useState(handOff?.source ?? '')
   const [result, setResult] = useState<AnalyzeResponse | null>(null)
   const [selection, setSelection] = useState<Selection | null>(null)
-  const [furigana, setFurigana] = useState(true)
+  // Null means "use whatever the setting says". A plain useState seeded from the
+  // setting would freeze at the default, because /api/me answers after mount and
+  // an initial value is only ever read once.
+  const [furiganaOverride, setFuriganaOverride] = useState<boolean | null>(null)
+  const furigana = furiganaOverride ?? me.furigana
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  // Arriving with text already in hand means the user has pressed Mine It on the
+  // home page — analysing it here saves them pressing Analyse straight away.
+  // Ref-guarded so it fires once, not on every later render.
+  const analysed = useRef(false)
+  useEffect(() => {
+    if (analysed.current || !handOff?.text) return
+    analysed.current = true
+    void analyze(handOff.text)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   async function analyze(input: string) {
     if (!input.trim()) return
@@ -192,7 +213,7 @@ export function MiningPage() {
                 <button
                   type="button"
                   className="btn"
-                  onClick={() => setFurigana(!furigana)}
+                  onClick={() => setFuriganaOverride(!furigana)}
                 >
                   Furigana: {furigana ? 'On' : 'Off'}
                 </button>

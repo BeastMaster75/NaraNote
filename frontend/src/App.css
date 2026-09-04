@@ -1,6 +1,12 @@
+/* The shell is exactly one viewport tall and never scrolls itself. Only
+   .app-main does, so the nav rail stays put instead of sliding out of view with
+   the content — previously the whole document scrolled and took the rail with
+   it. dvh so a mobile browser's collapsing URL bar doesn't cut the page off. */
 .app {
   display: flex;
-  min-height: 100vh;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .app-main {
@@ -8,6 +14,10 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  /* Reserves the scrollbar's width whether or not it's showing, so moving from
+     a short page to a tall one doesn't shift the whole layout sideways. */
+  scrollbar-gutter: stable;
 }
 
 @media (max-width: 640px) {
@@ -27,6 +37,28 @@
   background: var(--nn-raised);
   border: 1px solid var(--nn-line-soft);
   box-shadow: var(--nn-shadow);
+}
+
+/* Focused single-task screens: reviewing a word, writing a character.
+ *
+ * These are the sanctioned exception to "pages fill the screen". That rule was
+ * written for layouts — grids, columns, lists — where width is information. A
+ * recall prompt is the opposite: everything except the card in front of you is a
+ * distraction, and stretching to 1600px leaves the card stranded against one
+ * edge of an otherwise empty page.
+ */
+.focus {
+  width: 100%;
+  max-width: 46rem;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Handwriting needs the prompt and a 420px canvas side by side. */
+.focus.is-wide {
+  max-width: 68rem;
 }
 
 .kicker {
@@ -52,6 +84,19 @@
 .error {
   margin: 0;
   color: var(--nn-bengara);
+}
+
+/* Text for screen readers on controls whose meaning is carried visually — the
+   activity cells are coloured squares with nothing readable inside them. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .btn {
@@ -110,15 +155,36 @@ code {
   background: var(--nn-sunk);
 }
 
+/* Remove control on a card, used by the kanji wall and the deck word list. */
+.row-delete {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.7rem;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0 0.2rem;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--nn-ink-3);
+}
+
+.row-delete:hover {
+  color: var(--nn-bengara);
+}
+
 /* Attribution is a licence condition for KANJIDIC2 and KanjiVG, so it sits in
    the layout rather than on one page — it can't be navigated away from. */
+/* Uncapped like .page, and sharing its horizontal padding so the attribution
+   lines up with the content above it. */
 .credits {
+  width: 100%;
   margin-top: auto;
-  padding: 1rem 2.25rem 1.5rem;
+  padding: 1rem 2.5rem 1.5rem;
   border-top: 1px solid var(--nn-line-soft);
 }
 
-@media (max-width: 640px) {
+@media (max-width: 900px) {
   .credits {
     padding: 1rem 1.25rem 1.5rem;
   }

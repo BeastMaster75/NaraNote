@@ -1,5 +1,6 @@
 package com.naranote.export;
 
+import com.naranote.deck.DeckRef;
 import com.naranote.user.CurrentUser;
 import com.naranote.vocab.VocabItem;
 import com.naranote.vocab.VocabRepository;
@@ -32,12 +33,24 @@ public class AnkiExportService {
     }
 
     @Transactional(readOnly = true)
-    public List<VocabItem> words() {
-        return vocabRepository.findByUserIdOrderByCreatedAtDesc(currentUser.id());
+    public List<VocabItem> words(DeckRef deck) {
+        List<VocabItem> all = vocabRepository.findByUserIdOrderByCreatedAtDesc(currentUser.id());
+        if (deck == null || deck.kind() != DeckRef.Kind.WORDS) {
+            return all;
+        }
+        // Filtered here rather than in a query: the deck's source is already the
+        // grouping key the hub computed, and the list is small enough that a
+        // second repository method earns nothing.
+        return all.stream().filter(item -> deck.equals(deckOf(item))).toList();
     }
 
-    public byte[] buildApkg(String deckName) throws IOException, SQLException {
-        List<VocabItem> items = words();
+    /** The deck a word belongs to, by the same folding rule as the hub's counts. */
+    private static DeckRef deckOf(VocabItem item) {
+        return DeckRef.words(item.getSource());
+    }
+
+    public byte[] buildApkg(String deckName, DeckRef deck) throws IOException, SQLException {
+        List<VocabItem> items = words(deck);
         if (items.isEmpty()) {
             throw new IllegalStateException("Nothing to export");
         }
@@ -82,9 +95,9 @@ public class AnkiExportService {
      * commas ("river; stream, brook") and quoting them correctly for every
      * importer is more fragile than avoiding the problem.
      */
-    public String buildTsv() {
+    public String buildTsv(DeckRef deck) {
         StringBuilder tsv = new StringBuilder("Term\tReading\tMeaning\tSentence\tSource\n");
-        for (VocabItem item : words()) {
+        for (VocabItem item : words(deck)) {
             tsv.append(cell(item.getTerm()))
                     .append('\t')
                     .append(cell(item.getReading()))

@@ -22,20 +22,18 @@ type Filter = 'open' | 'done' | 'all'
 
 type TaskPanelProps = {
   tasks: Task[]
-  suggestions: Suggestion[]
-  /** Set by clicking a calendar day; filters the list and seeds the add form. */
+  /** Set by clicking an activity day; filters the list and seeds the add form. */
   selectedDate: string | null
   onClearDate: () => void
   onChanged: () => void
 }
 
-export function TaskPanel({
-  tasks,
-  suggestions,
-  selectedDate,
-  onClearDate,
-  onChanged,
-}: TaskPanelProps) {
+/**
+ * Tasks only. Suggestions used to head this panel, but they answer "what should I
+ * do now?" — which belongs at the top of the page, not buried under a form.
+ * The home page renders them; see RightNow there.
+ */
+export function TaskPanel({ tasks, selectedDate, onClearDate, onChanged }: TaskPanelProps) {
   const [filter, setFilter] = useState<Filter>('open')
   const [title, setTitle] = useState('')
   const [date, setDate] = useState('')
@@ -81,25 +79,6 @@ export function TaskPanel({
 
   return (
     <aside className="panel">
-      {suggestions.length > 0 && (
-        <section className="panel-block">
-          <h3 className="kicker">Right Now</h3>
-          <ul className="suggestions">
-            {suggestions.map((suggestion) => (
-              <li key={suggestion.kind}>
-                <Link to={suggestion.action} className={`suggestion s-${suggestion.kind.toLowerCase()}`}>
-                  <span className="suggestion-title">{suggestion.title}</span>
-                  <span className="suggestion-detail">{suggestion.detail}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <p className="panel-note">
-            These aren&rsquo;t ticked off — they disappear when they&rsquo;re no longer true.
-          </p>
-        </section>
-      )}
-
       <section className="panel-block">
         <div className="panel-head">
           <h3 className="kicker">Your Tasks</h3>

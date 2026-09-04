@@ -1,5 +1,6 @@
 package com.naranote.review;
 
+import com.naranote.deck.DeckRef;
 import com.naranote.review.ReviewDtos.DueWord;
 import com.naranote.review.ReviewDtos.ReviewRequest;
 import com.naranote.review.ReviewDtos.ReviewResult;
@@ -26,9 +27,12 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
+    /** {@code deck} is a deck id from /api/decks; absent means everything due. */
     @GetMapping("/due")
-    public List<DueWord> due(@RequestParam(defaultValue = "20") int limit) {
-        return reviewService.due(Math.clamp(limit, 1, 100));
+    public List<DueWord> due(
+            @RequestParam(defaultValue = "20") int limit,
+            @RequestParam(required = false) String deck) {
+        return reviewService.due(Math.clamp(limit, 1, 100), DeckRef.parse(deck));
     }
 
     @GetMapping("/due/count")

@@ -1,12 +1,14 @@
+/* Width comes from the grid column the panel sits in, not from here — it used
+   to be a fixed 21rem beside a flex calendar. */
 .panel {
-  width: 21rem;
-  flex: none;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
 .panel-block {
+  /* Fills the column so the card ends level with whatever sits beside it. */
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -23,16 +25,6 @@
   gap: 0.5rem;
 }
 
-.panel-note {
-  margin: 0.2rem 0 0;
-  font-size: 11px;
-  line-height: 1.5;
-  color: var(--nn-ink-3);
-}
-
-/* — computed prompts — */
-
-.suggestions,
 .tasks {
   list-style: none;
   margin: 0;
@@ -40,51 +32,6 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-}
-
-.suggestion {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 0.6rem 0.8rem;
-  text-decoration: none;
-  color: inherit;
-  border-radius: var(--nn-r-md);
-  background: var(--nn-sunk);
-  border-left: 3px solid var(--nn-line);
-}
-
-.suggestion:hover {
-  color: inherit;
-  border-left-color: var(--nn-kaki);
-}
-
-.suggestion-title {
-  font-size: 13.5px;
-  font-weight: 600;
-  color: var(--nn-ink);
-}
-
-.suggestion-detail {
-  font-size: 11px;
-  color: var(--nn-ink-3);
-}
-
-/* Colour by what the prompt means, not by position in the list. */
-.s-due {
-  border-left-color: var(--nn-kaki);
-}
-
-.s-words_due {
-  border-left-color: var(--nn-matcha);
-}
-
-.s-struggling {
-  border-left-color: var(--nn-bengara);
-}
-
-.s-untouched {
-  border-left-color: var(--nn-yamabuki);
 }
 
 /* — filters — */
@@ -266,8 +213,3 @@
   color: var(--nn-bengara);
 }
 
-@media (max-width: 880px) {
-  .panel {
-    width: 100%;
-  }
-}

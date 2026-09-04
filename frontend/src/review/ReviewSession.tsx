@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { Page } from '../components/Page'
+import { useUser } from '../user/UserContext'
 import './ReviewSession.css'
 
 type DueWord = {
@@ -23,6 +24,9 @@ const RATINGS: { rating: Rating; label: string; hint: string }[] = [
 ]
 
 export function ReviewSession() {
+  const { me, loaded } = useUser()
+  // Absent means every deck, which is the default the hub sends you here with.
+  const deck = useSearchParams()[0].get('deck')
   const [queue, setQueue] = useState<DueWord[] | null>(null)
   const [index, setIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
@@ -30,9 +34,13 @@ export function ReviewSession() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(false)
 
+  // Held until /api/me answers, so the first queue is the length the user asked
+  // for rather than a default that gets replaced a moment later.
   const load = useCallback(() => {
+    if (!loaded) return
     setError(false)
-    fetch('/api/review/due?limit=20')
+    const scope = deck ? `&deck=${encodeURIComponent(deck)}` : ''
+    fetch(`/api/review/due?limit=${me.sessionSize}${scope}`)
       .then((response) => {
         if (!response.ok) throw new Error(String(response.status))
         return response.json() as Promise<DueWord[]>
@@ -43,7 +51,7 @@ export function ReviewSession() {
         setRevealed(false)
       })
       .catch(() => setError(true))
-  }, [])
+  }, [loaded, me.sessionSize, deck])
 
   useEffect(load, [load])
 
@@ -94,7 +102,9 @@ export function ReviewSession() {
   if (error) {
     return (
       <Page title="Review">
-        <p className="error">Couldn&rsquo;t reach the server.</p>
+        <div className="focus">
+          <p className="error">Couldn&rsquo;t reach the server.</p>
+        </div>
       </Page>
     )
   }
@@ -102,7 +112,9 @@ export function ReviewSession() {
   if (!queue) {
     return (
       <Page title="Review">
-        <p className="muted">Loading…</p>
+        <div className="focus">
+          <p className="muted">Loading…</p>
+        </div>
       </Page>
     )
   }
@@ -110,77 +122,83 @@ export function ReviewSession() {
   if (queue.length === 0 || index >= queue.length) {
     return (
       <Page title="Review" subtitle="Words you have saved, when they are due.">
-        <section className="card">
-          <h3 className="kicker">{done > 0 ? 'Session Finished' : 'Nothing Due'}</h3>
-          <p className="muted">
-            {done > 0
-              ? `You reviewed ${done} ${done === 1 ? 'word' : 'words'}.`
-              : 'Nothing is due right now.'}{' '}
-            Save more from <Link to="/mine">Mine</Link>, or see your{' '}
-            <Link to="/collection">collection</Link>.
-          </p>
-          <div>
-            <button type="button" className="btn" onClick={load}>
-              Check Again
-            </button>
-          </div>
-        </section>
+        <div className="focus">
+          <section className="card">
+            <h3 className="kicker">{done > 0 ? 'Session Finished' : 'Nothing Due'}</h3>
+            <p className="muted">
+              {done > 0
+                ? `You reviewed ${done} ${done === 1 ? 'word' : 'words'}.`
+                : 'Nothing is due right now.'}{' '}
+              Save more from <Link to="/mine">Mine</Link>, or pick another deck.
+            </p>
+            <div className="session-done-actions">
+              <Link to="/review" className="btn is-primary">
+                All Decks
+              </Link>
+              <button type="button" className="btn" onClick={load}>
+                Check Again
+              </button>
+            </div>
+          </section>
+        </div>
       </Page>
     )
   }
 
   return (
     <Page title="Review" subtitle="What does it mean?">
-      <div className="session-progress muted small">
-        {index + 1} of {queue.length}
-        {word!.isNew && <span className="tag-new">new</span>}
-      </div>
-
-      <section className="card review-card">
-        <span className="review-term jp-lg">{word!.term}</span>
-
-        {revealed ? (
-          <>
-            {word!.reading && <span className="review-reading jp-sm">{word!.reading}</span>}
-            <p className="review-meaning">{word!.meaning}</p>
-            {word!.sentence && (
-              <p className="review-sentence jp">
-                {word!.sentence}
-                {word!.source && <span className="review-source">{word!.source}</span>}
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="muted small">
-            Recall the meaning, then reveal. <kbd>Space</kbd>
-          </p>
-        )}
-      </section>
-
-      {!revealed ? (
-        <div>
-          <button type="button" className="btn is-primary" onClick={() => setRevealed(true)}>
-            Show the Meaning
-          </button>
+      <div className="focus">
+        <div className="session-progress muted small">
+          {index + 1} of {queue.length}
+          {word!.isNew && <span className="tag-new">new</span>}
         </div>
-      ) : (
-        <div className="ratings">
-          {RATINGS.map(({ rating, label, hint }, i) => (
-            <button
-              key={rating}
-              type="button"
-              className={`btn rating rating-${rating.toLowerCase()}`}
-              onClick={() => rate(rating)}
-              disabled={busy}
-            >
-              <span className="rating-label">
-                {label} <kbd>{i + 1}</kbd>
-              </span>
-              <span className="rating-hint">{hint}</span>
+
+        <section className="card review-card">
+          <span className="review-term jp-lg">{word!.term}</span>
+
+          {revealed ? (
+            <>
+              {word!.reading && <span className="review-reading jp-sm">{word!.reading}</span>}
+              <p className="review-meaning">{word!.meaning}</p>
+              {word!.sentence && (
+                <p className="review-sentence jp">
+                  {word!.sentence}
+                  {word!.source && <span className="review-source">{word!.source}</span>}
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="muted small">
+              Recall the meaning, then reveal. <kbd>Space</kbd>
+            </p>
+          )}
+        </section>
+
+        {!revealed ? (
+          <div>
+            <button type="button" className="btn is-primary" onClick={() => setRevealed(true)}>
+              Show the Meaning
             </button>
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="ratings">
+            {RATINGS.map(({ rating, label, hint }, i) => (
+              <button
+                key={rating}
+                type="button"
+                className={`btn rating rating-${rating.toLowerCase()}`}
+                onClick={() => rate(rating)}
+                disabled={busy}
+              >
+                <span className="rating-label">
+                  {label} <kbd>{i + 1}</kbd>
+                </span>
+                <span className="rating-hint">{hint}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </Page>
   )
 }

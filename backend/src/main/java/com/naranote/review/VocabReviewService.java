@@ -1,5 +1,6 @@
 package com.naranote.review;
 
+import com.naranote.deck.DeckRef;
 import com.naranote.review.ReviewDtos.DueWord;
 import com.naranote.review.ReviewDtos.ReviewResult;
 import com.naranote.user.CurrentUser;
@@ -32,9 +33,19 @@ public class VocabReviewService {
             left join vocab_review r on r.vocab_id = v.id
             where v.user_id = ?
               and (r.due is null or r.due <= now())
+            %s
             order by r.due asc nulls first, v.created_at asc
             limit ?
             """;
+
+    /**
+     * Deck scoping, spliced into the queries above. Both branches are constants
+     * chosen by the deck's kind — no user text reaches the SQL, the source name
+     * is always bound as a parameter.
+     */
+    private static final String SOURCE_UNSORTED = "and nullif(trim(v.source), '') is null";
+
+    private static final String SOURCE_EQUALS = "and nullif(trim(v.source), '') = ?";
 
     private static final String COUNT_DUE_SQL =
             """
@@ -64,9 +75,29 @@ public class VocabReviewService {
         this.currentUser = currentUser;
     }
 
+    /**
+     * The session queue, optionally narrowed to one deck.
+     *
+     * <p>Narrowing is for starting a deliberate session on one source, not the
+     * default: a null deck means "everything due", which is the point of a
+     * scheduler. Splitting the queue permanently by deck is how you end up with
+     * three decks each saying "4 due" and nothing getting reviewed.
+     */
     @Transactional(readOnly = true)
-    public List<DueWord> due(int limit) {
-        return jdbc.query(DUE_SQL, DUE_WORD, currentUser.id(), limit);
+    public List<DueWord> due(int limit, DeckRef deck) {
+        if (deck == null || deck.kind() != DeckRef.Kind.WORDS) {
+            return jdbc.query(DUE_SQL.formatted(""), DUE_WORD, currentUser.id(), limit);
+        }
+        if (deck.isUnsorted()) {
+            return jdbc.query(
+                    DUE_SQL.formatted(SOURCE_UNSORTED), DUE_WORD, currentUser.id(), limit);
+        }
+        return jdbc.query(
+                DUE_SQL.formatted(SOURCE_EQUALS),
+                DUE_WORD,
+                currentUser.id(),
+                deck.source(),
+                limit);
     }
 
     @Transactional(readOnly = true)

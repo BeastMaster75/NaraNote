@@ -21,14 +21,6 @@ const ITEMS: NavItem[] = [
   { to: '/collection', label: 'Collection', icon: 'M12 3 3 8l9 5 9-5z M3 14l9 5 9-5', built: true },
 ]
 
-function toggleTheme() {
-  const root = document.documentElement
-  root.setAttribute(
-    'data-theme',
-    root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark',
-  )
-}
-
 export function NavRail() {
   return (
     <nav className="rail" aria-label="Main">
@@ -66,27 +58,6 @@ export function NavRail() {
           </li>
         ))}
       </ul>
-
-      <button
-        type="button"
-        className="rail-toggle"
-        onClick={toggleTheme}
-        aria-label="Toggle light and dark theme"
-      >
-        <svg
-          width="19"
-          height="19"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.75"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden="true"
-        >
-          <path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9z" />
-        </svg>
-      </button>
     </nav>
   )
 }

@@ -1,0 +1,112 @@
+/* Deck word list.
+ *
+ * These styles moved here wholesale from Library.css when the Collection page
+ * dropped its Words tab: a word is managed in the deck it belongs to now, and
+ * the Collection is the kanji wall. Unchanged apart from this note.
+ */
+
+/* — saved words — */
+
+/* Two or three across on a desktop instead of one very wide row per word —
+   a word plus its sentence needs about 30rem, not the whole screen. */
+.words {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  /* min() so the track can collapse below 29rem on a narrow screen — a bare
+     minmax(29rem, …) can't shrink and forces the page wider than the viewport. */
+  grid-template-columns: repeat(auto-fill, minmax(min(29rem, 100%), 1fr));
+  gap: 0.6rem;
+  align-items: start;
+}
+
+.word-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1rem 2.4rem 1rem 1.2rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+}
+
+.word-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.word-term-jp {
+  font-family: var(--nn-font-jp);
+  color: var(--nn-jp);
+}
+
+/* Each kanji inside a saved word opens its own page — a word is a way into
+   its characters, which is the point of having both in one collection. */
+.term-kanji {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.term-kanji:hover {
+  color: var(--nn-jp);
+  border-bottom-color: var(--nn-kaki);
+}
+
+.word-reading-jp {
+  color: var(--nn-jp);
+  opacity: 0.7;
+}
+
+.word-meaning {
+  font-size: 14px;
+  color: var(--nn-ink);
+}
+
+/* The reason the word is worth keeping: where you actually met it. */
+.word-sentence {
+  margin: 0;
+  padding: 0.6rem 0.8rem;
+  line-height: 1.85;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-sunk);
+  border-left: 3px solid var(--nn-line);
+}
+
+.word-source {
+  display: block;
+  margin-top: 0.3rem;
+  font-family: var(--nn-font-ui);
+  font-size: 11.5px;
+  color: var(--nn-ink-3);
+}
+
+.deckwords {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.deckwords-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.deckwords-bar-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .deckwords-bar-actions {
+    margin-left: 0;
+  }
+}

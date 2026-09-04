@@ -1,5 +1,6 @@
 package com.naranote.vocab;
 
+import com.naranote.deck.DeckRef;
 import com.naranote.user.CurrentUser;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -59,9 +61,12 @@ public class VocabController {
         this.currentUser = currentUser;
     }
 
+    /** {@code deck} is a deck id from /api/decks; absent lists every word. */
     @GetMapping
-    public List<VocabResponse> list() {
+    public List<VocabResponse> list(@RequestParam(required = false) String deck) {
+        DeckRef ref = DeckRef.parse(deck);
         return vocabRepository.findByUserIdOrderByCreatedAtDesc(currentUser.id()).stream()
+                .filter(item -> ref == null || ref.equals(DeckRef.words(item.getSource())))
                 .map(VocabResponse::of)
                 .toList();
     }

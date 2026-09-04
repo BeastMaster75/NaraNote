@@ -1,0 +1,118 @@
+/* A settings form is one of the few screens with a genuine reading measure, so
+   it takes a centred column rather than stretching to 1600px and leaving each
+   control marooned a metre from its label. */
+.settings {
+  width: 100%;
+  max-width: 58rem;
+  margin-inline: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.setting {
+  display: grid;
+  grid-template-columns: minmax(min(20rem, 100%), 1fr) minmax(min(14rem, 100%), 16rem);
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.15rem 1.4rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+  box-shadow: var(--nn-shadow);
+}
+
+.setting-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.setting-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--nn-ink);
+}
+
+.setting-control {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.setting-input {
+  width: 100%;
+  padding: 0.5rem 0.9rem;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--nn-ink);
+  caret-color: var(--nn-kaki);
+  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-pill);
+}
+
+.segmented {
+  display: flex;
+  width: 100%;
+  padding: 3px;
+  gap: 3px;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+}
+
+.segment {
+  flex: 1;
+  cursor: pointer;
+  padding: 0.4rem 0.6rem;
+  font-family: var(--nn-font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--nn-ink-2);
+  background: transparent;
+  border: 0;
+  border-radius: var(--nn-r-pill);
+}
+
+.segment:hover:not(.is-on) {
+  color: var(--nn-ink);
+}
+
+.segment.is-on {
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+}
+
+.setting-control-range {
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.setting-control-range input[type='range'] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--nn-kaki);
+  cursor: pointer;
+}
+
+.setting-value {
+  font-family: var(--nn-font-display);
+  font-size: 1.25rem;
+  line-height: 1;
+  min-width: 2.2ch;
+  text-align: right;
+  color: var(--nn-ink);
+}
+
+@media (max-width: 720px) {
+  .setting {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.85rem;
+  }
+
+  .setting-control {
+    justify-content: flex-start;
+  }
+}

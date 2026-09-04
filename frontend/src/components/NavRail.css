@@ -8,6 +8,9 @@
   padding: 20px 0;
   background: var(--nn-sunk);
   border-right: 1px solid var(--nn-line-soft);
+  /* The shell no longer scrolls, so the rail carries its own overflow for the
+     case of a viewport too short to fit every item. */
+  overflow-y: auto;
 }
 
 .rail-brand {
@@ -61,24 +64,6 @@
   letter-spacing: 0.04em;
 }
 
-.rail-toggle {
-  margin-top: auto;
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  color: var(--nn-ink-2);
-  background: transparent;
-  border: 1px solid var(--nn-line);
-  border-radius: 14px;
-}
-
-.rail-toggle:hover {
-  color: var(--nn-ink);
-  background: var(--nn-raised);
-}
-
 /* Narrow screens: the rail becomes a horizontal bar across the top. Enough to
    stay usable; a proper mobile pass belongs with the handwriting feature,
    where a tablet is the primary device. */
@@ -105,10 +90,5 @@
 
   .rail-item {
     width: 58px;
-  }
-
-  .rail-toggle {
-    margin-top: 0;
-    margin-left: auto;
   }
 }

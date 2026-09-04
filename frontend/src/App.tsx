@@ -6,7 +6,11 @@ import { MiningPage } from './mining/MiningPage'
 import { Home } from './pages/Home'
 import { Library } from './pages/Library'
 import { PracticeSession } from './practice/PracticeSession'
+import { DeckWords } from './review/DeckWords'
+import { ReviewHub } from './review/ReviewHub'
 import { ReviewSession } from './review/ReviewSession'
+import { SettingsPage } from './user/SettingsPage'
+import { TopBar } from './user/TopBar'
 import './App.css'
 
 function NotFound() {
@@ -27,14 +31,19 @@ function App() {
       <NavRail />
 
       <div className="app-main">
+        <TopBar />
+
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/kanji" element={<KanjiLookup />} />
           <Route path="/kanji/:literal" element={<KanjiLookup />} />
           <Route path="/mine" element={<MiningPage />} />
           <Route path="/write" element={<PracticeSession />} />
-          <Route path="/review" element={<ReviewSession />} />
+          <Route path="/review" element={<ReviewHub />} />
+          <Route path="/review/session" element={<ReviewSession />} />
+          <Route path="/review/deck" element={<DeckWords />} />
           <Route path="/collection" element={<Library />} />
+          <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
 

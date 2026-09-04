@@ -1,0 +1,139 @@
+.hub {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* The one primary action, above the decks rather than repeated inside each of
+   them. Reviewing everything due is the default; a deck is the exception. */
+.hub-start {
+  display: grid;
+  grid-template-columns: minmax(min(24rem, 100%), 1fr) auto;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.25rem 1.4rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+  box-shadow: var(--nn-shadow);
+}
+
+.hub-start-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.hub-start-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.hub-go {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.4rem;
+  padding: 0.7rem 1.4rem;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.hub-go-unit {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.75;
+}
+
+.decks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.deck {
+  display: grid;
+  grid-template-columns: minmax(min(18rem, 100%), 1fr) auto;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 0.95rem 1.3rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+  box-shadow: var(--nn-shadow);
+}
+
+/* Handwriting reads as its own thing, because it is: a different scheduler,
+   a different activity, and the one Anki cannot do. */
+.deck-kanji {
+  border-left: 3px solid var(--nn-kaki);
+}
+
+.deck-main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+/* A source name is usually Japanese, so it obeys the 18px floor. */
+.deck-name {
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-sm);
+  color: var(--nn-jp);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.deck-counts {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.deck-count {
+  font-size: 12px;
+  color: var(--nn-ink-3);
+}
+
+.deck-count strong {
+  font-family: var(--nn-font-mono);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--nn-ink-2);
+}
+
+.deck-count.is-due strong {
+  color: var(--nn-kaki);
+}
+
+.deck-count.is-unseen strong {
+  color: var(--nn-yamabuki);
+}
+
+.deck-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.hub-note {
+  max-width: 62ch;
+}
+
+@media (max-width: 820px) {
+  .hub-start,
+  .deck {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

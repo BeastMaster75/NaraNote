@@ -1,0 +1,95 @@
+/* A slim strip above every page. It carries only right-hand items by design —
+   the page's own title sits below it, and repeating that here would be noise. */
+/* Uncapped, matching .page — the chip belongs in the actual top-right corner,
+   not stopped short of it. Sticky because it is chrome like the rail: the
+   account and theme controls shouldn't scroll away from you. */
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.7rem 2.5rem 0.5rem;
+  width: 100%;
+  background: var(--nn-paper);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.topbar-btn {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  cursor: pointer;
+  border-radius: var(--nn-r-pill);
+  border: 1px solid var(--nn-line-soft);
+  background: transparent;
+  color: var(--nn-ink-2);
+}
+
+.topbar-btn:hover {
+  color: var(--nn-ink);
+  background: var(--nn-sunk);
+}
+
+.topbar-user {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.3rem 0.85rem 0.3rem 0.3rem;
+  border-radius: var(--nn-r-pill);
+  border: 1px solid var(--nn-line-soft);
+  text-decoration: none;
+  color: var(--nn-ink-2);
+}
+
+.topbar-user:hover,
+.topbar-user.is-active {
+  color: var(--nn-ink);
+  background: var(--nn-sunk);
+  border-color: var(--nn-line);
+}
+
+.topbar-avatar {
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+  font-family: var(--nn-font-display);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.topbar-name {
+  font-size: 13px;
+  font-weight: 600;
+  max-width: 12rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .topbar {
+    padding: 0.7rem 1.25rem 0;
+  }
+
+  /* The avatar alone still identifies the account and still opens settings. */
+  .topbar-name {
+    display: none;
+  }
+
+  .topbar-user {
+    padding: 0.3rem;
+  }
+}
