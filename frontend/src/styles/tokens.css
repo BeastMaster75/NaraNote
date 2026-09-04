@@ -53,7 +53,10 @@
   --nn-jp-xl: 44px;         /* kanji in lists, day-card headwords */
   --nn-jp-study: 168px;     /* the kanji under study */
   --nn-jp-lh: 2;            /* line-height for ruby-bearing text */
-  --nn-ruby: 0.46em;        /* furigana size relative to its base */
+  /* Raised from the design export's 0.46em. Japanese print sets ruby at roughly
+     half the base size, but print is 300+ DPI — at 96 DPI, 0.46em came out at
+     8.74px, which is below comfortable. 0.55em gives ~10.5px at the 19px body. */
+  --nn-ruby: 0.55em;        /* furigana size relative to its base */
 
   --nn-r-sm: 10px;
   --nn-r-md: 18px;

@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router'
 import { Page } from '../components/Page'
 import { TaskPanel, type Suggestion, type Task } from '../tasks/TaskPanel'
 import './Home.css'
@@ -73,8 +72,8 @@ export function Home() {
     openTasksByDate.set(task.dueDate, (openTasksByDate.get(task.dueDate) ?? 0) + 1)
   }
 
-  const dueSuggestion = suggestions.find((s) => s.kind === 'DUE')
-
+  // Note: the "practise N due" prompt lives only in the task panel. It used to be
+  // duplicated as a calendar CTA, which read as padding.
   return (
     <Page title="NaraNote" subtitle="Collect the Japanese You Meet" wide>
       <div className="home">
@@ -115,11 +114,6 @@ export function Home() {
               </div>
             </dl>
 
-            {dueSuggestion && (
-              <Link to="/write" className="btn is-primary calendar-cta">
-                Practise {dueSuggestion.count} due
-              </Link>
-            )}
           </header>
 
           <div className="calendar-grid">

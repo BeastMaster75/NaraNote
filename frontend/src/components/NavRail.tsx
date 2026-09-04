@@ -14,7 +14,7 @@ const ITEMS: NavItem[] = [
   { to: '/', label: 'Home', icon: 'M3 10.5 12 3l9 7.5V21H3z M9 21v-6h6v6', built: true },
   // A 原稿用紙 writing cell — the grid you practise characters inside.
   { to: '/kanji', label: 'Kanji', icon: 'M4 4h16v16H4z M12 4v16 M4 12h16', built: true },
-  { to: '/mine', label: 'Mine', icon: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M20 20l-4.6-4.6', built: false },
+  { to: '/mine', label: 'Mine', icon: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M20 20l-4.6-4.6', built: true },
   { to: '/write', label: 'Write', icon: 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z', built: true },
   { to: '/collection', label: 'Collection', icon: 'M12 3 3 8l9 5 9-5z M3 14l9 5 9-5', built: true },
 ]

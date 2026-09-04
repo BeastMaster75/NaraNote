@@ -2,9 +2,9 @@ import { Link, Route, Routes } from 'react-router'
 import { NavRail } from './components/NavRail'
 import { Page } from './components/Page'
 import { KanjiLookup } from './kanji/KanjiLookup'
+import { MiningPage } from './mining/MiningPage'
 import { Home } from './pages/Home'
 import { Library } from './pages/Library'
-import { Placeholder } from './pages/Placeholder'
 import { PracticeSession } from './practice/PracticeSession'
 import './App.css'
 
@@ -30,15 +30,7 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/kanji" element={<KanjiLookup />} />
           <Route path="/kanji/:literal" element={<KanjiLookup />} />
-          <Route
-            path="/mine"
-            element={
-              <Placeholder
-                title="Mine"
-                blurb="Paste in Japanese from anywhere and it will come back split into words with their readings and meanings. Words you have already saved will be dimmed, so any text shows you at a glance how much of it you know."
-              />
-            }
-          />
+          <Route path="/mine" element={<MiningPage />} />
           <Route path="/write" element={<PracticeSession />} />
           <Route path="/collection" element={<Library />} />
           <Route path="*" element={<NotFound />} />
