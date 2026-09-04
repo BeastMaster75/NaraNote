@@ -25,15 +25,27 @@ public class ActivityController {
 
     private static final String SQL =
             """
-            select day, sum(drawn)::int as drawn, sum(added)::int as added from (
-                select attempted_at::date as day, count(*) as drawn, 0 as added
+            select day, sum(drawn)::int as drawn, sum(reviewed)::int as reviewed,
+                   sum(added)::int as added
+            from (
+                select attempted_at::date as day, count(*) as drawn, 0 as reviewed, 0 as added
                 from kanji_attempt
                 where user_id = ? and attempted_at >= ? and attempted_at < ?
                 group by 1
                 union all
-                select added_at::date as day, 0 as drawn, count(*) as added
+                select attempted_at::date as day, 0 as drawn, count(*) as reviewed, 0 as added
+                from vocab_attempt
+                where user_id = ? and attempted_at >= ? and attempted_at < ?
+                group by 1
+                union all
+                select added_at::date as day, 0 as drawn, 0 as reviewed, count(*) as added
                 from kanji_library
                 where user_id = ? and added_at >= ? and added_at < ?
+                group by 1
+                union all
+                select created_at::date as day, 0 as drawn, 0 as reviewed, count(*) as added
+                from vocab_item
+                where user_id = ? and created_at >= ? and created_at < ?
                 group by 1
             ) t
             group by day
@@ -67,12 +79,11 @@ public class ActivityController {
                         new ActivityDay(
                                 rs.getObject("day", LocalDate.class),
                                 rs.getInt("drawn"),
+                                rs.getInt("reviewed"),
                                 rs.getInt("added")),
-                userId,
-                from,
-                to,
-                userId,
-                from,
-                to);
+                userId, from, to,
+                userId, from, to,
+                userId, from, to,
+                userId, from, to);
     }
 }

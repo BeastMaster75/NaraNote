@@ -1,0 +1,58 @@
+.review-card {
+  align-items: center;
+  text-align: center;
+  gap: 0.6rem;
+  padding: 2.5rem 1.5rem;
+  max-width: 46rem;
+}
+
+.review-term {
+  font-family: var(--nn-font-jp-serif);
+  font-size: 56px;
+  line-height: 1.4;
+  color: var(--nn-jp);
+}
+
+.review-reading {
+  color: var(--nn-jp);
+  opacity: 0.75;
+}
+
+.review-meaning {
+  margin: 0.4rem 0 0;
+  font-family: var(--nn-font-display);
+  font-size: 1.5rem;
+  line-height: 1.3;
+  color: var(--nn-ink);
+}
+
+/* The sentence it was mined from. Shown on the answer rather than the prompt —
+   as context for why you know it, not as a clue to guess from. */
+.review-sentence {
+  margin: 0.8rem 0 0;
+  padding: 0.8rem 1rem;
+  max-width: 34rem;
+  text-align: left;
+  line-height: 1.9;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-sunk);
+  border-left: 3px solid var(--nn-kaki);
+}
+
+.review-source {
+  display: block;
+  margin-top: 0.35rem;
+  font-family: var(--nn-font-ui);
+  font-size: 11.5px;
+  color: var(--nn-ink-3);
+}
+
+kbd {
+  font-family: var(--nn-font-mono);
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+  color: var(--nn-ink-3);
+}

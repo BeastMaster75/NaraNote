@@ -6,6 +6,7 @@ import { MiningPage } from './mining/MiningPage'
 import { Home } from './pages/Home'
 import { Library } from './pages/Library'
 import { PracticeSession } from './practice/PracticeSession'
+import { ReviewSession } from './review/ReviewSession'
 import './App.css'
 
 function NotFound() {
@@ -32,6 +33,7 @@ function App() {
           <Route path="/kanji/:literal" element={<KanjiLookup />} />
           <Route path="/mine" element={<MiningPage />} />
           <Route path="/write" element={<PracticeSession />} />
+          <Route path="/review" element={<ReviewSession />} />
           <Route path="/collection" element={<Library />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

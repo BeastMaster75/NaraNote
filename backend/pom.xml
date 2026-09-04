@@ -54,6 +54,13 @@
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
 		</dependency>
+		<!-- Writing .apkg files: an Anki package is a zip around a SQLite
+		     database, so the export needs a SQLite driver but no Python. -->
+		<dependency>
+			<groupId>org.xerial</groupId>
+			<artifactId>sqlite-jdbc</artifactId>
+			<version>3.53.4.0</version>
+		</dependency>
 		<!-- Japanese morphological analysis. Lucene's Kuromoji rather than
 		     com.atilika's: same lineage, but actively maintained, and this parses
 		     arbitrary text a user pastes in. -->

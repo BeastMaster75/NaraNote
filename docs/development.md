@@ -107,21 +107,35 @@ The one exception is `--nn-jp-known`, the dimmed colour marking already-saved wo
 same fallback — otherwise a deep link or a refresh on `/kanji/待` returns a 404 from Spring
 instead of the app. Only `/api/**` should escape that fallback.
 
-**Anki export shells out to Python.** `exporter/build_apkg.py` turns a list of
-notes into a `.apkg`; the backend writes JSON to a temp file, runs the script and
-streams the result. It needs Python with `genanki` installed — the interpreter is
-looked up as `python`, `python3` then `py`, or set `naranote.python` to a full
-path. There is no Java equivalent of genanki and the `collection.anki2` schema is
-undocumented and shifts between Anki versions, so reimplementing it would be the
-easiest thing here to get quietly wrong, and the failure mode is corrupting
-someone's collection. A plain-text export is always available and needs nothing.
+**Anki export is written in Java — no Python, no external tool.** An `.apkg` is a
+zip holding `collection.anki2`, a SQLite database in Anki's schema 11, plus an
+(always empty) media map. `ApkgWriter` writes it with `sqlite-jdbc`.
+
+The format is undocumented, so it was derived rather than guessed: the same deck
+was generated with genanki, its output read field by field, and the Java version
+diffed against it until schema, indexes, the JSON blobs in `col`, note and card
+column values, and every GUID matched. **If you change `ApkgWriter` or
+`NaraNoteDeck`, re-run that comparison** — a subtly malformed package can fail to
+import, or import badly.
+
+The sentinel values matter and are not arbitrary: `usn = -1` marks rows as never
+synced, `tags` is two spaces, new cards carry `due = 0`, and ids double as
+creation timestamps so they must be unique and ascending. A plain-text export is
+always available as a fallback.
 
 **Exported GUIDs key on `vocab_item.id`.** Never on the term and never on a list
 position: either would orphan every card and dump its review history the moment a
 word was edited or reordered. Re-exporting is meant to *update* existing cards.
+
+The GUID algorithm reproduces genanki's exactly — SHA-256 of the values joined by
+a double underscore, first eight bytes big-endian, rendered in Anki's own base91
+alphabet. That was matched deliberately rather than invented, so decks exported
+before the Java rewrite keep working.
+
 The export note type (`NaraNote Vocab`, model id 1748291043) is deliberately
 distinct from the separate 日本語 Anki Decks pipeline's ids so the two decks never
-collide.
+collide — NaraNote notes landing in `JP Vocab (vault)` would render with empty
+Audio and Image fields.
 
 **Scheduling is scoped to handwriting on purpose.** FSRS
 (`io.github.open-spaced-repetition:fsrs`) schedules kanji writing practice and nothing else.

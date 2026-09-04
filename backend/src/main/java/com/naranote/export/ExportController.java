@@ -30,12 +30,7 @@ public class ExportController {
             apkg = exportService.buildApkg(deck);
         } catch (IllegalStateException empty) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, empty.getMessage());
-        } catch (InterruptedException interrupted) {
-            Thread.currentThread().interrupt();
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Export interrupted");
         } catch (Exception failed) {
-            // The message carries the script's own output, which is the only
-            // useful thing to show when a build fails.
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR, failed.getMessage(), failed);
         }

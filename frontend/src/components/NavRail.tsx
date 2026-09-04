@@ -16,6 +16,8 @@ const ITEMS: NavItem[] = [
   { to: '/kanji', label: 'Kanji', icon: 'M4 4h16v16H4z M12 4v16 M4 12h16', built: true },
   { to: '/mine', label: 'Mine', icon: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M20 20l-4.6-4.6', built: true },
   { to: '/write', label: 'Write', icon: 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z', built: true },
+  // Two stacked cards — reviewing words, as distinct from writing characters.
+  { to: '/review', label: 'Review', icon: 'M8 6h12v11H8z M4 4h11v2H6v11H4z', built: true },
   { to: '/collection', label: 'Collection', icon: 'M12 3 3 8l9 5 9-5z M3 14l9 5 9-5', built: true },
 ]
 

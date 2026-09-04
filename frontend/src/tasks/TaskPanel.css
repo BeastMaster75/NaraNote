@@ -75,6 +75,10 @@
   border-left-color: var(--nn-kaki);
 }
 
+.s-words_due {
+  border-left-color: var(--nn-matcha);
+}
+
 .s-struggling {
   border-left-color: var(--nn-bengara);
 }

@@ -6,6 +6,7 @@ import './Home.css'
 type ActivityDay = {
   date: string
   drawn: number
+  reviewed: number
   added: number
 }
 
@@ -62,8 +63,12 @@ export function Home() {
   const todayKey = dayKey(new Date())
 
   const totals = [...activity.values()].reduce(
-    (sum, day) => ({ drawn: sum.drawn + day.drawn, added: sum.added + day.added }),
-    { drawn: 0, added: 0 },
+    (sum, day) => ({
+      drawn: sum.drawn + day.drawn,
+      reviewed: sum.reviewed + day.reviewed,
+      added: sum.added + day.added,
+    }),
+    { drawn: 0, reviewed: 0, added: 0 },
   )
 
   const openTasksByDate = new Map<string, number>()
@@ -107,6 +112,10 @@ export function Home() {
               <div>
                 <dt>Drawn</dt>
                 <dd>{totals.drawn}</dd>
+              </div>
+              <div>
+                <dt>Reviewed</dt>
+                <dd>{totals.reviewed}</dd>
               </div>
               <div>
                 <dt>Added</dt>
@@ -157,6 +166,9 @@ export function Home() {
                     </span>
                   )}
                   {day && day.drawn > 0 && <span className="chip-drawn">{day.drawn} drawn</span>}
+                  {day && day.reviewed > 0 && (
+                    <span className="chip-reviewed">{day.reviewed} reviewed</span>
+                  )}
                   {day && day.added > 0 && <span className="chip-added">{day.added} added</span>}
                 </button>
               )

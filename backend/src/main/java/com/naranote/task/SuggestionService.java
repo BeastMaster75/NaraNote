@@ -51,6 +51,24 @@ public class SuggestionService {
                             "/write"));
         }
 
+        int wordsDue =
+                count(
+                        """
+                        select count(*) from vocab_item v
+                        left join vocab_review r on r.vocab_id = v.id
+                        where v.user_id = ? and (r.due is null or r.due <= now())
+                        """,
+                        userId);
+        if (wordsDue > 0) {
+            out.add(
+                    new Suggestion(
+                            "WORDS_DUE",
+                            "Review " + wordsDue + (wordsDue == 1 ? " word" : " words"),
+                            "Scheduled for now",
+                            wordsDue,
+                            "/review"));
+        }
+
         int untouched =
                 count(
                         """
