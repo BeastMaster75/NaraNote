@@ -143,6 +143,21 @@
   border-radius: var(--nn-r-sm);
 }
 
+.radical {
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 0.2rem 0.65rem;
+  background: var(--nn-sunk);
+  border: 1px solid transparent;
+  border-radius: var(--nn-r-sm);
+}
+
+.radical:hover {
+  border-color: var(--nn-kaki);
+  color: var(--nn-jp);
+}
+
 .kanji-strokes {
   flex: 0 0 auto;
 }

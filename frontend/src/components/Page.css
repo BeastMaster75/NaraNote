@@ -6,6 +6,10 @@
   gap: 1.5rem;
 }
 
+.page.is-wide {
+  max-width: 84rem;
+}
+
 .page-head h2 {
   font-size: 2rem;
   color: var(--nn-ink);

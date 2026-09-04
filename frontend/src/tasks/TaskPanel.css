@@ -1,0 +1,269 @@
+.panel {
+  width: 21rem;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.panel-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 1.1rem 1.2rem 1.25rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+  box-shadow: var(--nn-shadow);
+}
+
+.panel-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.panel-note {
+  margin: 0.2rem 0 0;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--nn-ink-3);
+}
+
+/* — computed prompts — */
+
+.suggestions,
+.tasks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.suggestion {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0.6rem 0.8rem;
+  text-decoration: none;
+  color: inherit;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-sunk);
+  border-left: 3px solid var(--nn-line);
+}
+
+.suggestion:hover {
+  color: inherit;
+  border-left-color: var(--nn-kaki);
+}
+
+.suggestion-title {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--nn-ink);
+}
+
+.suggestion-detail {
+  font-size: 11px;
+  color: var(--nn-ink-3);
+}
+
+/* Colour by what the prompt means, not by position in the list. */
+.s-due {
+  border-left-color: var(--nn-kaki);
+}
+
+.s-struggling {
+  border-left-color: var(--nn-bengara);
+}
+
+.s-untouched {
+  border-left-color: var(--nn-yamabuki);
+}
+
+/* — filters — */
+
+.filters {
+  display: flex;
+  gap: 0.2rem;
+  margin-left: auto;
+}
+
+.filter {
+  cursor: pointer;
+  font-family: var(--nn-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--nn-r-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--nn-ink-3);
+}
+
+.filter:hover {
+  color: var(--nn-ink);
+}
+
+.filter.is-on {
+  background: var(--nn-sunk);
+  color: var(--nn-ink);
+}
+
+.date-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 11.5px;
+  color: var(--nn-ink-2);
+  padding: 0.35rem 0.6rem;
+  border-radius: var(--nn-r-sm);
+  background: var(--nn-kaki-tint);
+}
+
+.date-filter strong {
+  font-family: var(--nn-font-mono);
+  color: var(--nn-bengara);
+}
+
+.link-button {
+  margin-left: auto;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0;
+  font-size: 11.5px;
+  color: var(--nn-bengara);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* — add form — */
+
+.task-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.task-form-row {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.task-input {
+  min-width: 0;
+  flex: 1;
+  padding: 0.45rem 0.75rem;
+  font: inherit;
+  font-size: 13px;
+  color: var(--nn-ink);
+  caret-color: var(--nn-kaki);
+  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-pill);
+}
+
+.task-date {
+  flex: 1.2;
+  font-family: var(--nn-font-mono);
+  font-size: 11px;
+}
+
+.task-kanji-input {
+  flex: 0 0 4.5rem;
+  text-align: center;
+}
+
+/* — task list — */
+
+.task {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.55rem;
+  padding: 0.5rem 0.15rem;
+  border-bottom: 1px solid var(--nn-line-soft);
+}
+
+.task:last-child {
+  border-bottom: 0;
+}
+
+.task input[type='checkbox'] {
+  margin-top: 0.15rem;
+  accent-color: var(--nn-kaki);
+  cursor: pointer;
+}
+
+.task-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.task-title {
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--nn-ink);
+}
+
+.task.is-done .task-title {
+  text-decoration: line-through;
+  color: var(--nn-ink-3);
+}
+
+.task-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.task-date-chip {
+  font-family: var(--nn-font-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-sunk);
+  color: var(--nn-ink-3);
+}
+
+.task-kanji {
+  text-decoration: none;
+  line-height: 1.3;
+  padding: 0 4px;
+  border-radius: var(--nn-r-sm);
+  background: var(--nn-sunk);
+}
+
+.task-kanji:hover {
+  background: var(--nn-kaki-tint);
+  color: var(--nn-jp);
+}
+
+.task-delete {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  padding: 0 0.15rem;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--nn-ink-3);
+}
+
+.task-delete:hover {
+  color: var(--nn-bengara);
+}
+
+@media (max-width: 880px) {
+  .panel {
+    width: 100%;
+  }
+}

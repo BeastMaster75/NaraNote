@@ -75,6 +75,7 @@ public class KanjiImporter implements ApplicationRunner {
         log.info("Importing kanji reference data from {}", dataDir.toAbsolutePath());
         importCharacters(findKanjidicFile());
         importStrokeOrder(dataDir.resolve("kanji"));
+        importRadicals(findDataFile("kradfile", ".json"));
         log.info("Kanji import complete");
 
         // This is a job, not a server. Shut down rather than leaving Tomcat listening.
@@ -82,12 +83,16 @@ public class KanjiImporter implements ApplicationRunner {
     }
 
     private Path findKanjidicFile() throws IOException {
+        return findDataFile("kanjidic2-en", ".json");
+    }
+
+    private Path findDataFile(String prefix, String suffix) throws IOException {
         try (Stream<Path> files = Files.list(dataDir)) {
-            return files.filter(p -> p.getFileName().toString().startsWith("kanjidic2-en"))
-                    .filter(p -> p.getFileName().toString().endsWith(".json"))
+            return files.filter(p -> p.getFileName().toString().startsWith(prefix))
+                    .filter(p -> p.getFileName().toString().endsWith(suffix))
                     .findFirst()
                     .orElseThrow(() -> new IllegalStateException(
-                            "No kanjidic2-en*.json in " + dataDir.toAbsolutePath()
+                            "No " + prefix + "*" + suffix + " in " + dataDir.toAbsolutePath()
                                     + " — see docs/development.md"));
         }
     }
@@ -275,6 +280,66 @@ public class KanjiImporter implements ApplicationRunner {
                 total,
                 variants,
                 notKanji);
+    }
+
+    /**
+     * KRADFILE is a flat map of character to its components. It covers ~12,150
+     * characters against KANJIDIC2's ~10,400, so the same filter as stroke order
+     * applies: skip anything we have no kanji row for.
+     */
+    private void importRadicals(Path jsonFile) throws IOException {
+        Set<String> known = Set.copyOf(jdbc.queryForList("select literal from kanji", String.class));
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode kanjiMap = mapper.readTree(jsonFile.toFile()).path("kanji");
+
+        List<Object[]> batch = new ArrayList<>(BATCH_SIZE);
+        int pairs = 0;
+        int characters = 0;
+        int skipped = 0;
+
+        for (var entries = kanjiMap.properties().iterator(); entries.hasNext(); ) {
+            var entry = entries.next();
+            String literal = entry.getKey();
+            if (!known.contains(literal)) {
+                skipped++;
+                continue;
+            }
+            characters++;
+            for (JsonNode radical : entry.getValue()) {
+                batch.add(new Object[] {literal, radical.asText()});
+                if (batch.size() == BATCH_SIZE) {
+                    pairs += flushRadicals(batch);
+                    batch.clear();
+                }
+            }
+        }
+        pairs += flushRadicals(batch);
+        log.info(
+                "Imported {} radical links across {} characters ({} not in KANJIDIC2)",
+                pairs,
+                characters,
+                skipped);
+    }
+
+    private int flushRadicals(List<Object[]> batch) {
+        if (batch.isEmpty()) {
+            return 0;
+        }
+        jdbc.batchUpdate(
+                "insert into kanji_radical (literal, radical) values (?, ?) on conflict do nothing",
+                new BatchPreparedStatementSetter() {
+                    @Override
+                    public void setValues(PreparedStatement ps, int i) throws SQLException {
+                        ps.setString(1, (String) batch.get(i)[0]);
+                        ps.setString(2, (String) batch.get(i)[1]);
+                    }
+
+                    @Override
+                    public int getBatchSize() {
+                        return batch.size();
+                    }
+                });
+        return batch.size();
     }
 
     static String transform(String rawSvg) {

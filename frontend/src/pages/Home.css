@@ -1,62 +1,213 @@
-.home-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
-  gap: 1rem;
+.home {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
 }
 
-.home-card {
+.calendar {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.25rem 1.35rem;
-  text-decoration: none;
-  color: inherit;
+  gap: 1rem;
+  padding: 1.25rem 1.4rem 1.5rem;
   background: var(--nn-raised);
   border: 1px solid var(--nn-line-soft);
   border-radius: var(--nn-r-lg);
   box-shadow: var(--nn-shadow);
 }
 
-.home-card:hover {
-  border-color: var(--nn-kaki);
-  color: inherit;
-}
-
-.home-card.is-unbuilt {
-  background: transparent;
-  box-shadow: none;
-  border-style: dashed;
-}
-
-.home-card-head {
+.calendar-head {
   display: flex;
-  align-items: baseline;
-  gap: 0.6rem;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
-.home-card-head h3 {
+.calendar-month {
   font-family: var(--nn-font-display);
-  font-size: 1.3rem;
+  font-size: 1.6rem;
   font-weight: 400;
   margin: 0;
   color: var(--nn-ink);
 }
 
-.home-badge {
+.calendar-year {
+  font-family: var(--nn-font-mono);
+  font-size: 0.85rem;
+  letter-spacing: 0.06em;
+  color: var(--nn-ink-3);
+}
+
+.calendar-nav {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.calendar-nav .btn {
+  width: 2rem;
+  padding: 0.3rem 0;
+  text-align: center;
+  line-height: 1;
+  font-size: 16px;
+}
+
+.calendar-totals {
+  display: flex;
+  gap: 1.25rem;
+  margin: 0 0 0 auto;
+}
+
+.calendar-totals dt {
   font-family: var(--nn-font-mono);
   font-size: 9.5px;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--nn-r-pill);
+  color: var(--nn-ink-3);
+}
+
+.calendar-totals dd {
+  margin: 0.15rem 0 0;
+  font-family: var(--nn-font-display);
+  font-size: 1.3rem;
+  line-height: 1;
+  color: var(--nn-ink);
+}
+
+.calendar-cta {
+  text-decoration: none;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+
+.calendar-weekday {
+  font-family: var(--nn-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nn-ink-3);
+  padding-bottom: 4px;
+}
+
+/* A button, not a div: clicking a day selects it, so it must be focusable and
+   reachable from the keyboard like any other control. */
+.calendar-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 86px;
+  padding: 7px 8px;
+  border-radius: var(--nn-r-sm);
+  background: var(--nn-paper);
+  border: 1px solid var(--nn-line-soft);
+  cursor: pointer;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+}
+
+.calendar-cell:hover:not(.is-blank) {
+  border-color: var(--nn-ink-3);
+}
+
+.calendar-cell.is-selected {
+  border-color: var(--nn-kaki);
+  background: var(--nn-kaki-tint);
+}
+
+.chip-task {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--nn-r-sm);
+  white-space: nowrap;
   background: var(--nn-yamabuki-tint);
   color: var(--nn-yamabuki);
 }
 
-.home-card-body {
-  margin: 0;
-  font-size: 13.5px;
-  line-height: 1.6;
+.calendar-note {
+  margin-top: 0.25rem;
+}
+
+.calendar-cell.is-blank {
+  background: transparent;
+  border-color: transparent;
+}
+
+.calendar-cell.has-activity {
+  border-color: var(--nn-line);
+}
+
+.calendar-cell.is-today {
+  border-color: var(--nn-kaki);
+}
+
+.calendar-daynum {
+  font-family: var(--nn-font-mono);
+  font-size: 12px;
+  font-weight: 600;
   color: var(--nn-ink-2);
+}
+
+.calendar-today {
+  font-family: var(--nn-font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 1px 5px;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+}
+
+.chip-drawn,
+.chip-added {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--nn-r-sm);
+  white-space: nowrap;
+}
+
+.chip-drawn {
+  background: var(--nn-matcha-tint);
+  color: var(--nn-matcha);
+}
+
+.chip-added {
+  background: var(--nn-kaki-tint);
+  color: var(--nn-bengara);
+}
+
+/* Seven calendar columns need roughly 500px to stay readable; the panel is 336.
+   Below their combined width the two stack rather than squeezing. */
+@media (max-width: 880px) {
+  .home {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 640px) {
+  .calendar-cell {
+    min-height: 60px;
+    padding: 5px;
+  }
+
+  .chip-drawn,
+  .chip-added {
+    font-size: 9px;
+    padding: 1px 4px;
+  }
+
+  .calendar-totals {
+    margin-left: 0;
+  }
 }

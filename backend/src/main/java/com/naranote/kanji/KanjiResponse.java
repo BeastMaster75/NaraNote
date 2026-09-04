@@ -13,10 +13,12 @@ public record KanjiResponse(
         List<String> onReadings,
         List<String> kunReadings,
         List<String> nanori,
+        List<String> radicals,
         String strokeOrderSvg,
         boolean inLibrary) {
 
-    static KanjiResponse of(Kanji kanji, String strokeOrderSvg, boolean inLibrary) {
+    static KanjiResponse of(
+            Kanji kanji, List<String> radicals, String strokeOrderSvg, boolean inLibrary) {
         return new KanjiResponse(
                 kanji.getLiteral(),
                 kanji.getStrokeCount(),
@@ -27,6 +29,7 @@ public record KanjiResponse(
                 list(kanji.getOnReadings()),
                 list(kanji.getKunReadings()),
                 list(kanji.getNanori()),
+                radicals,
                 strokeOrderSvg,
                 inLibrary);
     }

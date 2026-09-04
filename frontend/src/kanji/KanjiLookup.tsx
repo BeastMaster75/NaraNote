@@ -13,6 +13,7 @@ type KanjiResponse = {
   onReadings: string[]
   kunReadings: string[]
   nanori: string[]
+  radicals: string[]
   strokeOrderSvg: string | null
   inLibrary: boolean
 }
@@ -149,8 +150,8 @@ function KanjiPanel({ literal }: { literal: string }) {
   if (status === 'missing') {
     return (
       <p className="muted">
-        No entry for <span className="jp">{literal}</span>. Kana and punctuation aren&rsquo;t in
-        the kanji dictionary.
+        No entry for <span className="jp">{literal}</span> in the kanji dictionary. Kana,
+        punctuation and some radical-only forms aren&rsquo;t in it.
       </p>
     )
   }
@@ -185,6 +186,22 @@ function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
           <Section title="Kun'yomi">
             <ReadingList readings={kanji.kunReadings} />
           </Section>
+
+          {kanji.radicals.length > 0 && (
+            <Section title="Built from">
+              <ul className="readings">
+                {kanji.radicals.map((radical) => (
+                  <li key={radical}>
+                    {/* Many components are kanji in their own right, so they link
+                        onward. A few are radical-only forms with no entry. */}
+                    <Link to={`/kanji/${radical}`} className="radical jp-sm">
+                      {radical}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </Section>
+          )}
 
           {kanji.nanori.length > 0 && (
             <Section title="In names">
