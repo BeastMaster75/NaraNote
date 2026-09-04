@@ -1,7 +1,17 @@
+/* The clue is a band across the top so the row below belongs to the canvas
+   alone: centred while you write, and centred as a pair once the answer joins
+   it on the right. A clue in the left column would break that symmetry. */
 .session {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.session-stage {
+  display: flex;
+  justify-content: center;
   align-items: flex-start;
+  flex-wrap: wrap;
   gap: 1.25rem;
 }
 
@@ -24,10 +34,23 @@
   color: var(--nn-bengara);
 }
 
-/* Doesn't grow: a meaning plus three readings needs about 24rem, and left to
-   flex freely it took 1080px and pushed the canvas to the edge. */
-.prompt {
-  flex: 0 1 24rem;
+/* Laid out along its width rather than down it — a stacked clue card cost
+   ~150px of height, and the canvas, the answer and the ratings all have to fit
+   on one screen. */
+/* .card.prompt, not .prompt: .card sets flex-direction itself and App.css
+   loads after this file, so an equal-specificity rule here loses. */
+.card.prompt {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+}
+
+.prompt-clue {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
   min-width: 0;
 }
 
@@ -44,7 +67,7 @@
 .prompt-readings {
   display: flex;
   gap: 1.5rem;
-  margin: 0.5rem 0 0;
+  margin: 0;
   flex-wrap: wrap;
 }
 
@@ -116,18 +139,25 @@
   margin-right: auto;
 }
 
-/* Takes the remaining room once revealed, so prompt, canvas and answer sit in
-   one row on a desktop instead of stacking. */
+/* Fixed rather than growing: it has to be a known width for the canvas to end
+   up centred *with* it, and a card that stretched to the page edge would put
+   the diagram too far from the strokes it is being compared against. */
 .answer {
-  flex: 1 1 22rem;
+  flex: 0 1 25rem;
   min-width: 0;
 }
 
 .answer-body {
   display: flex;
   align-items: center;
-  gap: 1.5rem;
+  gap: 1.25rem;
   flex-wrap: wrap;
+}
+
+/* Narrower than the standalone diagram on the kanji page — here it sits beside
+   the glyph inside a 25rem card, and at 320px the two would wrap apart. */
+.answer .stroke-order {
+  width: 220px;
 }
 
 .answer-glyph {

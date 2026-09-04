@@ -56,7 +56,7 @@
   gap: 1.25rem;
 }
 
-/* Handwriting needs the prompt and a 420px canvas side by side. */
+/* Handwriting needs a 420px canvas and the answer card side by side. */
 .focus.is-wide {
   max-width: 68rem;
 }

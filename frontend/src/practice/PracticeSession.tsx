@@ -24,27 +24,70 @@ const RATINGS: { rating: Rating; label: string; hint: string }[] = [
   { rating: 'EASY', label: 'Easy', hint: 'Straight off' },
 ]
 
+/** Everything the stage row has to fit, in px. Mirrors PracticeSession.css. */
+const MAX_CANVAS = 420
+const ANSWER_WIDTH = 400 // .answer flex-basis, 25rem
+const STAGE_GAP = 20 // .session-stage gap, 1.25rem
+/**
+ * Never share the row with the answer for less than this. A cramped box is
+ * worse to write in than a stacked answer is to read, so below the threshold
+ * the canvas takes the whole row and the answer wraps under it.
+ */
+const MIN_BESIDE_ANSWER = 340
+
+function canvasSizeFor(stageWidth: number) {
+  const beside = stageWidth - ANSWER_WIDTH - STAGE_GAP
+  const available = beside >= MIN_BESIDE_ANSWER ? beside : stageWidth
+  return Math.floor(Math.min(MAX_CANVAS, available))
+}
+
 /**
  * A larger box is genuinely easier to write a kanji in, so take the room when
- * the screen has it. Strokes are stored normalised, so changing this doesn't
- * invalidate anything already drawn.
+ * the row has it. Strokes are stored normalised, so resizing doesn't invalidate
+ * anything already drawn.
+ *
+ * <p>Measures the stage rather than the window: the box has to fit the row it
+ * actually sits in, and a `window.innerWidth` breakpoint got that wrong twice —
+ * it ignored the page's padding and max-width, and it only updated on `resize`,
+ * so any layout change that moved the row without resizing the window left a
+ * stale size behind.
+ *
+ * <p>Reserves the answer's width unconditionally, revealed or not, so the box
+ * doesn't resize under your hand the moment you ask for the answer.
  */
 function useCanvasSize() {
-  const measure = () => (window.innerWidth >= 1280 ? 420 : 340)
-  const [size, setSize] = useState(measure)
+  const [stage, setStage] = useState<HTMLDivElement | null>(null)
+  const [size, setSize] = useState(MAX_CANVAS)
 
-  useEffect(() => {
-    const onResize = () => setSize(measure())
-    window.addEventListener('resize', onResize)
-    return () => window.removeEventListener('resize', onResize)
+  // Measures in the ref callback, which runs during commit, so the first paint
+  // is already the right size rather than MAX_CANVAS corrected a frame later.
+  // Safe to read layout here: the stage is sized by its parent, so the canvas
+  // inside it can't feed back into the width being measured.
+  const ref = useCallback((node: HTMLDivElement | null) => {
+    setStage(node)
+    if (node) {
+      const width = node.getBoundingClientRect().width
+      if (width > 0) setSize(canvasSizeFor(width))
+    }
   }, [])
 
-  return size
+  useEffect(() => {
+    if (!stage) return
+    const observer = new ResizeObserver(([entry]) => {
+      const width = entry.contentRect.width
+      // 0 while the element is detached or hidden; keep the last good size.
+      if (width > 0) setSize(canvasSizeFor(width))
+    })
+    observer.observe(stage)
+    return () => observer.disconnect()
+  }, [stage])
+
+  return [ref, size] as const
 }
 
 export function PracticeSession() {
   const { me, loaded } = useUser()
-  const canvasSize = useCanvasSize()
+  const [stageRef, canvasSize] = useCanvasSize()
   const [queue, setQueue] = useState<DueCard[] | null>(null)
   const [index, setIndex] = useState(0)
   const [strokes, setStrokes] = useState<Stroke[]>([])
@@ -154,8 +197,10 @@ export function PracticeSession() {
 
         <div className="session">
           <section className="card prompt">
-            <h3 className="kicker">Write the Kanji For</h3>
-            <p className="prompt-meaning">{card!.meanings.slice(0, 4).join(', ')}</p>
+            <div className="prompt-clue">
+              <h3 className="kicker">Write the Kanji For</h3>
+              <p className="prompt-meaning">{card!.meanings.slice(0, 4).join(', ')}</p>
+            </div>
             <dl className="prompt-readings">
               <div>
                 <dt>On</dt>
@@ -172,60 +217,63 @@ export function PracticeSession() {
             </dl>
           </section>
 
-          <div className="session-work">
-            <div className="canvas-wrap" style={{ width: canvasSize, height: canvasSize }}>
-              <WritingCanvas
-                strokes={strokes}
-                onChange={setStrokes}
-                size={canvasSize}
-                disabled={revealed}
-                showNumbers={revealed}
-              />
-            </div>
-            <div className="canvas-actions">
-              <span className="muted small">
-                {strokes.length} {strokes.length === 1 ? 'stroke' : 'strokes'} drawn
-              </span>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setStrokes(strokes.slice(0, -1))}
-                disabled={revealed || strokes.length === 0}
-              >
-                Undo Stroke
-              </button>
-              <button
-                type="button"
-                className="btn"
-                onClick={() => setStrokes([])}
-                disabled={revealed || strokes.length === 0}
-              >
-                Clear
-              </button>
-            </div>
-          </div>
-
-          {revealed && (
-            <section className="card answer">
-              <h3 className="kicker">The Answer</h3>
-              <div className="answer-body">
-                <span className="answer-glyph">{card!.literal}</span>
-                {card!.strokeOrderSvg ? (
-                  <div
-                    className="stroke-order"
-                    // Our own imported KanjiVG, not user content.
-                    dangerouslySetInnerHTML={{ __html: card!.strokeOrderSvg }}
-                  />
-                ) : (
-                  <p className="muted small">No stroke diagram for this character.</p>
-                )}
+          <div className="session-stage" ref={stageRef}>
+            <div className="session-work">
+              <div className="canvas-wrap" style={{ width: canvasSize, height: canvasSize }}>
+                <WritingCanvas
+                  strokes={strokes}
+                  onChange={setStrokes}
+                  size={canvasSize}
+                  disabled={revealed}
+                  showNumbers={revealed}
+                />
               </div>
-              <p className="muted small">
-                You drew {strokes.length}; it has {card!.strokeCount ?? '—'}. Your strokes are
-                numbered in the order you made them — compare them one by one against the diagram.
-              </p>
-            </section>
-          )}
+              <div className="canvas-actions">
+                <span className="muted small">
+                  {strokes.length} {strokes.length === 1 ? 'stroke' : 'strokes'} drawn
+                </span>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setStrokes(strokes.slice(0, -1))}
+                  disabled={revealed || strokes.length === 0}
+                >
+                  Undo Stroke
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  onClick={() => setStrokes([])}
+                  disabled={revealed || strokes.length === 0}
+                >
+                  Clear
+                </button>
+              </div>
+            </div>
+
+            {revealed && (
+              <section className="card answer">
+                <h3 className="kicker">The Answer</h3>
+                <div className="answer-body">
+                  <span className="answer-glyph">{card!.literal}</span>
+                  {card!.strokeOrderSvg ? (
+                    <div
+                      className="stroke-order"
+                      // Our own imported KanjiVG, not user content.
+                      dangerouslySetInnerHTML={{ __html: card!.strokeOrderSvg }}
+                    />
+                  ) : (
+                    <p className="muted small">No stroke diagram for this character.</p>
+                  )}
+                </div>
+                <p className="muted small">
+                  You drew {strokes.length}; it has {card!.strokeCount ?? '—'}. Your strokes are
+                  numbered in the order you made them — compare them one by one against the
+                  diagram.
+                </p>
+              </section>
+            )}
+          </div>
         </div>
 
         {!revealed ? (
