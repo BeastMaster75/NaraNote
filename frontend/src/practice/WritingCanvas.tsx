@@ -15,6 +15,13 @@ type WritingCanvasProps = {
   /** CSS pixel size of the square drawing area. */
   size: number
   disabled?: boolean
+  /**
+   * Number each stroke at its starting point, in the order it was drawn. Shown
+   * only when the answer is revealed — the whole point is to sit next to
+   * KanjiVG's numbering and be compared against it, and during drawing the
+   * labels would be noise.
+   */
+  showNumbers?: boolean
 }
 
 /**
@@ -29,7 +36,13 @@ type WritingCanvasProps = {
  * finger and stylus, which matters because a tablet is where this feature is
  * actually pleasant to use.
  */
-export function WritingCanvas({ strokes, onChange, size, disabled }: WritingCanvasProps) {
+export function WritingCanvas({
+  strokes,
+  onChange,
+  size,
+  disabled,
+  showNumbers,
+}: WritingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drawingRef = useRef(false)
 
@@ -64,7 +77,51 @@ export function WritingCanvas({ strokes, onChange, size, disabled }: WritingCanv
       if (stroke.length === 1) context.lineTo(stroke[0].x * size + 0.01, stroke[0].y * size)
       context.stroke()
     }
-  }, [strokes, size])
+
+    if (!showNumbers) return
+
+    const styles = getComputedStyle(canvas)
+    const accent = styles.getPropertyValue('--nn-kaki').trim() || '#d9541f'
+    const halo = styles.getPropertyValue('--nn-raised').trim() || '#fdf8ea'
+    const fontSize = Math.max(11, size * 0.05)
+
+    context.font = `600 ${fontSize}px ui-monospace, Menlo, monospace`
+    context.textAlign = 'center'
+    context.textBaseline = 'middle'
+    context.lineJoin = 'round'
+
+    strokes.forEach((stroke, index) => {
+      if (stroke.length === 0) return
+      const start = stroke[0]
+
+      // Push the label back along the direction the stroke set off in, so it sits
+      // clear of the ink rather than on top of it.
+      const ahead = stroke[Math.min(stroke.length - 1, 3)]
+      let dx = start.x - ahead.x
+      let dy = start.y - ahead.y
+      const length = Math.hypot(dx, dy)
+      if (length < 0.001) {
+        // A dot has no direction; put the label up and to the left.
+        dx = -0.7
+        dy = -0.7
+      } else {
+        dx /= length
+        dy /= length
+      }
+
+      const offset = fontSize * 0.9
+      const margin = fontSize * 0.75
+      const x = Math.min(size - margin, Math.max(margin, start.x * size + dx * offset))
+      const y = Math.min(size - margin, Math.max(margin, start.y * size + dy * offset))
+
+      // Halo first so the number stays readable where it overlaps a stroke.
+      context.lineWidth = Math.max(3, fontSize * 0.28)
+      context.strokeStyle = halo
+      context.strokeText(String(index + 1), x, y)
+      context.fillStyle = accent
+      context.fillText(String(index + 1), x, y)
+    })
+  }, [strokes, size, showNumbers])
 
   function pointFrom(event: React.PointerEvent<HTMLCanvasElement>): Point {
     const rect = event.currentTarget.getBoundingClientRect()

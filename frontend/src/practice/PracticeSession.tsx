@@ -150,6 +150,7 @@ export function PracticeSession() {
               onChange={setStrokes}
               size={CANVAS_SIZE}
               disabled={revealed}
+              showNumbers={revealed}
             />
           </div>
           <div className="canvas-actions">
@@ -191,8 +192,8 @@ export function PracticeSession() {
               )}
             </div>
             <p className="muted small">
-              You drew {strokes.length}; it has {card!.strokeCount ?? '—'}. Compare the numbered
-              order against what you did.
+              You drew {strokes.length}; it has {card!.strokeCount ?? '—'}. Your strokes are
+              numbered in the order you made them — compare them one by one against the diagram.
             </p>
           </section>
         )}
