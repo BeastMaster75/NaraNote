@@ -83,7 +83,7 @@ export function TaskPanel({
     <aside className="panel">
       {suggestions.length > 0 && (
         <section className="panel-block">
-          <h3 className="kicker">Right now</h3>
+          <h3 className="kicker">Right Now</h3>
           <ul className="suggestions">
             {suggestions.map((suggestion) => (
               <li key={suggestion.kind}>
@@ -102,7 +102,7 @@ export function TaskPanel({
 
       <section className="panel-block">
         <div className="panel-head">
-          <h3 className="kicker">Your tasks</h3>
+          <h3 className="kicker">Your Tasks</h3>
           <div className="filters">
             {(['open', 'done', 'all'] as Filter[]).map((option) => (
               <button

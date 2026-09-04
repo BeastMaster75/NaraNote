@@ -10,7 +10,7 @@ import './App.css'
 
 function NotFound() {
   return (
-    <Page title="Not found">
+    <Page title="Not Found">
       <section className="card">
         <p className="muted">
           Nothing at this address. <Link to="/">Back to the start</Link>.

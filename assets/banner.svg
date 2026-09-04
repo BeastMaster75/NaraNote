@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 320" width="1200" height="320" role="img" aria-label="NaraNote — Collect the Japanese You Meet">
+  <title>NaraNote</title>
+
+  <rect width="1200" height="320" rx="28" fill="#f7f2e6"/>
+
+  <!-- 柿色 accent bar down the left edge -->
+  <rect x="0" y="0" width="10" height="320" rx="5" fill="#d9541f"/>
+
+  <!-- The mark: katakana ナ in two strokes, on its persimmon tile -->
+  <g transform="translate(88 90) scale(2.1875)">
+    <rect width="64" height="64" rx="17" fill="#d9541f"/>
+    <path d="M13 27 H51" stroke="#f7f2e6" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M41 15 C41 32 40 42 27 50" stroke="#f7f2e6" stroke-width="8" stroke-linecap="round" fill="none"/>
+  </g>
+
+  <!-- Georgia is the serif fallback the app's display font declares. An SVG
+       loaded as an image cannot fetch a web font, so Caprasimo is unavailable
+       here and the fallback is what actually renders. -->
+  <text x="288" y="182" font-family="Georgia, 'Times New Roman', serif" font-size="88" fill="#231f1a">NaraNote</text>
+
+  <text x="292" y="230" font-family="'Segoe UI', system-ui, sans-serif" font-size="26" fill="#6b6151">Collect the Japanese You Meet</text>
+
+  <!-- 生成り, 柿色, 山吹, 抹茶 — the palette, as a quiet signature -->
+  <g transform="translate(292 258)">
+    <circle cx="8" cy="8" r="8" fill="#d9541f"/>
+    <circle cx="34" cy="8" r="8" fill="#8f2e14"/>
+    <circle cx="60" cy="8" r="8" fill="#c98708"/>
+    <circle cx="86" cy="8" r="8" fill="#6d7a4e"/>
+  </g>
+</svg>

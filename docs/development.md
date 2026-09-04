@@ -27,16 +27,17 @@ docker compose up -d
 
 **1b. Reference data** (once)
 
-The kanji dictionary and stroke-order diagrams aren't in the repo — they're third-party
+The dictionary, stroke-order diagrams and radical data aren't in the repo — they're third-party
 CC BY-SA data, fetched into a gitignored `data/`. Grab the latest release assets:
 
 - `kanjidic2-en-*.json.zip` from
   [scriptin/jmdict-simplified](https://github.com/scriptin/jmdict-simplified/releases) (~1 MB)
+- `kradfile-*.json.zip` from the same release (~0.1 MB)
 - `kanjivg-*-main.zip` from
   [KanjiVG/kanjivg](https://github.com/KanjiVG/kanjivg/releases) (~12 MB)
 
-Extract both into `data/`, so you have `data/kanjidic2-en-*.json` and `data/kanji/*.svg`. Then
-load them:
+Extract all three into `data/`, so you have `data/kanjidic2-en-*.json`,
+`data/kradfile-*.json` and `data/kanji/*.svg`. Then load them:
 
 ```bash
 cd backend
@@ -44,9 +45,11 @@ cd backend
 ```
 
 The importer upserts and exits when finished, so it's safe to re-run against a newer release.
-Expect ~10,400 characters and ~6,400 diagrams — the gap is real, roughly a third of the
-characters KANJIDIC2 knows have no KanjiVG drawing, plus ~290 KanjiVG files that are kana and
-have no KANJIDIC2 entry at all.
+Expect roughly 10,400 characters, 6,400 stroke diagrams, and 43,700 radical links. The gaps are
+real and not a bug: about a third of the characters KANJIDIC2 knows have no KanjiVG drawing,
+~290 KanjiVG files are kana with no KANJIDIC2 entry, and KRADFILE covers ~2,200 characters
+KANJIDIC2 doesn't. Each source is filtered against the kanji table rather than allowed to fail
+on a foreign key partway through.
 
 **2. Backend**
 
@@ -93,6 +96,23 @@ The one exception is `--nn-jp-known`, the dimmed colour marking already-saved wo
 `index.html` for any unmatched path. Once Spring Boot serves the built bundle, it will need the
 same fallback — otherwise a deep link or a refresh on `/kanji/待` returns a 404 from Spring
 instead of the app. Only `/api/**` should escape that fallback.
+
+**Scheduling is scoped to handwriting on purpose.** FSRS
+(`io.github.open-spaced-repetition:fsrs`) schedules kanji writing practice and nothing else.
+Anki cannot check handwriting, so those reviews have nowhere else to live; vocabulary reviews
+belong in Anki, which does them better and already holds the user's history. Scheduling
+vocabulary here would make the export feature pointless and turn the app into a worse Anki.
+
+**The task panel has two halves and only one is stored.** Suggestions ("4 due", "2 keep
+catching you out") are computed from the library and review tables on every request, so they
+resolve themselves and can never go stale. Only user-written tasks are persisted. Don't
+"optimise" suggestions into a table — being uncachable is the point.
+
+**Jackson 3, not Jackson 2.** Spring Boot 4 ships `tools.jackson`; `com.fasterxml.jackson` is
+not on the classpath and must not be added back, since mixing the two skews module versions in
+ways that compile fine and fail at runtime. Note that Jackson 3 enables `FAIL_ON_TRAILING_TOKENS`
+by default, which breaks streaming a JSON array one element at a time — the kanji importer
+disables it explicitly.
 
 **Attribution is a licence condition**, not a courtesy. KANJIDIC2 (EDRDG) and KanjiVG
 (© Ulrich Apel) are both CC BY-SA and are credited in the app footer. The KanjiVG credit is

@@ -11,7 +11,7 @@ export function Placeholder({ title, blurb }: PlaceholderProps) {
   return (
     <Page title={title}>
       <section className="card">
-        <h3 className="kicker">Not built yet</h3>
+        <h3 className="kicker">Not Built Yet</h3>
         <p className="muted">{blurb}</p>
         <p className="muted small">
           In the meantime, <Link to="/kanji">kanji lookup</Link> works.

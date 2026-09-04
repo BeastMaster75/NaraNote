@@ -40,7 +40,7 @@ export function Library() {
 
       {entries?.length === 0 && (
         <section className="card">
-          <h3 className="kicker">Nothing saved yet</h3>
+          <h3 className="kicker">Nothing Saved Yet</h3>
           <p className="muted">
             Find a character on the <Link to="/kanji">kanji page</Link> and add it here. Later,
             sentence mining will be able to add them for you.

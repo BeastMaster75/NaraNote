@@ -98,7 +98,7 @@ export function PracticeSession() {
     return (
       <Page title="Write" subtitle="Handwriting practice.">
         <section className="card">
-          <h3 className="kicker">{done > 0 ? 'Session finished' : 'Nothing due'}</h3>
+          <h3 className="kicker">{done > 0 ? 'Session Finished' : 'Nothing Due'}</h3>
           <p className="muted">
             {done > 0
               ? `You practised ${done} ${done === 1 ? 'character' : 'characters'}.`
@@ -108,7 +108,7 @@ export function PracticeSession() {
           </p>
           <div>
             <button type="button" className="btn" onClick={load}>
-              Check again
+              Check Again
             </button>
           </div>
         </section>
@@ -125,7 +125,7 @@ export function PracticeSession() {
 
       <div className="session">
         <section className="card prompt">
-          <h3 className="kicker">Write the kanji for</h3>
+          <h3 className="kicker">Write the Kanji For</h3>
           <p className="prompt-meaning">{card!.meanings.slice(0, 4).join(', ')}</p>
           <dl className="prompt-readings">
             <div>
@@ -162,7 +162,7 @@ export function PracticeSession() {
               onClick={() => setStrokes(strokes.slice(0, -1))}
               disabled={revealed || strokes.length === 0}
             >
-              Undo stroke
+              Undo Stroke
             </button>
             <button
               type="button"
@@ -177,7 +177,7 @@ export function PracticeSession() {
 
         {revealed && (
           <section className="card answer">
-            <h3 className="kicker">The answer</h3>
+            <h3 className="kicker">The Answer</h3>
             <div className="answer-body">
               <span className="answer-glyph">{card!.literal}</span>
               {card!.strokeOrderSvg ? (
@@ -205,7 +205,7 @@ export function PracticeSession() {
             className="btn is-primary"
             onClick={() => setRevealed(true)}
           >
-            Show the answer
+            Show the Answer
           </button>
         </div>
       ) : (

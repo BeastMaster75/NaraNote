@@ -76,7 +76,7 @@ export function Home() {
   const dueSuggestion = suggestions.find((s) => s.kind === 'DUE')
 
   return (
-    <Page title="NaraNote" subtitle="Your Japanese Learning Companion" wide>
+    <Page title="NaraNote" subtitle="Collect the Japanese You Meet" wide>
       <div className="home">
         <section className="calendar">
           <header className="calendar-head">

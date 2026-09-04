@@ -56,7 +56,7 @@ function LibraryToggle({ literal, initial }: { literal: string; initial: boolean
         onClick={toggle}
         disabled={busy}
       >
-        {inLibrary ? 'In your library' : 'Add to library'}
+        {inLibrary ? 'In Your Library' : 'Add to Library'}
       </button>
       {failed && <span className="error small">Couldn&rsquo;t save that.</span>}
     </div>
@@ -188,7 +188,7 @@ function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
           </Section>
 
           {kanji.radicals.length > 0 && (
-            <Section title="Built from">
+            <Section title="Built From">
               <ul className="readings">
                 {kanji.radicals.map((radical) => (
                   <li key={radical}>
@@ -204,14 +204,14 @@ function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
           )}
 
           {kanji.nanori.length > 0 && (
-            <Section title="In names">
+            <Section title="In Names">
               <ReadingList readings={kanji.nanori} />
             </Section>
           )}
         </div>
 
         <div className="kanji-strokes">
-          <Section title="Stroke order">
+          <Section title="Stroke Order">
             {kanji.strokeOrderSvg ? (
               // Trusted content: these SVGs come from our own import of KanjiVG,
               // not from anything a user supplied.
