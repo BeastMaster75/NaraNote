@@ -46,6 +46,8 @@ export function Library() {
   const [vocab, setVocab] = useState<VocabEntry[] | null>(null)
   const [kanji, setKanji] = useState<KanjiEntry[] | null>(null)
   const [error, setError] = useState(false)
+  const [exporting, setExporting] = useState<string | null>(null)
+  const [exportError, setExportError] = useState<string | null>(null)
 
   const reload = useCallback(() => {
     fetch('/api/vocab')
@@ -63,6 +65,32 @@ export function Library() {
   async function removeWord(id: number) {
     await fetch(`/api/vocab/${id}`, { method: 'DELETE' })
     reload()
+  }
+
+  /**
+   * Fetched rather than a plain link: a failed export would otherwise navigate
+   * the user to a page of raw JSON instead of telling them what went wrong.
+   */
+  async function download(path: string, filename: string) {
+    setExporting(filename)
+    setExportError(null)
+    try {
+      const response = await fetch(path)
+      if (!response.ok) {
+        const detail = await response.json().catch(() => null)
+        throw new Error(detail?.message || `Export failed (${response.status})`)
+      }
+      const url = URL.createObjectURL(await response.blob())
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      link.click()
+      URL.revokeObjectURL(url)
+    } catch (cause) {
+      setExportError(cause instanceof Error ? cause.message : 'Export failed')
+    } finally {
+      setExporting(null)
+    }
   }
 
   async function removeKanji(literal: string) {
@@ -103,7 +131,38 @@ export function Library() {
             </p>
           </section>
         ) : (
-          <ul className="words">
+          <>
+            <div className="export-bar">
+              <div className="export-copy">
+                <span className="kicker">Take It to Anki</span>
+                <p className="muted small">
+                  {vocab.length} {vocab.length === 1 ? 'word' : 'words'}, each with the sentence
+                  you met it in. Re-exporting updates the same cards rather than duplicating
+                  them, so your review history survives.
+                </p>
+              </div>
+              <div className="export-actions">
+                <button
+                  type="button"
+                  className="btn is-primary"
+                  disabled={exporting !== null}
+                  onClick={() => download('/api/export/anki', 'naranote.apkg')}
+                >
+                  {exporting === 'naranote.apkg' ? 'Building…' : 'Anki Deck'}
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={exporting !== null}
+                  onClick={() => download('/api/export/csv', 'naranote-vocab.tsv')}
+                >
+                  Plain Text
+                </button>
+              </div>
+            </div>
+            {exportError && <p className="error small">{exportError}</p>}
+
+            <ul className="words">
             {vocab.map((word) => (
               <li key={word.id} className="word-row">
                 <div className="word-main">
@@ -132,8 +191,9 @@ export function Library() {
                   ×
                 </button>
               </li>
-            ))}
-          </ul>
+              ))}
+            </ul>
+          </>
         ))}
 
       {tab === 'kanji' &&

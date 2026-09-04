@@ -33,16 +33,26 @@ CC BY-SA data, fetched into a gitignored `data/`. Grab the latest release assets
 - `kanjidic2-en-*.json.zip` from
   [scriptin/jmdict-simplified](https://github.com/scriptin/jmdict-simplified/releases) (~1 MB)
 - `kradfile-*.json.zip` from the same release (~0.1 MB)
+- `jmdict-eng-*.json.zip` from the same release (~11 MB) — the full English
+  edition, not `jmdict-eng-common`: mining means pasting real text, and a
+  dictionary that silently lacks uncommon words fails exactly when it's needed
 - `kanjivg-*-main.zip` from
   [KanjiVG/kanjivg](https://github.com/KanjiVG/kanjivg/releases) (~12 MB)
 
-Extract all three into `data/`, so you have `data/kanjidic2-en-*.json`,
-`data/kradfile-*.json` and `data/kanji/*.svg`. Then load them:
+Extract all four into `data/`, so you have `data/kanjidic2-en-*.json`,
+`data/kradfile-*.json`, `data/jmdict-eng-*.json` and `data/kanji/*.svg`. Then run
+both importers:
 
 ```bash
 cd backend
 ./mvnw spring-boot:run -Dspring-boot.run.arguments=--import-kanji
+./mvnw spring-boot:run -Dspring-boot.run.arguments=--import-dictionary
 ```
+
+The dictionary import takes about half a minute and rebuilds wholesale — entry
+ids are stable but forms and senses are not, so a stale sense from an older
+release would otherwise linger with nothing to notice it. Expect ~218,000
+entries, ~499,000 forms and ~253,000 senses.
 
 The importer upserts and exits when finished, so it's safe to re-run against a newer release.
 Expect roughly 10,400 characters, 6,400 stroke diagrams, and 43,700 radical links. The gaps are
@@ -96,6 +106,22 @@ The one exception is `--nn-jp-known`, the dimmed colour marking already-saved wo
 `index.html` for any unmatched path. Once Spring Boot serves the built bundle, it will need the
 same fallback — otherwise a deep link or a refresh on `/kanji/待` returns a 404 from Spring
 instead of the app. Only `/api/**` should escape that fallback.
+
+**Anki export shells out to Python.** `exporter/build_apkg.py` turns a list of
+notes into a `.apkg`; the backend writes JSON to a temp file, runs the script and
+streams the result. It needs Python with `genanki` installed — the interpreter is
+looked up as `python`, `python3` then `py`, or set `naranote.python` to a full
+path. There is no Java equivalent of genanki and the `collection.anki2` schema is
+undocumented and shifts between Anki versions, so reimplementing it would be the
+easiest thing here to get quietly wrong, and the failure mode is corrupting
+someone's collection. A plain-text export is always available and needs nothing.
+
+**Exported GUIDs key on `vocab_item.id`.** Never on the term and never on a list
+position: either would orphan every card and dump its review history the moment a
+word was edited or reordered. Re-exporting is meant to *update* existing cards.
+The export note type (`NaraNote Vocab`, model id 1748291043) is deliberately
+distinct from the separate 日本語 Anki Decks pipeline's ids so the two decks never
+collide.
 
 **Scheduling is scoped to handwriting on purpose.** FSRS
 (`io.github.open-spaced-repetition:fsrs`) schedules kanji writing practice and nothing else.
