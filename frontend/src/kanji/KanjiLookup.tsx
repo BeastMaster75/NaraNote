@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { Page } from '../components/Page'
 import './KanjiLookup.css'
@@ -63,9 +63,42 @@ function LibraryToggle({ literal, initial }: { literal: string; initial: boolean
   )
 }
 
-// Handy without a Japanese IME installed, and each one exercises a different
-// edge: a common verb stem, a grade-1 pictograph, and 29 strokes.
+// Fallbacks for a browser with no history yet. They matter: without a Japanese
+// IME these are the only way into the page, so the row is padded with them
+// rather than left empty.
 const EXAMPLES = ['待', '山', '鬱', '語', '飲']
+
+const RECENTS_KEY = 'naranote.recentKanji'
+const CHIP_COUNT = 5
+
+/**
+ * Recently viewed characters live in localStorage rather than on the server.
+ * "What I just looked at on this machine" is inherently per-device, and a
+ * shortcut row isn't worth a table, an endpoint and a round trip that would
+ * make the chips flicker in on every page load.
+ */
+function readRecents(): string[] {
+  try {
+    const raw = localStorage.getItem(RECENTS_KEY)
+    const parsed: unknown = raw ? JSON.parse(raw) : []
+    return Array.isArray(parsed)
+      ? parsed.filter((item): item is string => typeof item === 'string').slice(0, CHIP_COUNT)
+      : []
+  } catch {
+    // Private browsing, or someone hand-edited the key into nonsense.
+    return []
+  }
+}
+
+function pushRecent(literal: string): string[] {
+  const next = [literal, ...readRecents().filter((item) => item !== literal)].slice(0, CHIP_COUNT)
+  try {
+    localStorage.setItem(RECENTS_KEY, JSON.stringify(next))
+  } catch {
+    /* storage unavailable — the row just won't persist */
+  }
+  return next
+}
 
 export function KanjiLookup() {
   const { literal: param } = useParams<{ literal: string }>()
@@ -84,6 +117,17 @@ export function KanjiLookup() {
   const draftRef = useRef(draft)
   draftRef.current = draft
   const composing = useRef(false)
+
+  const [recents, setRecents] = useState<string[]>(readRecents)
+
+  // Stable identity so the panel's effect doesn't re-run on every render.
+  const remember = useCallback((found: string) => {
+    setRecents(pushRecent(found))
+  }, [])
+
+  // Your own history first, topped up with examples so the row is never empty
+  // and there is always a way in without a Japanese keyboard.
+  const chips = [...recents, ...EXAMPLES.filter((e) => !recents.includes(e))].slice(0, CHIP_COUNT)
 
   useEffect(() => {
     // Adopt the route only when it disagrees with what's typed — otherwise the
@@ -134,16 +178,20 @@ export function KanjiLookup() {
           placeholder="漢字"
         />
           <div className="lookup-examples">
-            {EXAMPLES.map((example) => (
-              <Link key={example} to={`/kanji/${example}`} className="chip jp-sm">
-                {example}
+            {chips.map((chip) => (
+              <Link
+                key={chip}
+                to={`/kanji/${chip}`}
+                className={`chip jp-sm${recents.includes(chip) ? ' is-recent' : ''}`}
+              >
+                {chip}
               </Link>
             ))}
           </div>
         </div>
 
         {literal ? (
-          <KanjiPanel literal={literal} />
+          <KanjiPanel literal={literal} onFound={remember} />
         ) : (
           <p className="muted">Pick a kanji, or type one.</p>
         )}
@@ -152,7 +200,15 @@ export function KanjiLookup() {
   )
 }
 
-function KanjiPanel({ literal }: { literal: string }) {
+function KanjiPanel({
+  literal,
+  onFound,
+}: {
+  literal: string
+  /** Called only for a character that actually resolved, so a mistyped or
+   *  non-existent one never lands in the recents row. */
+  onFound: (literal: string) => void
+}) {
   const [kanji, setKanji] = useState<KanjiResponse | null>(null)
   const [status, setStatus] = useState<'loading' | 'ok' | 'missing' | 'error'>('loading')
 
@@ -170,6 +226,7 @@ function KanjiPanel({ literal }: { literal: string }) {
         if (cancelled) return
         setKanji(data)
         setStatus(data ? 'ok' : 'missing')
+        if (data) onFound(literal)
       })
       .catch(() => {
         if (!cancelled) setStatus('error')
@@ -179,7 +236,7 @@ function KanjiPanel({ literal }: { literal: string }) {
     return () => {
       cancelled = true
     }
-  }, [literal])
+  }, [literal, onFound])
 
   if (status === 'error') return <p className="error">Couldn&rsquo;t reach the server.</p>
   if (status === 'missing') {

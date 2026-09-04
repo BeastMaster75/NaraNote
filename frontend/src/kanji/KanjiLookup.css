@@ -44,6 +44,12 @@
   border-color: var(--nn-kaki);
 }
 
+/* Your own history reads as slightly more solid than the fallback examples. */
+.chip.is-recent {
+  background: var(--nn-sunk);
+  border-color: var(--nn-line);
+}
+
 /* The chip carries .jp-sm, which pins it to full-contrast Japanese; keep the
    generic link colour from overriding it on hover. */
 .chip:hover,
