@@ -107,11 +107,14 @@
   align-items: flex-start;
 }
 
+/* Sections flow into columns as the page widens rather than one stretching to
+   1200px — a list of readings gains nothing from being that wide. */
 .kanji-text {
-  flex: 1 1 18rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
+  flex: 1 1 20rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
+  align-content: start;
+  gap: 1.1rem 2rem;
 }
 
 .kanji-section {
@@ -165,9 +168,16 @@
 /* KanjiVG ships a fixed 109x109 box; let it scale, and let the strokes take the
    card's text colour via the currentColor rewritten at import time. */
 .stroke-order {
-  width: 240px;
+  width: 260px;
   max-width: 100%;
   color: var(--nn-jp);
+}
+
+/* Give the diagram more room once there is room to give. */
+@media (min-width: 1200px) {
+  .stroke-order {
+    width: 320px;
+  }
 }
 
 .stroke-order svg {

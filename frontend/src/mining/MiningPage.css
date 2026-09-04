@@ -74,6 +74,17 @@
   gap: 1rem;
 }
 
+.mining-detail {
+  width: 24rem;
+  flex: none;
+}
+
+/* Japanese at 19px stops being comfortable somewhere past ~45 characters a
+   line, so the passage keeps a measure even when nothing is selected beside it. */
+.sentences {
+  max-width: 62rem;
+}
+
 .mining-legend {
   display: flex;
   align-items: center;
@@ -295,12 +306,24 @@
   text-decoration: none;
 }
 
+/* Below three columns' worth of room, stack the lot. */
+@media (max-width: 1280px) {
+  .mining {
+    flex-wrap: wrap;
+  }
+
+  .mining-detail {
+    width: 100%;
+  }
+}
+
 @media (max-width: 900px) {
   .mining {
     flex-direction: column;
   }
 
-  .mining-input {
+  .mining-input,
+  .mining-detail {
     width: 100%;
   }
 }

@@ -243,19 +243,24 @@ export function MiningPage() {
                 ))}
               </div>
 
-              {selection && (
-                <WordDetail
-                  key={selection.token.baseForm + selection.sentence}
-                  token={selection.token}
-                  sentence={selection.sentence}
-                  busy={busy}
-                  onSave={save}
-                  onClose={() => setSelection(null)}
-                />
-              )}
             </>
           )}
         </section>
+
+        {/* Its own column, so on a desktop the word you clicked sits beside the
+            passage instead of pushing it down the page. */}
+        {selection && (
+          <aside className="mining-detail">
+            <WordDetail
+              key={selection.token.baseForm + selection.sentence}
+              token={selection.token}
+              sentence={selection.sentence}
+              busy={busy}
+              onSave={save}
+              onClose={() => setSelection(null)}
+            />
+          </aside>
+        )}
       </div>
     </Page>
   )

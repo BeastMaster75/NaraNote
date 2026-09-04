@@ -187,6 +187,13 @@
   color: var(--nn-bengara);
 }
 
+/* Cells grow with the grid, or a wide calendar ends up as short letterboxes. */
+@media (min-width: 1200px) {
+  .calendar-cell {
+    min-height: 112px;
+  }
+}
+
 /* Seven calendar columns need roughly 500px to stay readable; the panel is 336.
    Below their combined width the two stack rather than squeezing. */
 @media (max-width: 880px) {

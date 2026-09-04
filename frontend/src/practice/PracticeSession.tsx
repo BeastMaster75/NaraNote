@@ -23,9 +23,26 @@ const RATINGS: { rating: Rating; label: string; hint: string }[] = [
   { rating: 'EASY', label: 'Easy', hint: 'Straight off' },
 ]
 
-const CANVAS_SIZE = 340
+/**
+ * A larger box is genuinely easier to write a kanji in, so take the room when
+ * the screen has it. Strokes are stored normalised, so changing this doesn't
+ * invalidate anything already drawn.
+ */
+function useCanvasSize() {
+  const measure = () => (window.innerWidth >= 1280 ? 420 : 340)
+  const [size, setSize] = useState(measure)
+
+  useEffect(() => {
+    const onResize = () => setSize(measure())
+    window.addEventListener('resize', onResize)
+    return () => window.removeEventListener('resize', onResize)
+  }, [])
+
+  return size
+}
 
 export function PracticeSession() {
+  const canvasSize = useCanvasSize()
   const [queue, setQueue] = useState<DueCard[] | null>(null)
   const [index, setIndex] = useState(0)
   const [strokes, setStrokes] = useState<Stroke[]>([])
@@ -144,11 +161,11 @@ export function PracticeSession() {
         </section>
 
         <div className="session-work">
-          <div className="canvas-wrap" style={{ width: CANVAS_SIZE, height: CANVAS_SIZE }}>
+          <div className="canvas-wrap" style={{ width: canvasSize, height: canvasSize }}>
             <WritingCanvas
               strokes={strokes}
               onChange={setStrokes}
-              size={CANVAS_SIZE}
+              size={canvasSize}
               disabled={revealed}
               showNumbers={revealed}
             />

@@ -1,13 +1,13 @@
+/* Fills the available width up to a cap, rather than sitting in a narrow
+   reading column. At 1920 the old 62rem cap used 54% of the screen.
+   Line length is controlled per-element below, not by starving the page. */
 .page {
-  max-width: 62rem;
-  padding: 2rem 2.25rem 3rem;
+  width: 100%;
+  max-width: 1600px;
+  padding: 2rem 2.5rem 3rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-}
-
-.page.is-wide {
-  max-width: 84rem;
 }
 
 .page-head h2 {
@@ -19,7 +19,15 @@
   margin: 0.35rem 0 0;
 }
 
-@media (max-width: 640px) {
+/* Prose keeps a readable measure even when the page around it is wide.
+   Roughly 62 characters is the comfortable span for continuous text. */
+.page-head p,
+.card > p,
+.page > p.muted {
+  max-width: 62ch;
+}
+
+@media (max-width: 900px) {
   .page {
     padding: 1.5rem 1.25rem 2.5rem;
   }

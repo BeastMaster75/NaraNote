@@ -24,8 +24,10 @@
   color: var(--nn-bengara);
 }
 
+/* Doesn't grow: a meaning plus three readings needs about 24rem, and left to
+   flex freely it took 1080px and pushed the canvas to the edge. */
 .prompt {
-  flex: 1 1 15rem;
+  flex: 0 1 24rem;
   min-width: 0;
 }
 
@@ -114,8 +116,11 @@
   margin-right: auto;
 }
 
+/* Takes the remaining room once revealed, so prompt, canvas and answer sit in
+   one row on a desktop instead of stacking. */
 .answer {
-  flex: 1 1 18rem;
+  flex: 1 1 22rem;
+  min-width: 0;
 }
 
 .answer-body {

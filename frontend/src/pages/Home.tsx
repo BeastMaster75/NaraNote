@@ -75,7 +75,7 @@ export function Home() {
   // Note: the "practise N due" prompt lives only in the task panel. It used to be
   // duplicated as a calendar CTA, which read as padding.
   return (
-    <Page title="NaraNote" subtitle="Collect the Japanese You Meet" wide>
+    <Page title="NaraNote" subtitle="Collect the Japanese You Meet">
       <div className="home">
         <section className="calendar">
           <header className="calendar-head">
