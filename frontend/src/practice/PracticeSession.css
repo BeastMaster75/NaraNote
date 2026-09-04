@@ -1,0 +1,175 @@
+.session {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.session-progress {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-family: var(--nn-font-mono);
+  letter-spacing: 0.08em;
+}
+
+.tag-new {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-kaki-tint);
+  color: var(--nn-bengara);
+}
+
+.prompt {
+  flex: 1 1 15rem;
+  min-width: 0;
+}
+
+.prompt-meaning {
+  margin: 0;
+  font-family: var(--nn-font-display);
+  font-size: 1.6rem;
+  line-height: 1.2;
+  color: var(--nn-ink);
+}
+
+/* Meaning alone is ambiguous — 本 and 書 both answer "book" — so the readings
+   are part of the prompt, not decoration. */
+.prompt-readings {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0.5rem 0 0;
+  flex-wrap: wrap;
+}
+
+.prompt-readings dt {
+  font-family: var(--nn-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nn-ink-3);
+}
+
+.prompt-readings dd {
+  margin: 0.2rem 0 0;
+  color: var(--nn-ink);
+}
+
+.session-work {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.canvas-wrap {
+  position: relative;
+  border-radius: var(--nn-r-lg);
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line);
+  overflow: hidden;
+}
+
+/* Centre and diagonal guides, like the practice grid in a 原稿用紙 notebook. */
+.canvas-wrap::before,
+.canvas-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.canvas-wrap::before {
+  background:
+    linear-gradient(to right, transparent calc(50% - 0.5px), var(--nn-line) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--nn-line) 50%, transparent calc(50% + 0.5px));
+}
+
+.canvas-wrap::after {
+  background:
+    linear-gradient(135deg, transparent calc(50% - 0.5px), var(--nn-line-soft) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(45deg, transparent calc(50% - 0.5px), var(--nn-line-soft) 50%, transparent calc(50% + 0.5px));
+}
+
+.writing-canvas {
+  position: relative;
+  display: block;
+  /* Without this, dragging on a touchscreen scrolls the page instead of drawing. */
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.canvas-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.canvas-actions .muted {
+  margin-right: auto;
+}
+
+.answer {
+  flex: 1 1 18rem;
+}
+
+.answer-body {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.answer-glyph {
+  font-family: var(--nn-font-jp-serif);
+  font-size: 96px;
+  line-height: 1;
+  color: var(--nn-jp);
+}
+
+.ratings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.6rem;
+  max-width: 44rem;
+}
+
+.rating {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.rating-label {
+  font-size: 14px;
+  color: var(--nn-ink);
+}
+
+.rating-hint {
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--nn-ink-3);
+}
+
+.rating-again:hover:not(:disabled) {
+  border-color: var(--nn-bengara);
+  background: var(--nn-bengara-tint);
+}
+
+.rating-hard:hover:not(:disabled) {
+  border-color: var(--nn-yamabuki);
+  background: var(--nn-yamabuki-tint);
+}
+
+.rating-good:hover:not(:disabled),
+.rating-easy:hover:not(:disabled) {
+  border-color: var(--nn-matcha);
+  background: var(--nn-matcha-tint);
+}

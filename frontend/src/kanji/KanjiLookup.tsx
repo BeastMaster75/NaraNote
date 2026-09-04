@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
+import { Page } from '../components/Page'
 import './KanjiLookup.css'
 
 type KanjiResponse = {
@@ -13,6 +14,52 @@ type KanjiResponse = {
   kunReadings: string[]
   nanori: string[]
   strokeOrderSvg: string | null
+  inLibrary: boolean
+}
+
+/**
+ * Add or remove this character from your library. Optimistic state would be
+ * wrong here — if the request fails the button must not claim it worked.
+ */
+function LibraryToggle({ literal, initial }: { literal: string; initial: boolean }) {
+  const [inLibrary, setInLibrary] = useState(initial)
+  const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
+
+  useEffect(() => {
+    setInLibrary(initial)
+    setFailed(false)
+  }, [initial, literal])
+
+  async function toggle() {
+    setBusy(true)
+    setFailed(false)
+    try {
+      const response = await fetch(`/api/library/${encodeURIComponent(literal)}`, {
+        method: inLibrary ? 'DELETE' : 'PUT',
+      })
+      if (!response.ok) throw new Error(String(response.status))
+      setInLibrary(!inLibrary)
+    } catch {
+      setFailed(true)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="library-toggle">
+      <button
+        type="button"
+        className={`btn${inLibrary ? ' is-in-library' : ' is-primary'}`}
+        onClick={toggle}
+        disabled={busy}
+      >
+        {inLibrary ? 'In your library' : 'Add to library'}
+      </button>
+      {failed && <span className="error small">Couldn&rsquo;t save that.</span>}
+    </div>
+  )
 }
 
 // Handy without a Japanese IME installed, and each one exercises a different
@@ -35,8 +82,9 @@ export function KanjiLookup() {
   }
 
   return (
-    <section className="lookup">
-      <div className="lookup-controls">
+    <Page title="Kanji" subtitle="Readings, meanings and stroke order for any character.">
+      <section className="lookup">
+        <div className="lookup-controls">
         <input
           className="lookup-input jp-lg"
           value={literal}
@@ -49,17 +97,22 @@ export function KanjiLookup() {
           aria-label="Kanji to look up"
           placeholder="漢字"
         />
-        <div className="lookup-examples">
-          {EXAMPLES.map((example) => (
-            <Link key={example} to={`/kanji/${example}`} className="chip jp-sm">
-              {example}
-            </Link>
-          ))}
+          <div className="lookup-examples">
+            {EXAMPLES.map((example) => (
+              <Link key={example} to={`/kanji/${example}`} className="chip jp-sm">
+                {example}
+              </Link>
+            ))}
+          </div>
         </div>
-      </div>
 
-      {literal ? <KanjiPanel literal={literal} /> : <p className="muted">Pick a kanji, or type one.</p>}
-    </section>
+        {literal ? (
+          <KanjiPanel literal={literal} />
+        ) : (
+          <p className="muted">Pick a kanji, or type one.</p>
+        )}
+      </section>
+    </Page>
   )
 }
 
@@ -116,6 +169,7 @@ function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
           <Fact label="JLPT" value={kanji.jlptLevel ? `N${kanji.jlptLevel}` : null} />
           <Fact label="Frequency" value={kanji.frequency ? `#${kanji.frequency}` : null} />
         </dl>
+        <LibraryToggle literal={kanji.literal} initial={kanji.inLibrary} />
       </div>
 
       <div className="kanji-body">

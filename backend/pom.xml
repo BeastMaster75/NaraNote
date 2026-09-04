@@ -12,16 +12,11 @@
 	<artifactId>naranote</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>NaraNote</name>
-	<description>Japanese study companion</description>
+	<description>Your Japanese Learning Companion</description>
 	<properties>
 		<java.version>21</java.version>
 	</properties>
 	<dependencies>
-		<dependency>
-			<groupId>com.fasterxml.jackson.core</groupId>
-			<artifactId>jackson-databind</artifactId>
-			<version>2.20.0</version>
-		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -58,6 +53,14 @@
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<optional>true</optional>
+		</dependency>
+		<!-- FSRS: the same scheduling algorithm Anki uses, from the group that
+		     develops it. Pure Java, no native binding. Scheduling here is scoped
+		     to handwriting practice, which Anki cannot host. -->
+		<dependency>
+			<groupId>io.github.open-spaced-repetition</groupId>
+			<artifactId>fsrs</artifactId>
+			<version>1.0.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

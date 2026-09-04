@@ -1,0 +1,114 @@
+.rail {
+  width: 84px;
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 20px 0;
+  background: var(--nn-sunk);
+  border-right: 1px solid var(--nn-line-soft);
+}
+
+.rail-brand {
+  display: flex;
+  margin-bottom: 14px;
+  border-radius: 14px;
+}
+
+.rail-items {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+}
+
+.rail-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  width: 64px;
+  padding: 8px 0;
+  border-radius: 14px;
+  text-decoration: none;
+  color: var(--nn-ink-2);
+}
+
+.rail-item:hover {
+  background: var(--nn-raised);
+  color: var(--nn-ink);
+}
+
+.rail-item.is-active {
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+}
+
+/* Sections that exist in the plan but not yet in the app. Dimmed rather than
+   disabled — they're reachable, and what they open explains itself. */
+.rail-item.is-unbuilt:not(.is-active) {
+  opacity: 0.55;
+}
+
+.rail-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.rail-toggle {
+  margin-top: auto;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  color: var(--nn-ink-2);
+  background: transparent;
+  border: 1px solid var(--nn-line);
+  border-radius: 14px;
+}
+
+.rail-toggle:hover {
+  color: var(--nn-ink);
+  background: var(--nn-raised);
+}
+
+/* Narrow screens: the rail becomes a horizontal bar across the top. Enough to
+   stay usable; a proper mobile pass belongs with the handwriting feature,
+   where a tablet is the primary device. */
+@media (max-width: 640px) {
+  .rail {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 10px 12px;
+    border-right: none;
+    border-bottom: 1px solid var(--nn-line-soft);
+    overflow-x: auto;
+  }
+
+  .rail-brand {
+    margin-bottom: 0;
+  }
+
+  .rail-items {
+    flex-direction: row;
+    width: auto;
+  }
+
+  .rail-item {
+    width: 58px;
+  }
+
+  .rail-toggle {
+    margin-top: 0;
+    margin-left: auto;
+  }
+}

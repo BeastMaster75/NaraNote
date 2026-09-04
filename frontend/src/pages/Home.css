@@ -1,0 +1,62 @@
+.home-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+  gap: 1rem;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 1.25rem 1.35rem;
+  text-decoration: none;
+  color: inherit;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+  box-shadow: var(--nn-shadow);
+}
+
+.home-card:hover {
+  border-color: var(--nn-kaki);
+  color: inherit;
+}
+
+.home-card.is-unbuilt {
+  background: transparent;
+  box-shadow: none;
+  border-style: dashed;
+}
+
+.home-card-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+}
+
+.home-card-head h3 {
+  font-family: var(--nn-font-display);
+  font-size: 1.3rem;
+  font-weight: 400;
+  margin: 0;
+  color: var(--nn-ink);
+}
+
+.home-badge {
+  font-family: var(--nn-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-yamabuki-tint);
+  color: var(--nn-yamabuki);
+}
+
+.home-card-body {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--nn-ink-2);
+}

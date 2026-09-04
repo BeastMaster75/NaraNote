@@ -1,0 +1,55 @@
+.library-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+  gap: 0.75rem;
+}
+
+.library-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.9rem 1.1rem;
+  text-decoration: none;
+  color: inherit;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-md);
+}
+
+.library-card:hover {
+  border-color: var(--nn-kaki);
+  color: inherit;
+}
+
+/* Serif for the studied character, matching the kanji page — this is the
+   character as an object of study, not UI text. */
+.library-glyph {
+  font-family: var(--nn-font-jp-serif);
+  font-size: var(--nn-jp-xl);
+  line-height: 1;
+  color: var(--nn-jp);
+}
+
+.library-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.library-meaning {
+  font-size: 13.5px;
+  color: var(--nn-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.library-readings {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

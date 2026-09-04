@@ -1,10 +1,5 @@
 package com.naranote.kanji;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonToken;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,6 +21,12 @@ import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.jdbc.core.BatchPreparedStatementSetter;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+import tools.jackson.core.JsonParser;
+import tools.jackson.core.JsonToken;
+import tools.jackson.databind.DeserializationFeature;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * One-off loader for the kanji reference data. Not part of normal startup — run it
@@ -96,11 +97,17 @@ public class KanjiImporter implements ApplicationRunner {
      * ~15 MB of JSON, which balloons well past that as an in-memory tree.
      */
     private void importCharacters(Path jsonFile) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        // FAIL_ON_TRAILING_TOKENS is on by default in Jackson 3. It's meant for
+        // "parse this whole document as one value", and here it's wrong: we read
+        // one array element at a time and the rest of the array is legitimately
+        // still ahead of us.
+        ObjectMapper mapper = JsonMapper.builder()
+                .disable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS)
+                .build();
         List<Object[]> batch = new ArrayList<>(BATCH_SIZE);
         int total = 0;
 
-        try (JsonParser parser = new JsonFactory().createParser(jsonFile.toFile())) {
+        try (JsonParser parser = mapper.createParser(jsonFile.toFile())) {
             while (parser.nextToken() != null) {
                 if (!"characters".equals(parser.currentName())
                         || parser.nextToken() != JsonToken.START_ARRAY) {
