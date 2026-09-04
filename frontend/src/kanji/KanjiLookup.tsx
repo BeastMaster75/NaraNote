@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { Page } from '../components/Page'
 import './KanjiLookup.css'
@@ -76,6 +76,30 @@ export function KanjiLookup() {
   const codePoints = param ? Array.from(param) : []
   const literal = codePoints[0] ?? ''
 
+  // The field holds its own text rather than reading straight from the URL.
+  // Binding it to the route broke Japanese input entirely: an IME composes a
+  // character over several keystrokes, and navigating on each one overwrote the
+  // half-finished composition.
+  const [draft, setDraft] = useState(literal)
+  const draftRef = useRef(draft)
+  draftRef.current = draft
+  const composing = useRef(false)
+
+  useEffect(() => {
+    // Adopt the route only when it disagrees with what's typed — otherwise the
+    // navigation caused by typing would immediately wipe the rest of the input.
+    if ((Array.from(draftRef.current)[0] ?? '') !== literal) {
+      setDraft(literal)
+    }
+  }, [literal])
+
+  function commit(value: string) {
+    const first = Array.from(value)[0]
+    // Empty goes to /kanji, not home. Backspacing a character should leave you
+    // on the page you were using, not throw you out of it.
+    navigate(first ? `/kanji/${first}` : '/kanji', { replace: true })
+  }
+
   // Keep the URL canonical: one character per kanji page. Pasting a whole word
   // into the address bar lands on its first character rather than a dead URL.
   if (codePoints.length > 1) {
@@ -88,12 +112,23 @@ export function KanjiLookup() {
         <div className="lookup-controls">
         <input
           className="lookup-input jp-lg"
-          value={literal}
+          value={draft}
           onChange={(event) => {
-            const first = Array.from(event.target.value)[0]
-            // Replace rather than push: typing shouldn't fill the back button
-            // with every character you tried.
-            navigate(first ? `/kanji/${first}` : '/', { replace: true })
+            setDraft(event.target.value)
+            // Mid-composition the value is romaji, not a character yet — wait
+            // for the IME to finish before acting on it.
+            if (!composing.current) {
+              // Replace rather than push: typing shouldn't fill the back button
+              // with every character you tried.
+              commit(event.target.value)
+            }
+          }}
+          onCompositionStart={() => {
+            composing.current = true
+          }}
+          onCompositionEnd={(event) => {
+            composing.current = false
+            commit(event.currentTarget.value)
           }}
           aria-label="Kanji to look up"
           placeholder="漢字"
