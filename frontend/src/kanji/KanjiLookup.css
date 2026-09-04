@@ -167,6 +167,106 @@
   color: var(--nn-jp);
 }
 
+/* The personal half of the page: your words, your attempts, your other kanji. */
+.kanji-yours {
+  flex: 1 1 18rem;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding-left: 1.5rem;
+  border-left: 1px solid var(--nn-line-soft);
+}
+
+/* The divider is a column separator. Once the columns stack it has nothing to
+   separate, and reads as a stray line and an unexplained indent. */
+@media (max-width: 900px) {
+  .kanji-yours {
+    padding-left: 0;
+    border-left: 0;
+    padding-top: 1.1rem;
+    border-top: 1px solid var(--nn-line-soft);
+  }
+}
+
+.practice-tally {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.tally {
+  font-size: 12px;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-sunk);
+  color: var(--nn-ink-2);
+}
+
+.tally strong {
+  font-family: var(--nn-font-display);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--nn-ink);
+}
+
+.tally.is-again {
+  background: var(--nn-bengara-tint);
+  color: var(--nn-bengara);
+}
+
+.tally.is-hard {
+  background: var(--nn-yamabuki-tint);
+  color: var(--nn-yamabuki);
+}
+
+.tally.is-good {
+  background: var(--nn-matcha-tint);
+  color: var(--nn-matcha);
+}
+
+.your-words {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.your-words li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-sunk);
+}
+
+.your-word {
+  color: var(--nn-jp);
+}
+
+.your-word-meaning {
+  font-size: 12.5px;
+  color: var(--nn-ink-2);
+}
+
+/* The sentence you met it in — the thing that makes the word stick. */
+.your-word-sentence {
+  margin-top: 0.2rem;
+  color: var(--nn-jp);
+  opacity: 0.8;
+  line-height: 1.7;
+}
+
+.shared-count {
+  margin-left: 0.35rem;
+  font-family: var(--nn-font-mono);
+  font-size: 9.5px;
+  color: var(--nn-kaki);
+}
+
 .kanji-strokes {
   flex: 0 0 auto;
 }

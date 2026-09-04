@@ -15,7 +15,29 @@ type KanjiResponse = {
   nanori: string[]
   radicals: string[]
   strokeOrderSvg: string | null
-  inLibrary: boolean
+  yours: {
+    inLibrary: boolean
+    words: { term: string; reading: string | null; meaning: string; sentence: string | null }[]
+    practice: {
+      attempts: number
+      again: number
+      hard: number
+      good: number
+      lastAttempt: string | null
+      state: string | null
+      due: string | null
+    } | null
+    relatedInLibrary: { literal: string; shared: number }[]
+  }
+}
+
+function relativeDay(iso: string) {
+  const days = Math.round((new Date(iso).getTime() - Date.now()) / 86_400_000)
+  if (days < -1) return `${Math.abs(days)} days ago`
+  if (days === -1) return 'yesterday'
+  if (days === 0) return 'today'
+  if (days === 1) return 'tomorrow'
+  return `in ${days} days`
 }
 
 /**
@@ -262,7 +284,7 @@ function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
           <Fact label="JLPT" value={kanji.jlptLevel ? `N${kanji.jlptLevel}` : null} />
           <Fact label="Frequency" value={kanji.frequency ? `#${kanji.frequency}` : null} />
         </dl>
-        <LibraryToggle literal={kanji.literal} initial={kanji.inLibrary} />
+        <LibraryToggle literal={kanji.literal} initial={kanji.yours.inLibrary} />
       </div>
 
       <div className="kanji-body">
@@ -302,6 +324,10 @@ function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
           )}
         </div>
 
+        <div className="kanji-yours">
+          <YoursPanel kanji={kanji} />
+        </div>
+
         <div className="kanji-strokes">
           <Section title="Stroke Order">
             {kanji.strokeOrderSvg ? (
@@ -318,6 +344,96 @@ function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
         </div>
       </div>
     </article>
+  )
+}
+
+/**
+ * What's true of you rather than of the character. Reference pages elsewhere
+ * already show the dictionary; this is the half only this app can show.
+ */
+function YoursPanel({ kanji }: { kanji: KanjiResponse }) {
+  const { words, practice, relatedInLibrary, inLibrary } = kanji.yours
+  const nothingYet = words.length === 0 && !practice && relatedInLibrary.length === 0
+
+  if (nothingYet) {
+    return (
+      <Section title="Yours">
+        <p className="muted small">
+          {inLibrary
+            ? 'In your library, but you haven’t practised it or met it in a saved word yet.'
+            : 'Nothing yet. Add it to your library to practise writing it, or save a word containing it from Mine.'}
+        </p>
+      </Section>
+    )
+  }
+
+  return (
+    <>
+      {practice && (
+        <Section title="Your Practice">
+          <div className="practice-tally">
+            <span className="tally">
+              <strong>{practice.attempts}</strong> written
+            </span>
+            {practice.again > 0 && (
+              <span className="tally is-again">
+                <strong>{practice.again}</strong> failed
+              </span>
+            )}
+            {practice.hard > 0 && (
+              <span className="tally is-hard">
+                <strong>{practice.hard}</strong> hard
+              </span>
+            )}
+            {practice.good > 0 && (
+              <span className="tally is-good">
+                <strong>{practice.good}</strong> right
+              </span>
+            )}
+          </div>
+          <p className="muted small">
+            {practice.due
+              ? `Next up ${relativeDay(practice.due)}.`
+              : 'No longer scheduled — it isn’t in your library.'}
+            {practice.lastAttempt && ` Last written ${relativeDay(practice.lastAttempt)}.`}
+          </p>
+        </Section>
+      )}
+
+      {words.length > 0 && (
+        <Section title="In Your Words">
+          <ul className="your-words">
+            {words.map((word) => (
+              <li key={word.term}>
+                <span className="your-word jp-sm">{word.term}</span>
+                <span className="your-word-meaning">{word.meaning}</span>
+                {word.sentence && <span className="your-word-sentence jp-sm">{word.sentence}</span>}
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {relatedInLibrary.length > 0 && (
+        <Section title="Shares Parts With">
+          <ul className="readings">
+            {relatedInLibrary.map((related) => (
+              <li key={related.literal}>
+                <Link
+                  to={`/kanji/${related.literal}`}
+                  className="radical jp-sm"
+                  title={`${related.shared} component${related.shared === 1 ? '' : 's'} in common`}
+                >
+                  {related.literal}
+                  {related.shared > 1 && <span className="shared-count">{related.shared}</span>}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <p className="muted small">Others in your library built from the same components.</p>
+        </Section>
+      )}
+    </>
   )
 }
 
