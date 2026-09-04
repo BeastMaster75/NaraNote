@@ -23,6 +23,12 @@
   font-size: 2.4rem;
 }
 
+.head-brand {
+  display: flex;
+  flex: none;
+  border-radius: 14px;
+}
+
 .head svg {
   flex: none;
 }

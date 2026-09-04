@@ -1,4 +1,5 @@
 import { useEffect, useState, type ReactNode } from 'react'
+import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import './KanjiLookup.css'
 
 type KanjiResponse = {
@@ -19,18 +20,54 @@ type KanjiResponse = {
 const EXAMPLES = ['待', '山', '鬱', '語', '飲']
 
 export function KanjiLookup() {
-  const [query, setQuery] = useState('待')
+  const { literal: param } = useParams<{ literal: string }>()
+  const navigate = useNavigate()
+
+  // Split by code point rather than char — a few CJK characters sit outside the
+  // Basic Multilingual Plane and arrive as two-char surrogate pairs.
+  const codePoints = param ? Array.from(param) : []
+  const literal = codePoints[0] ?? ''
+
+  // Keep the URL canonical: one character per kanji page. Pasting a whole word
+  // into the address bar lands on its first character rather than a dead URL.
+  if (codePoints.length > 1) {
+    return <Navigate to={`/kanji/${literal}`} replace />
+  }
+
+  return (
+    <section className="lookup">
+      <div className="lookup-controls">
+        <input
+          className="lookup-input jp-lg"
+          value={literal}
+          onChange={(event) => {
+            const first = Array.from(event.target.value)[0]
+            // Replace rather than push: typing shouldn't fill the back button
+            // with every character you tried.
+            navigate(first ? `/kanji/${first}` : '/', { replace: true })
+          }}
+          aria-label="Kanji to look up"
+          placeholder="漢字"
+        />
+        <div className="lookup-examples">
+          {EXAMPLES.map((example) => (
+            <Link key={example} to={`/kanji/${example}`} className="chip jp-sm">
+              {example}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {literal ? <KanjiPanel literal={literal} /> : <p className="muted">Pick a kanji, or type one.</p>}
+    </section>
+  )
+}
+
+function KanjiPanel({ literal }: { literal: string }) {
   const [kanji, setKanji] = useState<KanjiResponse | null>(null)
   const [status, setStatus] = useState<'loading' | 'ok' | 'missing' | 'error'>('loading')
 
-  // The query may be a whole word pasted in; look up its first character.
-  const literal = query ? Array.from(query)[0] : ''
-
   useEffect(() => {
-    if (!literal) {
-      setKanji(null)
-      return
-    }
     let cancelled = false
     setStatus('loading')
 
@@ -55,40 +92,17 @@ export function KanjiLookup() {
     }
   }, [literal])
 
-  return (
-    <section className="lookup">
-      <div className="lookup-controls">
-        <input
-          className="lookup-input jp-lg"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          aria-label="Kanji to look up"
-          placeholder="漢字"
-        />
-        <div className="lookup-examples">
-          {EXAMPLES.map((example) => (
-            <button
-              key={example}
-              type="button"
-              className="chip jp-sm"
-              onClick={() => setQuery(example)}
-            >
-              {example}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {status === 'error' && <p className="error">Couldn&rsquo;t reach the server.</p>}
-      {status === 'missing' && (
-        <p className="muted">
-          No entry for <span className="jp">{literal}</span>. Kana and punctuation aren&rsquo;t in
-          the kanji dictionary.
-        </p>
-      )}
-      {status === 'ok' && kanji && <KanjiDetail kanji={kanji} />}
-    </section>
-  )
+  if (status === 'error') return <p className="error">Couldn&rsquo;t reach the server.</p>
+  if (status === 'missing') {
+    return (
+      <p className="muted">
+        No entry for <span className="jp">{literal}</span>. Kana and punctuation aren&rsquo;t in
+        the kanji dictionary.
+      </p>
+    )
+  }
+  if (status === 'loading' || !kanji) return <p className="muted">Loading…</p>
+  return <KanjiDetail kanji={kanji} />
 }
 
 function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {

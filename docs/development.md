@@ -88,6 +88,12 @@ below 18px, because dense kanji become illegible at the sizes and contrast that 
 The one exception is `--nn-jp-known`, the dimmed colour marking already-saved words. Use the
 `.jp` / `.jp-sm` / `.jp-lg` helpers in `index.css` rather than setting fonts and sizes ad hoc.
 
+**Client-side routes need a server fallback in production.** The frontend is a single-page app:
+`/kanji/待` exists only in the browser, and the Vite dev server already knows to serve
+`index.html` for any unmatched path. Once Spring Boot serves the built bundle, it will need the
+same fallback — otherwise a deep link or a refresh on `/kanji/待` returns a 404 from Spring
+instead of the app. Only `/api/**` should escape that fallback.
+
 **Attribution is a licence condition**, not a courtesy. KANJIDIC2 (EDRDG) and KanjiVG
 (© Ulrich Apel) are both CC BY-SA and are credited in the app footer. The KanjiVG credit is
 also embedded in each stored SVG by the importer, so it survives being copied around.

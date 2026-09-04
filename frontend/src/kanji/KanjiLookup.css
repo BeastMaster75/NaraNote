@@ -27,8 +27,12 @@
   flex-wrap: wrap;
 }
 
+/* A link, not a button — each chip is a real navigation to /kanji/X, so it
+   should be middle-clickable and copyable like any other link. */
 .chip {
-  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  text-decoration: none;
   padding: 0.3rem 0.7rem;
   background: var(--nn-raised);
   border: 1px solid var(--nn-line);
@@ -38,6 +42,13 @@
 
 .chip:hover {
   border-color: var(--nn-kaki);
+}
+
+/* The chip carries .jp-sm, which pins it to full-contrast Japanese; keep the
+   generic link colour from overriding it on hover. */
+.chip:hover,
+.chip:visited {
+  color: var(--nn-jp);
 }
 
 .kanji {

@@ -1,3 +1,4 @@
+import { Link, Route, Routes } from 'react-router'
 import { Logo } from './components/Logo'
 import { KanjiLookup } from './kanji/KanjiLookup'
 import './App.css'
@@ -8,11 +9,24 @@ function toggleTheme() {
   root.setAttribute('data-theme', next)
 }
 
+function NotFound() {
+  return (
+    <section className="card">
+      <h2 className="kicker">Not found</h2>
+      <p className="muted">
+        Nothing here. <Link to="/">Back to kanji lookup</Link>.
+      </p>
+    </section>
+  )
+}
+
 function App() {
   return (
     <main className="shell">
       <header className="head">
-        <Logo size={44} />
+        <Link to="/" className="head-brand" aria-label="NaraNote home">
+          <Logo size={44} />
+        </Link>
         <div className="head-text">
           <h1>NaraNote</h1>
           <p className="muted">Japanese study companion</p>
@@ -22,7 +36,11 @@ function App() {
         </button>
       </header>
 
-      <KanjiLookup />
+      <Routes>
+        <Route path="/" element={<KanjiLookup />} />
+        <Route path="/kanji/:literal" element={<KanjiLookup />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
 
       <footer className="credits small muted">
         Kanji data from{' '}
