@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
+import { BatchAddModal } from './BatchAddModal'
 import { Page } from '../components/Page'
 import './Library.css'
 
@@ -34,6 +35,11 @@ export function Library() {
 
   useEffect(reload, [reload])
 
+  const savedSet = useMemo(
+    () => new Set(kanji?.map((entry) => entry.literal) ?? []),
+    [kanji]
+  )
+
   async function removeKanji(literal: string) {
     await fetch(`/api/library/${encodeURIComponent(literal)}`, { method: 'DELETE' })
     reload()
@@ -56,13 +62,19 @@ export function Library() {
             click a kanji inside one of your saved words. Words themselves live in their
             decks under <Link to="/review">Review</Link>.
           </p>
+          <div className="library-empty-actions">
+            <BatchAddModal savedLiterals={savedSet} onDone={reload} variant="primary" />
+          </div>
         </section>
       ) : (
         <>
-          <p className="muted small">
-            {kanji.length} {kanji.length === 1 ? 'character' : 'characters'}. Handwriting is
-            scheduled under <Link to="/review">Review</Link>.
-          </p>
+          <div className="library-toolbar">
+            <p className="muted small">
+              {kanji.length} {kanji.length === 1 ? 'character' : 'characters'}. Handwriting is
+              scheduled under <Link to="/review">Review</Link>.
+            </p>
+            <BatchAddModal savedLiterals={savedSet} onDone={reload} />
+          </div>
 
           <ul className="library-grid">
             {kanji.map((entry) => (

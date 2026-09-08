@@ -1,0 +1,241 @@
+/* ── Batch Add Modal ─────────────────────────────────────────────────────
+   Native <dialog> — the browser handles backdrop, focus trapping, and
+   Escape-to-close. Styles here follow the NaraNote token system. */
+
+/* CRITICAL: Must be display: none when not open, otherwise author styles
+   override the user-agent stylesheet and render the dialog inline in the DOM. */
+.batch-modal:not([open]) {
+  display: none !important;
+}
+
+/* Backdrop — semi-transparent ink over the page with subtle blur. */
+.batch-modal::backdrop {
+  background: rgba(35, 31, 26, 0.65);
+  backdrop-filter: blur(4px);
+  animation: batchFadeIn 0.2s ease-out;
+}
+
+[data-theme='dark'] .batch-modal::backdrop {
+  background: rgba(0, 0, 0, 0.75);
+}
+
+.batch-modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
+  box-sizing: border-box;
+  border: 1px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-lg);
+  background: var(--nn-raised);
+  box-shadow: var(--nn-shadow-lift);
+  padding: 0;
+  width: min(42rem, calc(100vw - 2rem));
+  max-height: min(38rem, 85vh);
+  overflow: hidden;
+  color: var(--nn-ink);
+  font-family: var(--nn-font-ui);
+  outline: none;
+  z-index: 1000;
+}
+
+.batch-modal[open] {
+  display: flex;
+  flex-direction: column;
+  animation: batchModalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes batchModalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.96) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes batchFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Header ─────────────────────────────────────────────────────────── */
+
+.batch-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.25rem 1.5rem 0.75rem;
+  border-bottom: 1px solid var(--nn-line-soft);
+}
+
+.batch-header h3 {
+  font-family: var(--nn-font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  margin: 0;
+}
+
+.batch-close {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--nn-ink-3);
+  padding: 0.2rem 0.4rem;
+  border-radius: var(--nn-r-sm);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.batch-close:hover {
+  color: var(--nn-ink);
+  background: var(--nn-sunk);
+}
+
+/* ── Body (scrollable) ──────────────────────────────────────────────── */
+
+.batch-body {
+  padding: 1.25rem 1.5rem 1.5rem;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.batch-body p {
+  margin: 0;
+}
+
+/* ── Textarea ───────────────────────────────────────────────────────── */
+
+.batch-input {
+  width: 100%;
+  min-height: 5.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-md);
+  background: var(--nn-sunk);
+  color: var(--nn-jp);
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-sm);
+  line-height: 1.7;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, outline-color 0.15s ease;
+}
+
+.batch-input::placeholder {
+  color: var(--nn-ink-3);
+  font-family: var(--nn-font-ui);
+  font-size: 14px;
+}
+
+.batch-input:focus {
+  outline: 2px solid var(--nn-kaki);
+  outline-offset: -1px;
+  border-color: transparent;
+}
+
+/* ── Preview grid ───────────────────────────────────────────────────── */
+
+.batch-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.batch-preview-label {
+  font-family: var(--nn-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nn-ink-3);
+}
+
+.batch-grid {
+  list-style: none;
+  margin: 0;
+  padding: 4px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  max-height: 13rem;
+  overflow-y: auto;
+}
+
+.batch-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-paper);
+  border: 1px solid var(--nn-line-soft);
+  font-family: var(--nn-font-jp-serif);
+  font-size: var(--nn-jp-xl);
+  line-height: 1;
+  color: var(--nn-jp);
+  transition: transform 0.12s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  user-select: none;
+}
+
+.batch-chip:hover {
+  transform: translateY(-2px);
+  border-color: var(--nn-kaki);
+  box-shadow: var(--nn-shadow);
+}
+
+/* Already in library — dimmed with a subtle matcha tint. */
+.batch-chip.is-saved {
+  opacity: 0.45;
+  border-color: var(--nn-matcha);
+  background: var(--nn-matcha-tint);
+  transform: none;
+  box-shadow: none;
+}
+
+.batch-empty {
+  color: var(--nn-ink-3);
+  font-size: 13px;
+}
+
+/* ── Footer / actions ───────────────────────────────────────────────── */
+
+.batch-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding-top: 0.25rem;
+}
+
+/* ── Result summary ─────────────────────────────────────────────────── */
+
+.batch-result {
+  padding: 1rem 1.25rem;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-matcha-tint);
+  border: 1px solid var(--nn-matcha);
+  font-size: 14px;
+  color: var(--nn-ink);
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  animation: batchFadeIn 0.25s ease-out;
+}
+
+.batch-result-line {
+  margin: 0;
+}
+
+.batch-result strong {
+  font-weight: 600;
+}

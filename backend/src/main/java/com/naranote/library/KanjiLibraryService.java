@@ -76,6 +76,51 @@ public class KanjiLibraryService {
         libraryRepository.deleteByIdUserIdAndIdLiteral(currentUser.id(), literal);
     }
 
+    /** Result of a batch add: how many were added, already present, or unknown. */
+    public record BatchResult(int added, int alreadySaved, int notFound, List<String> notFoundLiterals) {}
+
+    /**
+     * Add many characters at once. Each literal must be a single code point.
+     * Unknown characters and duplicates are counted but never cause a failure.
+     */
+    @Transactional
+    public BatchResult addBatch(List<String> literals) {
+        // Deduplicate while preserving order for a predictable result.
+        List<String> unique = literals.stream().distinct().toList();
+
+        // One query: which of these actually exist in the kanji table?
+        var knownKanji = kanjiRepository.findAllById(unique).stream()
+                .map(Kanji::getLiteral)
+                .collect(Collectors.toSet());
+
+        List<String> notFoundLiterals = unique.stream()
+                .filter(lit -> !knownKanji.contains(lit))
+                .toList();
+
+        // Of the ones that exist, which are already in this user's library?
+        var existingEntries = libraryRepository.findByIdUserIdOrderByAddedAtDesc(currentUser.id())
+                .stream()
+                .map(e -> e.getId().getLiteral())
+                .collect(Collectors.toSet());
+
+        List<KanjiLibraryEntry> toSave = unique.stream()
+                .filter(knownKanji::contains)
+                .filter(lit -> !existingEntries.contains(lit))
+                .map(lit -> new KanjiLibraryEntry(currentUser.id(), lit, "BATCH"))
+                .toList();
+
+        if (!toSave.isEmpty()) {
+            libraryRepository.saveAll(toSave);
+        }
+
+        int alreadySaved = (int) unique.stream()
+                .filter(knownKanji::contains)
+                .filter(existingEntries::contains)
+                .count();
+
+        return new BatchResult(toSave.size(), alreadySaved, notFoundLiterals.size(), notFoundLiterals);
+    }
+
     private static List<String> list(String[] values) {
         return values == null ? List.of() : Arrays.asList(values);
     }

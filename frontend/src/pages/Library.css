@@ -1,5 +1,18 @@
 /* — saved kanji — */
 
+.library-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.library-empty-actions {
+  margin-top: 1.25rem;
+}
+
 .library-grid {
   list-style: none;
   margin: 0;
