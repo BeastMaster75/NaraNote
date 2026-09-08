@@ -1,0 +1,151 @@
+.ks {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+/* Identity band: the character, then just enough to name it. Everything else
+   about the character lives on the kanji page — repeating it here would bury
+   the sentences, which are the reason this page exists. */
+.card.ks-head {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem 2rem;
+}
+
+.ks-glyph {
+  font-family: var(--nn-font-jp-serif);
+  font-size: 118px;
+  line-height: 1;
+  color: var(--nn-jp);
+}
+
+.ks-identity {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.ks-meaning {
+  margin: 0;
+  font-family: var(--nn-font-display);
+  font-size: 1.6rem;
+  line-height: 1.2;
+  color: var(--nn-ink);
+}
+
+.ks-readings {
+  display: flex;
+  gap: 1.5rem;
+  margin: 0;
+  flex-wrap: wrap;
+}
+
+.ks-readings dt {
+  font-family: var(--nn-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nn-ink-3);
+}
+
+.ks-readings dd {
+  margin: 0.2rem 0 0;
+  color: var(--nn-ink);
+}
+
+.ks-links {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.ks-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.ks-empty {
+  max-width: 46ch;
+}
+
+/* Fills the width in columns rather than stretching one line of Japanese across
+   1600px. The min() is load-bearing: a bare minmax(26rem, 1fr) cannot shrink and
+   forces horizontal overflow on a phone. */
+.ks-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(26rem, 100%), 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.ks-sentence {
+  gap: 0.7rem;
+}
+
+/* Family, size and contrast come from `.jp` in index.css — this only sets the
+   leading, which is looser than prose because the sentence is meant to be read
+   slowly and scanned for one character. Not `--nn-jp-lh`: that is the ruby
+   line-height and there is no ruby here. */
+.ks-text {
+  margin: 0;
+  line-height: 1.85;
+}
+
+.ks-provenance {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--nn-line-soft);
+}
+
+/* Quiet until you go looking for it: unfiling is a correction, not a routine
+   action, and a row of × down the page would read as clutter. */
+.ks-unfile {
+  border: none;
+  background: none;
+  cursor: pointer;
+  padding: 0 0.25rem;
+  font-size: 15px;
+  line-height: 1;
+  color: var(--nn-ink-3);
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.ks-sentence:hover .ks-unfile,
+.ks-unfile:focus-visible {
+  opacity: 1;
+}
+
+.ks-unfile:hover {
+  color: var(--nn-bengara);
+}
+
+.ks-source {
+  font-family: var(--nn-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-kaki-tint);
+  color: var(--nn-bengara);
+  margin-left: auto;
+}
+
+@media (max-width: 640px) {
+  .ks-glyph {
+    font-size: 84px;
+  }
+}

@@ -2,6 +2,7 @@ import { Link, Route, Routes } from 'react-router'
 import { NavRail } from './components/NavRail'
 import { Page } from './components/Page'
 import { KanjiLookup } from './kanji/KanjiLookup'
+import { KanjiSentences } from './kanji/KanjiSentences'
 import { MiningPage } from './mining/MiningPage'
 import { Home } from './pages/Home'
 import { Library } from './pages/Library'
@@ -43,6 +44,7 @@ function App() {
           <Route path="/review/session" element={<ReviewSession />} />
           <Route path="/review/deck" element={<DeckWords />} />
           <Route path="/collection" element={<Library />} />
+          <Route path="/collection/:literal" element={<KanjiSentences />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>

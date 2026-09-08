@@ -74,6 +74,112 @@ public class KanjiService {
                 relatedInLibrary(userId, literal));
     }
 
+    /**
+     * Every sentence you have stored that contains this character, from both
+     * directions: the ones you filed under it deliberately, and the ones that came
+     * along with a saved word and happen to contain it.
+     *
+     * <p>Deduplicated on the sentence text, preferring the deliberate filing —
+     * the same sentence reached two ways is still one sentence. Uncapped by
+     * design: this answers "show me all of them".
+     */
+    @Transactional(readOnly = true)
+    public List<KanjiSentence> sentencesContaining(String literal) {
+        long userId = currentUser.id();
+        // The literal is always a single CJK character, so it can carry no LIKE
+        // wildcards of its own and needs no escaping.
+        return jdbc.query(
+                """
+                select id, sentence, term, reading, meaning, source, saved_at
+                from (
+                    select distinct on (sentence)
+                           id, sentence, term, reading, meaning, source, saved_at, filed
+                    from (
+                        select id,
+                               sentence,
+                               null::text as term,
+                               null::text as reading,
+                               null::text as meaning,
+                               source,
+                               created_at as saved_at,
+                               0 as filed
+                        from kanji_sentence
+                        where user_id = ? and literal = ?
+                        union all
+                        select null::bigint, sentence, term, reading, meaning,
+                               source, created_at, 1
+                        from vocab_item
+                        where user_id = ? and sentence is not null and sentence like ?
+                    ) both_ways
+                    order by sentence, filed
+                ) deduped
+                order by saved_at desc
+                """,
+                (rs, row) ->
+                        new KanjiSentence(
+                                (Long) rs.getObject("id"),
+                                rs.getString("sentence"),
+                                rs.getString("term"),
+                                rs.getString("reading"),
+                                rs.getString("meaning"),
+                                rs.getString("source"),
+                                rs.getTimestamp("saved_at").toInstant()),
+                userId,
+                literal,
+                userId,
+                "%" + literal + "%");
+    }
+
+    /**
+     * Unfiles a sentence. Scoped to the current user so an id from someone else's
+     * collection deletes nothing rather than deleting theirs. The character stays
+     * in the library — you filed it on purpose, and dropping it because its last
+     * sentence went would be a surprise.
+     */
+    @Transactional
+    public boolean unfileSentence(long id) {
+        return jdbc.update(
+                        "delete from kanji_sentence where id = ? and user_id = ?",
+                        id,
+                        currentUser.id())
+                > 0;
+    }
+
+    /**
+     * Files a sentence under a character, adding the character to the library if
+     * it isn't there yet. Returns false when the character isn't one we know, so
+     * the controller can 404 rather than let a foreign key blow up as a 500.
+     *
+     * <p>Both writes are idempotent: filing the same sentence twice, or filing one
+     * under a character you already study, changes nothing.
+     */
+    @Transactional
+    public boolean fileSentence(String literal, String sentence, String source) {
+        if (!kanjiRepository.existsById(literal)) {
+            return false;
+        }
+        long userId = currentUser.id();
+        jdbc.update(
+                """
+                insert into kanji_library (user_id, literal, source)
+                values (?, ?, 'MINING')
+                on conflict (user_id, literal) do nothing
+                """,
+                userId,
+                literal);
+        jdbc.update(
+                """
+                insert into kanji_sentence (user_id, literal, sentence, source)
+                values (?, ?, ?, ?)
+                on conflict (user_id, literal, sentence) do nothing
+                """,
+                userId,
+                literal,
+                sentence,
+                source == null || source.isBlank() ? null : source.trim());
+        return true;
+    }
+
     private List<SavedWord> wordsContaining(long userId, String literal) {
         // The literal is always a single CJK character, so it can carry no LIKE
         // wildcards of its own and needs no escaping.

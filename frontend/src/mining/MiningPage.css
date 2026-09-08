@@ -1,26 +1,56 @@
+/* Stacked, not three columns. The old shape pinned a 21rem textarea to the left
+   and left the rest of a 1600px page empty until you pressed Analyse, which read
+   as a broken screen rather than an invitation. */
 .mining {
   display: flex;
-  align-items: flex-start;
+  flex-direction: column;
   gap: 1.25rem;
 }
 
-.mining-input {
-  width: 21rem;
-  flex: none;
+.card.mining-box {
+  gap: 0.8rem;
+}
+
+.mining-controls {
   display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  padding: 1.1rem 1.2rem 1.25rem;
-  background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-lg);
-  box-shadow: var(--nn-shadow);
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+}
+
+.mining-controls .mining-actions {
+  margin-left: auto;
+}
+
+/* Once there's a passage on screen the box has done its job, so it shrinks to a
+   line: what you pasted, how much of it you already knew, and the way back. */
+.card.mining-bar {
+  flex-direction: row;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.mining-excerpt {
+  margin: 0;
+  flex: 1 1 14rem;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--nn-jp);
+}
+
+.mining-bar .mining-stats {
+  flex: 0 1 16rem;
+  padding-top: 0;
+  border-top: none;
 }
 
 .mining-textarea {
   width: 100%;
   resize: vertical;
-  padding: 0.8rem 0.9rem;
+  padding: 1rem 1.1rem;
   line-height: 1.9;
   background: var(--nn-paper);
   border: 1px solid var(--nn-line);
@@ -66,7 +96,14 @@
   background: var(--nn-jp-known);
 }
 
-.mining-output {
+/* Passage and the word you clicked, side by side on a desktop. */
+.mining-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.mining-passage {
   flex: 1;
   min-width: 0;
   display: flex;
@@ -77,6 +114,149 @@
 .mining-detail {
   width: 24rem;
   flex: none;
+}
+
+@media (max-width: 900px) {
+  .mining-stage {
+    flex-direction: column;
+  }
+
+  .mining-detail {
+    width: 100%;
+  }
+}
+
+/* Single characters as targets. Tighter than a word button because they sit
+   inside running text and must not push the line apart. */
+.tok-kanji {
+  cursor: pointer;
+  border-radius: 4px;
+  padding: 0 0.06em;
+  color: var(--nn-jp);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--nn-line);
+}
+
+/* The one sanctioned dim on Japanese: characters already in your collection
+   recede so the passage reads as a diff of what you don't have yet. Still
+   tappable — you may want to file another sentence under one you own. */
+.tok-kanji.is-known {
+  color: var(--nn-jp-known);
+  border-bottom-color: transparent;
+}
+
+.tok-kanji:hover,
+.tok-kanji:focus-visible {
+  background: var(--nn-kaki-tint);
+  border-bottom-color: var(--nn-kaki);
+}
+
+.tok-kanji.is-selected {
+  background: var(--nn-kaki-tint);
+  color: var(--nn-kaki);
+  border-bottom-color: var(--nn-kaki);
+}
+
+.pick-meaning {
+  margin: 0;
+  font-family: var(--nn-font-display);
+  font-size: 1.25rem;
+  line-height: 1.25;
+  color: var(--nn-ink);
+}
+
+.pick-done {
+  color: var(--nn-matcha);
+  font-weight: 600;
+}
+
+.mining-recent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.mining-firstrun {
+  max-width: 62ch;
+}
+
+/* Same card language as the kanji page's sentence list, deliberately: both
+   answer "here is Japanese you have actually met", and they should look like
+   one idea. The min() keeps it from forcing overflow on a phone. */
+.mining-recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(24rem, 100%), 1fr));
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.mining-recent-card {
+  gap: 0.7rem;
+}
+
+/* Characters, not sentences: the landing state should show the collection the
+   page actually builds. The sentences live one tap away on each kanji's page. */
+.mining-collected-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(9rem, 100%), 1fr));
+  gap: 0.75rem;
+}
+
+.card.mining-collected-card {
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+  text-decoration: none;
+  transition: border-color 120ms ease;
+}
+
+.card.mining-collected-card:hover {
+  border-color: var(--nn-kaki);
+}
+
+.mining-collected-glyph {
+  font-family: var(--nn-font-jp-serif);
+  font-size: 44px;
+  line-height: 1.1;
+  color: var(--nn-jp);
+}
+
+.mining-collected-meaning {
+  color: var(--nn-ink-3);
+}
+
+.mining-recent-text {
+  margin: 0;
+  line-height: 1.85;
+}
+
+.mining-recent-meta {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--nn-line-soft);
+}
+
+.mining-recent-source {
+  font-family: var(--nn-font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-kaki-tint);
+  color: var(--nn-bengara);
+  margin-left: auto;
 }
 
 /* Japanese at 19px stops being comfortable somewhere past ~45 characters a
@@ -307,23 +487,7 @@
 }
 
 /* Below three columns' worth of room, stack the lot. */
-@media (max-width: 1280px) {
-  .mining {
-    flex-wrap: wrap;
-  }
-
-  .mining-detail {
-    width: 100%;
-  }
-}
-
-@media (max-width: 900px) {
-  .mining {
-    flex-direction: column;
-  }
-
-  .mining-input,
-  .mining-detail {
-    width: 100%;
-  }
-}
+/* The old three-column layout's breakpoints lived here and outlived it: they
+   still targeted `.mining-input`, which no longer exists, and forced
+   `.mining-detail` to full width at 1280px and below — collapsing the passage
+   to zero on a 1280px screen. Stacking is handled once, beside `.mining-stage`. */

@@ -86,6 +86,15 @@
   color: var(--nn-bengara);
 }
 
+/* The one highlight style, shared by everything that marks a run of Japanese
+   inside a sentence. Overrides the browser default, which is a yellow block. */
+.hit {
+  background: var(--nn-kaki-tint);
+  color: var(--nn-kaki);
+  border-radius: 4px;
+  padding: 0 0.08em;
+}
+
 /* Text for screen readers on controls whose meaning is carried visually — the
    activity cells are coloured squares with nothing readable inside them. */
 .visually-hidden {

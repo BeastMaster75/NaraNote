@@ -67,7 +67,10 @@ export function Library() {
           <ul className="library-grid">
             {kanji.map((entry) => (
               <li key={entry.literal} className="library-cell">
-                <Link to={`/kanji/${entry.literal}`} className="library-card">
+                {/* Into your own sentences, not the dictionary entry: from the
+                    collection the interesting question is where you met it. The
+                    full entry is one link away on that page. */}
+                <Link to={`/collection/${entry.literal}`} className="library-card">
                   <span className="library-glyph">{entry.literal}</span>
                   <span className="library-meta">
                     <span className="library-meaning">
