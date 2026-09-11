@@ -4,11 +4,13 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  min-height: 0;
 }
 
 .panel-block {
   /* Fills the column so the card ends level with whatever sits beside it. */
   flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
@@ -32,6 +34,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 /* — filters — */

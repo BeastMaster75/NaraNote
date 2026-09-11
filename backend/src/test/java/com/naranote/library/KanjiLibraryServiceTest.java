@@ -10,6 +10,7 @@ import static org.mockito.Mockito.when;
 import com.naranote.kanji.Kanji;
 import com.naranote.kanji.KanjiRepository;
 import com.naranote.user.CurrentUser;
+import com.naranote.vocab.RecognitionWordService;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -30,12 +31,17 @@ class KanjiLibraryServiceTest {
     @Mock
     private CurrentUser currentUser;
 
+    @Mock
+    private RecognitionWordService recognitionWordService;
+
     private KanjiLibraryService service;
 
     @BeforeEach
     void setUp() {
         when(currentUser.id()).thenReturn(1L);
-        service = new KanjiLibraryService(libraryRepository, kanjiRepository, currentUser);
+        service =
+                new KanjiLibraryService(
+                        libraryRepository, kanjiRepository, currentUser, recognitionWordService);
     }
 
     private Kanji mockKanji(String literal) {
@@ -73,7 +79,7 @@ class KanjiLibraryServiceTest {
 
         @SuppressWarnings("unchecked")
         ArgumentCaptor<List<KanjiLibraryEntry>> captor = ArgumentCaptor.forClass(List.class);
-        verify(libraryRepository).saveAll(captor.capture());
+        verify(libraryRepository).saveAllAndFlush(captor.capture());
 
         List<KanjiLibraryEntry> saved = captor.getValue();
         assertThat(saved).hasSize(2);
@@ -100,6 +106,6 @@ class KanjiLibraryServiceTest {
         assertThat(result.notFound()).isEqualTo(0);
         assertThat(result.notFoundLiterals()).isEmpty();
 
-        verify(libraryRepository, never()).saveAll(anyList());
+        verify(libraryRepository, never()).saveAllAndFlush(anyList());
     }
 }

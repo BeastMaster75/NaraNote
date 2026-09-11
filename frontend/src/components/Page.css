@@ -10,6 +10,18 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  /* Fills exactly the space .app-main has available instead of growing to
+     content, so a page with an internally-scrolling section (flex: 1;
+     min-height: 0; overflow-y: auto down that section's own ancestor chain)
+     doesn't also make the whole page scroll. overflow-y: auto is load-bearing
+     here, not decorative: without it, a page whose content still exceeds its
+     box (e.g. a kanji with more practice history, words and related
+     characters than most) renders past the box's edge with the default
+     overflow: visible and overlaps whatever comes next — the credits footer —
+     instead of either fitting or scrolling cleanly within its own box. */
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .page-head h2 {

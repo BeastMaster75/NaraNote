@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
 }
 
 /* ── Opening band: capture on the left, what to do next on the right ────────
@@ -275,6 +277,11 @@
     minmax(min(17rem, 100%), 19rem);
   gap: 1.25rem;
   align-items: stretch;
+  /* Bounds the row to .home's available height instead of growing to match
+     whatever the tallest column's content needs — that column (tasks) now
+     scrolls internally within its own card instead. */
+  flex: 1;
+  min-height: 0;
 }
 
 .activity {

@@ -5,6 +5,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .card.mining-box {
@@ -101,11 +103,18 @@
   display: flex;
   align-items: flex-start;
   gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .mining-passage {
   flex: 1;
   min-width: 0;
+  min-height: 0;
+  /* Stretches to the row's own bounded height (unlike .mining-detail, which
+     stays sized to its content) so .sentences inside it has a real height to
+     scroll within, rather than the passage growing to fit all its text. */
+  align-self: stretch;
   display: flex;
   flex-direction: column;
   gap: 1rem;
@@ -299,6 +308,9 @@
   background: var(--nn-raised);
   border: 1px solid var(--nn-line-soft);
   border-radius: var(--nn-r-lg);
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .sentence {

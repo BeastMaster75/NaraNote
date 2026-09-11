@@ -3,6 +3,7 @@ package com.naranote.library;
 import com.naranote.kanji.Kanji;
 import com.naranote.kanji.KanjiRepository;
 import com.naranote.user.CurrentUser;
+import com.naranote.vocab.RecognitionWordService;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -17,14 +18,17 @@ public class KanjiLibraryService {
     private final KanjiLibraryRepository libraryRepository;
     private final KanjiRepository kanjiRepository;
     private final CurrentUser currentUser;
+    private final RecognitionWordService recognitionWordService;
 
     public KanjiLibraryService(
             KanjiLibraryRepository libraryRepository,
             KanjiRepository kanjiRepository,
-            CurrentUser currentUser) {
+            CurrentUser currentUser,
+            RecognitionWordService recognitionWordService) {
         this.libraryRepository = libraryRepository;
         this.kanjiRepository = kanjiRepository;
         this.currentUser = currentUser;
+        this.recognitionWordService = recognitionWordService;
     }
 
     @Transactional(readOnly = true)
@@ -66,7 +70,11 @@ public class KanjiLibraryService {
             return false;
         }
         if (!contains(literal)) {
-            libraryRepository.save(new KanjiLibraryEntry(currentUser.id(), literal, "MANUAL"));
+            // Flushed, not just saved: generateFor reads kanji_library back through a
+            // raw JdbcTemplate query on the same connection, which won't see a
+            // pending Hibernate insert that hasn't been flushed yet.
+            libraryRepository.saveAndFlush(new KanjiLibraryEntry(currentUser.id(), literal, "MANUAL"));
+            recognitionWordService.generateFor(currentUser.id(), literal);
         }
         return true;
     }
@@ -110,7 +118,13 @@ public class KanjiLibraryService {
                 .toList();
 
         if (!toSave.isEmpty()) {
-            libraryRepository.saveAll(toSave);
+            // saveAllAndFlush, not saveAll: generateFor reads kanji_library back
+            // through a raw JdbcTemplate query on the same connection, which won't
+            // see pending Hibernate inserts that haven't been flushed yet.
+            libraryRepository.saveAllAndFlush(toSave);
+            for (KanjiLibraryEntry entry : toSave) {
+                recognitionWordService.generateFor(currentUser.id(), entry.getId().getLiteral());
+            }
         }
 
         int alreadySaved = (int) unique.stream()

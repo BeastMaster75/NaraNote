@@ -57,6 +57,16 @@ export function ReviewSession() {
 
   const word = queue?.[index]
 
+  // Auto-plays once per reveal. cancel() first in case a prior utterance is
+  // still running from a rapid Space-Space navigation.
+  useEffect(() => {
+    if (!revealed || !word || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    const utterance = new SpeechSynthesisUtterance(word.reading || word.term)
+    utterance.lang = 'ja-JP'
+    window.speechSynthesis.speak(utterance)
+  }, [revealed, word])
+
   async function rate(rating: Rating) {
     if (!word) return
     setBusy(true)

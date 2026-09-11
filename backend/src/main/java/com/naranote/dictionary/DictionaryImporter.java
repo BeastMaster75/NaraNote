@@ -68,9 +68,11 @@ public class DictionaryImporter implements ApplicationRunner {
         List<Object[]> entries = new ArrayList<>(BATCH_SIZE);
         List<Object[]> forms = new ArrayList<>(BATCH_SIZE);
         List<Object[]> senses = new ArrayList<>(BATCH_SIZE);
+        List<Object[]> formKanji = new ArrayList<>(BATCH_SIZE);
         int entryCount = 0;
         int formCount = 0;
         int senseCount = 0;
+        int formKanjiCount = 0;
 
         ObjectMapper mapper =
                 JsonMapper.builder()
@@ -92,7 +94,11 @@ public class DictionaryImporter implements ApplicationRunner {
                     for (JsonNode k : word.path("kanji")) {
                         boolean common = k.path("common").asBoolean(false);
                         anyCommon |= common;
-                        wordForms.add(new Object[] {id, k.path("text").asText(), false, common});
+                        String text = k.path("text").asText();
+                        wordForms.add(new Object[] {id, text, false, common});
+                        for (int literal : kanjiCodePoints(text)) {
+                            formKanji.add(new Object[] {id, new String(Character.toChars(literal)), text});
+                        }
                     }
                     for (JsonNode k : word.path("kana")) {
                         boolean common = k.path("common").asBoolean(false);
@@ -131,6 +137,7 @@ public class DictionaryImporter implements ApplicationRunner {
                         entryCount += flushEntries(entries);
                         formCount += flushForms(forms);
                         senseCount += flushSenses(senses);
+                        formKanjiCount += flushFormKanji(formKanji);
                     }
                 }
                 break;
@@ -139,12 +146,14 @@ public class DictionaryImporter implements ApplicationRunner {
         entryCount += flushEntries(entries);
         formCount += flushForms(forms);
         senseCount += flushSenses(senses);
+        formKanjiCount += flushFormKanji(formKanji);
 
         log.info(
-                "Imported {} entries, {} forms, {} senses",
+                "Imported {} entries, {} forms, {} senses, {} form-kanji links",
                 entryCount,
                 formCount,
-                senseCount);
+                senseCount,
+                formKanjiCount);
 
         System.exit(SpringApplication.exit(context, () -> 0));
     }
@@ -167,6 +176,15 @@ public class DictionaryImporter implements ApplicationRunner {
         List<String> out = new ArrayList<>();
         array.forEach(node -> out.add(node.asText()));
         return out.toArray(String[]::new);
+    }
+
+    /** The CJK ideograph range TokenizerService uses, deduplicated per form. */
+    private static List<Integer> kanjiCodePoints(String text) {
+        return text.codePoints()
+                .filter(cp -> cp >= 0x3400 && cp <= 0x9FFF)
+                .distinct()
+                .boxed()
+                .toList();
     }
 
     private int flushEntries(List<Object[]> batch) {
@@ -217,6 +235,23 @@ public class DictionaryImporter implements ApplicationRunner {
                                 col,
                                 ps.getConnection().createArrayOf("text", (String[]) row[col - 1]));
                     }
+                }));
+        batch.clear();
+        return n;
+    }
+
+    private int flushFormKanji(List<Object[]> batch) {
+        int n = batch.size();
+        if (n == 0) return 0;
+        jdbc.batchUpdate(
+                """
+                insert into dict_form_kanji (entry_id, literal, form) values (?, ?, ?)
+                on conflict do nothing
+                """,
+                setter(batch, (ps, row) -> {
+                    ps.setString(1, (String) row[0]);
+                    ps.setString(2, (String) row[1]);
+                    ps.setString(3, (String) row[2]);
                 }));
         batch.clear();
         return n;

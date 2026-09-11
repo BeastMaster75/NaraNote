@@ -2,6 +2,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
 }
 
 /* Identity band: the character, then just enough to name it. Everything else
@@ -67,6 +69,8 @@
   display: flex;
   flex-direction: column;
   gap: 0.9rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .ks-empty {
@@ -84,6 +88,10 @@
   grid-template-columns: repeat(auto-fill, minmax(min(26rem, 100%), 1fr));
   gap: 0.9rem;
   align-items: start;
+  align-content: start;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .ks-sentence {

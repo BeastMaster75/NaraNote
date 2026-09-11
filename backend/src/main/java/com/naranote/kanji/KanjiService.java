@@ -6,6 +6,7 @@ import com.naranote.kanji.KanjiResponse.SavedWord;
 import com.naranote.kanji.KanjiResponse.Yours;
 import com.naranote.library.KanjiLibraryService;
 import com.naranote.user.CurrentUser;
+import com.naranote.vocab.RecognitionWordService;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Optional;
@@ -20,6 +21,7 @@ public class KanjiService {
     private final KanjiStrokeOrderRepository strokeOrderRepository;
     private final KanjiLibraryService libraryService;
     private final CurrentUser currentUser;
+    private final RecognitionWordService recognitionWordService;
     // Radicals and the personal blocks are plain lookups with no behaviour of
     // their own; entities and repositories for them would be pure ceremony.
     private final JdbcTemplate jdbc;
@@ -29,11 +31,13 @@ public class KanjiService {
             KanjiStrokeOrderRepository strokeOrderRepository,
             KanjiLibraryService libraryService,
             CurrentUser currentUser,
+            RecognitionWordService recognitionWordService,
             JdbcTemplate jdbc) {
         this.kanjiRepository = kanjiRepository;
         this.strokeOrderRepository = strokeOrderRepository;
         this.libraryService = libraryService;
         this.currentUser = currentUser;
+        this.recognitionWordService = recognitionWordService;
         this.jdbc = jdbc;
     }
 
@@ -159,14 +163,18 @@ public class KanjiService {
             return false;
         }
         long userId = currentUser.id();
-        jdbc.update(
-                """
-                insert into kanji_library (user_id, literal, source)
-                values (?, ?, 'MINING')
-                on conflict (user_id, literal) do nothing
-                """,
-                userId,
-                literal);
+        int added =
+                jdbc.update(
+                        """
+                        insert into kanji_library (user_id, literal, source)
+                        values (?, ?, 'MINING')
+                        on conflict (user_id, literal) do nothing
+                        """,
+                        userId,
+                        literal);
+        if (added > 0) {
+            recognitionWordService.generateFor(userId, literal);
+        }
         jdbc.update(
                 """
                 insert into kanji_sentence (user_id, literal, sentence, source)

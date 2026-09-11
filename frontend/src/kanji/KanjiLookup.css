@@ -106,11 +106,17 @@
   color: var(--nn-ink);
 }
 
+/* A fixed row height, the same for every kanji regardless of how much data it
+   has — a character with one reading and no words gets the same card size as
+   one with a full page of both, rather than the card resizing per-character.
+   stretch (not flex-start) makes all three columns actually reach that height
+   instead of sizing to their own shorter content. */
 .kanji-body {
   display: flex;
   gap: 2rem;
   flex-wrap: wrap;
-  align-items: flex-start;
+  align-items: stretch;
+  height: 28rem;
 }
 
 /* Sections flow into columns as the page widens rather than one stretching to
@@ -121,6 +127,8 @@
   grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
   align-content: start;
   gap: 1.1rem 2rem;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .kanji-section {
@@ -167,10 +175,15 @@
   color: var(--nn-jp);
 }
 
-/* The personal half of the page: your words, your attempts, your other kanji. */
+/* The personal half of the page: your words, your attempts, your other kanji.
+   min-height: 0 + overflow-y: auto is a safety net for a kanji with more
+   Practice/Shares content than 日 (today's largest) — .your-words already
+   caps itself, but the sections around it aren't individually capped. */
 .kanji-yours {
   flex: 1 1 18rem;
   min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
@@ -232,6 +245,12 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+  /* Unbounded before the Reading deck existed, this list was always short
+     enough not to matter. A common kanji can now have a full page of words —
+     capped and scrolled on its own so Practice/Shares Parts With beside it
+     stay put rather than the whole "Yours" column scrolling as one block. */
+  max-height: min(15rem, 30vh);
+  overflow-y: auto;
 }
 
 .your-words li {

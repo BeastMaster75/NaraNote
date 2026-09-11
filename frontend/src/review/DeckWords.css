@@ -19,6 +19,10 @@
   grid-template-columns: repeat(auto-fill, minmax(min(29rem, 100%), 1fr));
   gap: 0.6rem;
   align-items: start;
+  align-content: start;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .word-row {
@@ -89,6 +93,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
 }
 
 .deckwords-bar {
