@@ -1,0 +1,10 @@
+# Build context for the prod Dockerfile (repo root). data/ especially must
+# never land in an image layer — it's licensed third-party data, gitignored
+# on purpose and mounted in at runtime instead.
+data/
+.git/
+.idea/
+.vscode/
+backend/target/
+frontend/node_modules/
+frontend/dist/

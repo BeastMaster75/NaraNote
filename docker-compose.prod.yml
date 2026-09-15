@@ -1,0 +1,47 @@
+# The deployable shape: one app container (frontend built and embedded into
+# the backend jar, see the root Dockerfile) plus the database. No frontend
+# service, no bind mounts, no dev-only ports.
+#
+#   docker compose -f docker-compose.prod.yml up --build
+#
+services:
+  db:
+    image: postgres:16
+    container_name: naranote-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: naranote
+      POSTGRES_USER: ${POSTGRES_USER:-naranote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-naranote}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8"
+    volumes:
+      - naranote-pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-naranote} -d naranote"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: naranote-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-naranote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-naranote}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/naranote
+      NARANOTE_DATA_DIR: /data
+    ports:
+      - "8080:8080"
+    # Optional: only needed to run the one-off --import-kanji /
+    # --import-dictionary commands against a prod-shaped image.
+    volumes:
+      - ./data:/data
+
+volumes:
+  naranote-pgdata:

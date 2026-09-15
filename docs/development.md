@@ -8,7 +8,8 @@
 
 ## Prerequisites
 
-JDK 21, Node.js 20+, Docker Desktop.
+JDK 21, Node.js 20+, Docker Desktop — or just Docker Desktop if you'd rather run everything in
+containers; see [Running it with Docker](#running-it-with-docker) below.
 
 ## Running it
 
@@ -61,6 +62,28 @@ real and not a bug: about a third of the characters KANJIDIC2 knows have no Kanj
 KANJIDIC2 doesn't. Each source is filtered against the kanji table rather than allowed to fail
 on a foreign key partway through.
 
+**1c. JLPT levels** (once)
+
+`--import-kanji` populates `jlpt_level` from KANJIDIC2's own `jlpt` field, but that's the
+pre-2010 4-level scale, frozen since the test's 2010 revision to the current 5-level N1–N5
+system — this step overwrites it with a real modern-scale source,
+[davidluzgouveia/kanji-data](https://github.com/davidluzgouveia/kanji-data) (MIT). Download
+`kanji.json` from that repo's `master` branch (~5.5 MB) into `data/jlpt-kanji-data.json`
+(renamed on save — `data/` already has a `kanji*` file), then:
+
+```bash
+cd backend
+./mvnw spring-boot:run -Dspring-boot.run.arguments=--import-jlpt
+```
+
+Clears `jlpt_level` on every row first, then backfills roughly 2,200 kanji across N1–N5 from the
+new source — everything outside that source's coverage stays `null` rather than keeping a stale
+old-scale guess. In Docker, run it via `docker compose exec backend`, same as the other
+importers (see [Running it with Docker](#running-it-with-docker)); add
+`--spring.main.web-application-type=none` to the arguments if the `backend` service is already
+running, so the importer's own Spring context doesn't try to bind the same port.
+on a foreign key partway through.
+
 **2. Backend**
 
 ```bash
@@ -82,6 +105,42 @@ npm run dev
 `http://localhost:5173`. Requests to `/api/*` are proxied to the backend (`vite.config.ts`), so
 the browser only ever talks to one origin and there is no CORS to configure.
 
+## Running it with Docker
+
+The host-only workflow above still works unchanged — this is an alternative, not a replacement.
+
+**Dev** — db, backend and frontend all containerized, both app services hot-reloading:
+
+```bash
+docker compose up
+```
+
+`http://localhost:5173` for the app, same as running it on the host. No local JDK, Maven or
+Node needed — the images carry those. Backend edits restart via `spring-boot-devtools`; frontend
+edits hot-reload via Vite HMR, same as today.
+
+Reference-data import (step 1b above) runs the same commands, just inside the container, against
+the bind-mounted `./data`. Unlike the host workflow, the `backend` service is already running on
+8080 by the time you'd run this — add `--spring.main.web-application-type=none` so the importer's
+own (otherwise-unused) Spring context doesn't try to bind the same port and fail to start:
+
+```bash
+docker compose exec backend ./mvnw spring-boot:run "-Dspring-boot.run.arguments=--import-kanji --spring.main.web-application-type=none"
+docker compose exec backend ./mvnw spring-boot:run "-Dspring-boot.run.arguments=--import-dictionary --spring.main.web-application-type=none"
+```
+
+**Prod** — one deployable image: the frontend build gets embedded into the backend jar's
+`static/` resources at build time, so Spring Boot serves both the app and the API from a single
+container on port 8080, no separate frontend service.
+
+```bash
+docker compose -f docker-compose.prod.yml up --build
+```
+
+Tests are skipped in that image build (`-DskipTests`), deliberately — `NaraNoteApplicationTests`
+needs a live Postgres, and a `docker build` stage has no network path to one. `mvnw test` against
+the running `db` service is still the real test path, same as always.
+
 ## Things worth knowing
 
 **Flyway owns the schema.** Hibernate runs with `ddl-auto: validate` — it checks that entities
@@ -102,10 +161,11 @@ The one exception is `--nn-jp-known`, the dimmed colour marking already-saved wo
 `.jp` / `.jp-sm` / `.jp-lg` helpers in `index.css` rather than setting fonts and sizes ad hoc.
 
 **Client-side routes need a server fallback in production.** The frontend is a single-page app:
-`/kanji/待` exists only in the browser, and the Vite dev server already knows to serve
-`index.html` for any unmatched path. Once Spring Boot serves the built bundle, it will need the
-same fallback — otherwise a deep link or a refresh on `/kanji/待` returns a 404 from Spring
-instead of the app. Only `/api/**` should escape that fallback.
+`/kanji/待` exists only in the browser. The Vite dev server already knows to serve `index.html`
+for any unmatched path; in the prod image, `SpaController` (`com.naranote.web`) does the same by
+forwarding non-API, non-asset GETs to `/index.html`, so a deep link or refresh on `/kanji/待`
+loads the app instead of 404ing. `/api/**` is unaffected — Spring's handler mapping prefers the
+`RestController`s' literal path registrations over the controller's variable catch-all.
 
 **Anki export is written in Java — no Python, no external tool.** An `.apkg` is a
 zip holding `collection.anki2`, a SQLite database in Anki's schema 11, plus an

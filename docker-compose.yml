@@ -20,5 +20,45 @@ services:
       timeout: 5s
       retries: 10
 
+  backend:
+    build: ./backend
+    container_name: naranote-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-naranote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-naranote}
+      # Service name and the container's own port, not the 5433 host mapping
+      # meant for connections from outside the compose network.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/naranote
+      NARANOTE_DATA_DIR: /data
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./backend:/app
+      - naranote-m2:/root/.m2
+      - ./data:/data
+
+  frontend:
+    build: ./frontend
+    container_name: naranote-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      VITE_API_PROXY_TARGET: http://backend:8080
+      VITE_USE_POLLING: "1"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      # Shadows the bind mount above at this one path — node_modules is
+      # built inside the container (npm ci in frontend/Dockerfile) and must
+      # not be replaced by whatever npm installed on the host.
+      - /app/node_modules
+
 volumes:
   naranote-pgdata:
+  naranote-m2:

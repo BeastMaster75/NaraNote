@@ -21,6 +21,12 @@ const CREDITS = [
     body: 'Word entries, readings and meanings used across mining, lookup and the Reading deck.',
     license: 'EDRDG, CC BY-SA 4.0',
   },
+  {
+    name: 'kanji-data',
+    href: 'https://github.com/davidluzgouveia/kanji-data',
+    body: 'Modern N1–N5 JLPT levels, built on Jonathan Waller’s JLPT resources.',
+    license: 'David Gouveia, MIT',
+  },
 ]
 
 const THEMES: { value: Theme; label: string }[] = [

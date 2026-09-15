@@ -3,7 +3,7 @@ spring:
     name: naranote
 
   datasource:
-    url: jdbc:postgresql://localhost:5433/naranote
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5433/naranote}
     username: ${POSTGRES_USER:naranote}
     password: ${POSTGRES_PASSWORD:naranote}
 
