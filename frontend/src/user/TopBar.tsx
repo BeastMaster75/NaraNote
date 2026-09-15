@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router'
+import { NavLink, useNavigate } from 'react-router'
 import { useUser, type Theme } from './UserContext'
 import './TopBar.css'
 
@@ -22,8 +22,14 @@ const LABEL: Record<Theme, string> = {
  * account settings; this fills the first with the second.
  */
 export function TopBar() {
-  const { me, save } = useUser()
+  const { me, save, logout } = useUser()
+  const navigate = useNavigate()
   const initial = Array.from(me.displayName.trim())[0]?.toUpperCase() ?? '?'
+
+  async function handleLogout() {
+    await logout()
+    navigate('/login', { replace: true })
+  }
 
   return (
     <header className="topbar">
@@ -47,6 +53,28 @@ export function TopBar() {
             aria-hidden="true"
           >
             <path d={ICON[me.theme]} />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          className="topbar-btn"
+          onClick={handleLogout}
+          title="Log out"
+          aria-label="Log out"
+        >
+          <svg
+            width="17"
+            height="17"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" />
           </svg>
         </button>
 

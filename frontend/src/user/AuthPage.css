@@ -1,0 +1,33 @@
+/* .card loads its own gap from App.css, which loads after component CSS —
+   the combined selector (not a second .auth-form-only rule) is what lets
+   this actually win rather than silently losing the cascade. */
+.card.auth-form {
+  gap: 1.1rem;
+  width: 100%;
+  max-width: 26rem;
+  margin-inline: auto;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 13px;
+  color: var(--nn-ink-2);
+}
+
+.auth-field input {
+  padding: 0.6rem 0.9rem;
+  font: inherit;
+  font-size: 14px;
+  color: var(--nn-ink);
+  caret-color: var(--nn-kaki);
+  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-md);
+}
+
+.auth-field input:focus-visible {
+  outline: 2px solid var(--nn-kaki);
+  outline-offset: 1px;
+}

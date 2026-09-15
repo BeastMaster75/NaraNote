@@ -7,6 +7,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.Duration;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -23,10 +25,18 @@ import org.springframework.web.server.ResponseStatusException;
 /**
  * Register, login, logout. Phase 1 only — no email confirmation yet (that's a
  * later phase), so accounts are usable the moment they're created.
+ *
+ * <p>Logs which email attempted what, and whether it succeeded — never the
+ * password. {@link com.naranote.logging.RequestLoggingInterceptor} already
+ * logs every request generically (method, path, status); this fills in the
+ * "which account" detail that a generic access log can't safely infer from a
+ * request body that might contain a password.
  */
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
+
+    private static final Logger log = LoggerFactory.getLogger(AuthController.class);
 
     static final String COOKIE_NAME = "naranote_session";
     private static final Duration COOKIE_MAX_AGE = Duration.ofDays(30);
@@ -56,6 +66,7 @@ public class AuthController {
                         Boolean.class,
                         email);
         if (Boolean.TRUE.equals(exists)) {
+            log.warn("Registration attempt for already-registered email: {}", email);
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
         }
 
@@ -71,6 +82,7 @@ public class AuthController {
                         email,
                         passwordEncoder.encode(request.password()));
 
+        log.info("Registered new account: user={} email={}", userId, email);
         setSessionCookie(sessionService.issue(userId), response);
     }
 
@@ -84,14 +96,21 @@ public class AuthController {
                         email);
 
         if (rows.isEmpty()) {
+            // Same message and same log detail as a wrong password below — not
+            // distinguishing "no such account" from "wrong password" avoids
+            // letting either the response or the log confirm which emails have
+            // an account here.
+            log.warn("Login failed: {}", email);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong email or password");
         }
         String storedHash = (String) rows.getFirst()[1];
         if (storedHash == null || !passwordEncoder.matches(request.password(), storedHash)) {
+            log.warn("Login failed: {}", email);
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Wrong email or password");
         }
 
         long userId = (long) rows.getFirst()[0];
+        log.info("Login succeeded: user={} email={}", userId, email);
         setSessionCookie(sessionService.issue(userId), response);
     }
 
@@ -99,6 +118,7 @@ public class AuthController {
     public void logout(
             @CookieValue(name = COOKIE_NAME, required = false) String token,
             HttpServletResponse response) {
+        sessionService.resolve(token).ifPresent(userId -> log.info("Logout: user={}", userId));
         sessionService.revoke(token);
         response.addHeader(
                 HttpHeaders.SET_COOKIE,

@@ -1,4 +1,4 @@
-import { Link, Route, Routes } from 'react-router'
+import { Link, Outlet, Route, Routes } from 'react-router'
 import { NavRail } from './components/NavRail'
 import { Page } from './components/Page'
 import { KanjiLookup } from './kanji/KanjiLookup'
@@ -10,6 +10,9 @@ import { PracticeSession } from './practice/PracticeSession'
 import { DeckWords } from './review/DeckWords'
 import { ReviewHub } from './review/ReviewHub'
 import { ReviewSession } from './review/ReviewSession'
+import { LoginPage } from './user/LoginPage'
+import { RegisterPage } from './user/RegisterPage'
+import { RequireAuth } from './user/RequireAuth'
 import { SettingsPage } from './user/SettingsPage'
 import { TopBar } from './user/TopBar'
 import './App.css'
@@ -26,7 +29,12 @@ function NotFound() {
   )
 }
 
-function App() {
+/**
+ * The nav rail, top bar and credits line are chrome for the authenticated
+ * app — a layout route so /login and /register (outside RequireAuth) don't
+ * render a nav rail full of links that would just bounce back to /login.
+ */
+function AppShell() {
   return (
     <div className="app">
       <NavRail />
@@ -34,7 +42,27 @@ function App() {
       <div className="app-main">
         <TopBar />
 
-        <Routes>
+        <Outlet />
+
+        {/* The full attribution lives once on Settings — CC BY-SA still wants a
+            mention wherever the licensed data actually shows, so this stays,
+            just as quiet as something almost nobody needs to click gets to be. */}
+        <footer className="credits small muted">
+          <Link to="/settings#credits">Data credits</Link>
+        </footer>
+      </div>
+    </div>
+  )
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/register" element={<RegisterPage />} />
+
+      <Route element={<RequireAuth />}>
+        <Route element={<AppShell />}>
           <Route path="/" element={<Home />} />
           <Route path="/kanji" element={<KanjiLookup />} />
           <Route path="/kanji/:literal" element={<KanjiLookup />} />
@@ -47,16 +75,9 @@ function App() {
           <Route path="/collection/:literal" element={<KanjiSentences />} />
           <Route path="/settings" element={<SettingsPage />} />
           <Route path="*" element={<NotFound />} />
-        </Routes>
-
-        {/* The full attribution lives once on Settings — CC BY-SA still wants a
-            mention wherever the licensed data actually shows, so this stays,
-            just as quiet as something almost nobody needs to click gets to be. */}
-        <footer className="credits small muted">
-          <Link to="/settings#credits">Data credits</Link>
-        </footer>
-      </div>
-    </div>
+        </Route>
+      </Route>
+    </Routes>
   )
 }
 
