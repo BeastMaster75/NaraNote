@@ -37,6 +37,14 @@
 			<groupId>org.flywaydb</groupId>
 			<artifactId>flyway-database-postgresql</artifactId>
 		</dependency>
+		<!-- Just the encoder (BCryptPasswordEncoder), not spring-boot-starter-security:
+		     the full starter's auto-configured filter chain, default login page and
+		     CSRF handling would fight the hand-rolled session/interceptor auth built
+		     here to match the rest of this backend's explicit, no-framework-magic style. -->
+		<dependency>
+			<groupId>org.springframework.security</groupId>
+			<artifactId>spring-security-crypto</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
