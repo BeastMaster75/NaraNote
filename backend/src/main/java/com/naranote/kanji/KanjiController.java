@@ -45,6 +45,19 @@ public class KanjiController {
     }
 
     /**
+     * Every word in the collection containing this character. Unlike
+     * {@link KanjiResponse.Yours#words()} this is not capped or balanced
+     * across readings — the collection page this feeds answers "show me
+     * every word," the dictionary page's Yours panel answers "show me a
+     * sample."
+     */
+    @GetMapping("/{literal}/words")
+    public List<KanjiResponse.SavedWord> words(@PathVariable String literal) {
+        requireSingleCharacter(literal);
+        return kanjiService.allWordsContaining(literal);
+    }
+
+    /**
      * Files a sentence under this character and puts the character in the
      * library. The kanji-first half of mining: you pick the character you care
      * about in a passage, and the sentence follows it — rather than saving a word

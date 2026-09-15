@@ -1,12 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { BatchAddModal } from './BatchAddModal'
+import { KanjiFilterBar } from './KanjiFilterBar'
 import { Page } from '../components/Page'
 import './Library.css'
 
 type KanjiEntry = {
   literal: string
   strokeCount: number | null
+  jlptLevel: number | null
   meanings: string[]
   onReadings: string[]
   kunReadings: string[]
@@ -25,6 +27,7 @@ type KanjiEntry = {
 export function Library() {
   const [kanji, setKanji] = useState<KanjiEntry[] | null>(null)
   const [error, setError] = useState(false)
+  const [jlptLevel, setJlptLevel] = useState<number | null>(null)
 
   const reload = useCallback(() => {
     fetch('/api/library')
@@ -38,6 +41,11 @@ export function Library() {
   const savedSet = useMemo(
     () => new Set(kanji?.map((entry) => entry.literal) ?? []),
     [kanji]
+  )
+
+  const filteredKanji = useMemo(
+    () => (jlptLevel === null ? kanji : kanji?.filter((entry) => entry.jlptLevel === jlptLevel)),
+    [kanji, jlptLevel]
   )
 
   async function removeKanji(literal: string) {
@@ -70,14 +78,21 @@ export function Library() {
         <>
           <div className="library-toolbar">
             <p className="muted small">
-              {kanji.length} {kanji.length === 1 ? 'character' : 'characters'}. Handwriting is
-              scheduled under <Link to="/review">Review</Link>.
+              {jlptLevel === null
+                ? `${kanji.length} ${kanji.length === 1 ? 'character' : 'characters'}`
+                : `${filteredKanji?.length ?? 0} of ${kanji.length} characters`}
+              . Handwriting is scheduled under <Link to="/review">Review</Link>.
             </p>
+            <KanjiFilterBar jlptLevel={jlptLevel} onJlptLevelChange={setJlptLevel} />
             <BatchAddModal savedLiterals={savedSet} onDone={reload} />
           </div>
 
+          {filteredKanji?.length === 0 && (
+            <p className="muted small">No N{jlptLevel} kanji in your collection yet.</p>
+          )}
+
           <ul className="library-grid">
-            {kanji.map((entry) => (
+            {filteredKanji?.map((entry) => (
               <li key={entry.literal} className="library-cell">
                 {/* Into your own sentences, not the dictionary entry: from the
                     collection the interesting question is where you met it. The

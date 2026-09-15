@@ -65,6 +65,51 @@
   flex-wrap: wrap;
 }
 
+.ks-words-section {
+  gap: 0.9rem;
+}
+
+/* Uncapped by design, same as .ks-list below — but words tend to run shorter
+   and denser than sentences, so this caps its own height and scrolls
+   internally rather than taking a full flex share of the page. */
+.ks-words {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-height: min(20rem, 40vh);
+  overflow-y: auto;
+}
+
+.ks-words li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-sunk);
+}
+
+.ks-word-term {
+  color: var(--nn-jp);
+}
+
+.ks-word-meaning {
+  font-size: 12.5px;
+  color: var(--nn-ink-2);
+}
+
+/* The sentence it was met in, when there is one — recognition-deck words
+   generated from the kanji collection don't carry one. */
+.ks-word-sentence {
+  margin-top: 0.2rem;
+  color: var(--nn-jp);
+  opacity: 0.8;
+  line-height: 1.7;
+}
+
 .ks-body {
   display: flex;
   flex-direction: column;

@@ -405,7 +405,16 @@ function YoursPanel({ kanji }: { kanji: KanjiResponse }) {
           <ul className="your-words">
             {words.map((word) => (
               <li key={word.term}>
-                <span className="your-word jp-sm">{word.term}</span>
+                <span className="your-word jp-sm jp-ruby">
+                  {word.reading ? (
+                    <ruby>
+                      {word.term}
+                      <rt>{word.reading}</rt>
+                    </ruby>
+                  ) : (
+                    word.term
+                  )}
+                </span>
                 <span className="your-word-meaning">{word.meaning}</span>
                 {word.sentence && <span className="your-word-sentence jp-sm">{word.sentence}</span>}
               </li>

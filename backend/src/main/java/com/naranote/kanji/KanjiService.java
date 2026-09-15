@@ -5,10 +5,15 @@ import com.naranote.kanji.KanjiResponse.Related;
 import com.naranote.kanji.KanjiResponse.SavedWord;
 import com.naranote.kanji.KanjiResponse.Yours;
 import com.naranote.library.KanjiLibraryService;
+import com.naranote.mining.TokenizerService;
 import com.naranote.user.CurrentUser;
 import com.naranote.vocab.RecognitionWordService;
 import java.sql.Timestamp;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -58,7 +63,7 @@ public class KanjiService {
                                                 .findById(literal)
                                                 .map(KanjiStrokeOrder::getSvg)
                                                 .orElse(null),
-                                        yours(literal)));
+                                        yours(kanji)));
     }
 
     private List<String> radicals(String literal) {
@@ -69,11 +74,12 @@ public class KanjiService {
     }
 
     /** The part of the page that is about the reader rather than the character. */
-    private Yours yours(String literal) {
+    private Yours yours(Kanji kanji) {
         long userId = currentUser.id();
+        String literal = kanji.getLiteral();
         return new Yours(
                 libraryService.contains(literal),
-                wordsContaining(userId, literal),
+                wordsContaining(userId, literal, kanji.getOnReadings(), kanji.getKunReadings()),
                 practice(userId, literal),
                 relatedInLibrary(userId, literal));
     }
@@ -135,6 +141,34 @@ public class KanjiService {
     }
 
     /**
+     * Every word in the collection containing this character, newest first.
+     * Unlike {@link #wordsContaining} (which feeds the dictionary page's Yours
+     * panel, capped and balanced across readings for a quick glance) this is
+     * uncapped — the collection page this feeds answers "show me everything
+     * I've met with this character," same as {@link #sentencesContaining}.
+     */
+    @Transactional(readOnly = true)
+    public List<SavedWord> allWordsContaining(String literal) {
+        long userId = currentUser.id();
+        // The literal is always a single CJK character, so it can carry no LIKE
+        // wildcards of its own and needs no escaping.
+        return jdbc.query(
+                """
+                select term, reading, meaning, sentence from vocab_item
+                where user_id = ? and term like ?
+                order by created_at desc
+                """,
+                (rs, row) ->
+                        new SavedWord(
+                                rs.getString("term"),
+                                rs.getString("reading"),
+                                rs.getString("meaning"),
+                                rs.getString("sentence")),
+                userId,
+                "%" + literal + "%");
+    }
+
+    /**
      * Unfiles a sentence. Scoped to the current user so an id from someone else's
      * collection deletes nothing rather than deleting theirs. The character stays
      * in the library — you filed it on purpose, and dropping it because its last
@@ -188,24 +222,108 @@ public class KanjiService {
         return true;
     }
 
-    private List<SavedWord> wordsContaining(long userId, String literal) {
+    private static final int WORD_CANDIDATE_LIMIT = 60;
+    private static final int WORDS_PER_READING = 2;
+
+    record CandidateWord(String term, String reading, String meaning, String sentence) {}
+
+    /**
+     * Every reading the kanji has gets its own two slots, ranked by how common
+     * the word is within that reading — a flat "most recent 12" let one
+     * productive reading (usually a kun'yomi that forms lots of compounds) crowd
+     * out the rest, so a common kanji's on'yomi could go entirely unrepresented.
+     *
+     * <p>JMdict gives a word's whole reading, not which part of it belongs to
+     * this kanji, so matching is a best-effort substring check against the
+     * kanji's own declared readings rather than a real decomposition — rendaku
+     * (人 as びと in 恋人) and irregular compounds (明日 as あした) won't match and
+     * land in a shared "other" bucket, capped the same as any real reading.
+     */
+    private List<SavedWord> wordsContaining(
+            long userId, String literal, String[] onReadings, String[] kunReadings) {
         // The literal is always a single CJK character, so it can carry no LIKE
         // wildcards of its own and needs no escaping.
-        return jdbc.query(
-                """
-                select term, reading, meaning, sentence from vocab_item
-                where user_id = ? and term like ?
-                order by created_at desc
-                limit 12
-                """,
-                (rs, row) ->
+        List<CandidateWord> candidates =
+                jdbc.query(
+                        """
+                        select v.term, v.reading, v.meaning, v.sentence
+                        from vocab_item v
+                        left join dict_entry de on de.id = v.dict_entry_id
+                        where v.user_id = ? and v.term like ?
+                        order by de.common desc nulls last,
+                                 de.sense_count desc nulls last,
+                                 v.created_at desc
+                        limit ?
+                        """,
+                        (rs, row) ->
+                                new CandidateWord(
+                                        rs.getString("term"),
+                                        rs.getString("reading"),
+                                        rs.getString("meaning"),
+                                        rs.getString("sentence")),
+                        userId,
+                        "%" + literal + "%",
+                        WORD_CANDIDATE_LIMIT);
+
+        return bucketByReading(candidates, onReadings, kunReadings);
+    }
+
+    /**
+     * Pure and package-private so it's testable without a database: given
+     * candidates already ranked by commonality, keep the first
+     * {@value #WORDS_PER_READING} per reading bucket.
+     */
+    static List<SavedWord> bucketByReading(
+            List<CandidateWord> candidates, String[] onReadings, String[] kunReadings) {
+        List<String> normalizedOn =
+                Arrays.stream(onReadings == null ? new String[0] : onReadings)
+                        .map(TokenizerService::toHiragana)
+                        .toList();
+        List<String> normalizedKun =
+                Arrays.stream(kunReadings == null ? new String[0] : kunReadings)
+                        .map(KanjiService::kunStem)
+                        .toList();
+
+        Map<String, Integer> bucketCounts = new LinkedHashMap<>();
+        List<SavedWord> result = new ArrayList<>();
+        for (CandidateWord candidate : candidates) {
+            String bucket = classifyReading(candidate.reading(), normalizedOn, normalizedKun);
+            int seenInBucket = bucketCounts.merge(bucket, 1, Integer::sum);
+            if (seenInBucket <= WORDS_PER_READING) {
+                result.add(
                         new SavedWord(
-                                rs.getString("term"),
-                                rs.getString("reading"),
-                                rs.getString("meaning"),
-                                rs.getString("sentence")),
-                userId,
-                "%" + literal + "%");
+                                candidate.term(),
+                                candidate.reading(),
+                                candidate.meaning(),
+                                candidate.sentence()));
+            }
+        }
+        return result;
+    }
+
+    /** The kanji-only part of a KANJIDIC2 kun'yomi: strip okurigana after "." and any "-". */
+    static String kunStem(String kunReading) {
+        int dot = kunReading.indexOf('.');
+        String stem = dot >= 0 ? kunReading.substring(0, dot) : kunReading;
+        return stem.replace("-", "");
+    }
+
+    static String classifyReading(
+            String wordReading, List<String> onReadings, List<String> kunReadings) {
+        if (wordReading == null || wordReading.isBlank()) {
+            return "other";
+        }
+        for (String reading : onReadings) {
+            if (!reading.isBlank() && wordReading.contains(reading)) {
+                return reading;
+            }
+        }
+        for (String reading : kunReadings) {
+            if (!reading.isBlank() && wordReading.contains(reading)) {
+                return reading;
+            }
+        }
+        return "other";
     }
 
     private Practice practice(long userId, String literal) {

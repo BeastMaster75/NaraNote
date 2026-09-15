@@ -50,6 +50,9 @@ public class KanjiLibraryService {
                     return new LibraryEntryResponse(
                             entry.getId().getLiteral(),
                             kanji == null ? null : kanji.getStrokeCount(),
+                            kanji == null ? null : kanji.getGrade(),
+                            kanji == null ? null : kanji.getJlptLevel(),
+                            kanji == null ? null : kanji.getFrequency(),
                             list(kanji == null ? null : kanji.getMeanings()),
                             list(kanji == null ? null : kanji.getOnReadings()),
                             list(kanji == null ? null : kanji.getKunReadings()),

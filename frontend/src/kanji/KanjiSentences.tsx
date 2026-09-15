@@ -26,6 +26,13 @@ type Sentence = {
   savedAt: string
 }
 
+type Word = {
+  term: string
+  reading: string | null
+  meaning: string
+  sentence: string | null
+}
+
 /**
  * One character, and every sentence you have met it in.
  *
@@ -36,6 +43,7 @@ type Sentence = {
 export function KanjiSentences() {
   const { literal = '' } = useParams()
   const [kanji, setKanji] = useState<Kanji | null>(null)
+  const [words, setWords] = useState<Word[] | null>(null)
   const [sentences, setSentences] = useState<Sentence[] | null>(null)
   const [error, setError] = useState(false)
 
@@ -48,13 +56,18 @@ export function KanjiSentences() {
         if (!r.ok) throw new Error(String(r.status))
         return r.json() as Promise<Kanji>
       }),
+      fetch(`${path}/words`).then((r) => {
+        if (!r.ok) throw new Error(String(r.status))
+        return r.json() as Promise<Word[]>
+      }),
       fetch(`${path}/sentences`).then((r) => {
         if (!r.ok) throw new Error(String(r.status))
         return r.json() as Promise<Sentence[]>
       }),
     ])
-      .then(([foundKanji, foundSentences]) => {
+      .then(([foundKanji, foundWords, foundSentences]) => {
         setKanji(foundKanji)
+        setWords(foundWords)
         setSentences(foundSentences)
       })
       .catch(() => setError(true))
@@ -78,7 +91,7 @@ export function KanjiSentences() {
     )
   }
 
-  if (!kanji || !sentences) {
+  if (!kanji || !words || !sentences) {
     return (
       <Page title="Collection">
         <p className="muted">Loading…</p>
@@ -120,6 +133,39 @@ export function KanjiSentences() {
             </div>
           </div>
         </header>
+
+        <section className="card ks-words-section">
+          <h3 className="kicker">
+            {words.length === 0 ? 'Your Words' : `Your Words — ${words.length}`}
+          </h3>
+
+          {words.length === 0 ? (
+            <p className="muted ks-empty">
+              No word in your collection contains {kanji.literal} yet. Words show up here once
+              this character is in a saved word — from mining, or generated from your kanji
+              collection.
+            </p>
+          ) : (
+            <ul className="ks-words">
+              {words.map((word) => (
+                <li key={word.term}>
+                  <span className="ks-word-term jp-sm jp-ruby">
+                    {word.reading ? (
+                      <ruby>
+                        {word.term}
+                        <rt>{word.reading}</rt>
+                      </ruby>
+                    ) : (
+                      word.term
+                    )}
+                  </span>
+                  <span className="ks-word-meaning">{word.meaning}</span>
+                  {word.sentence && <span className="ks-word-sentence jp-sm">{word.sentence}</span>}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
 
         <section className="ks-body">
           <h3 className="kicker">

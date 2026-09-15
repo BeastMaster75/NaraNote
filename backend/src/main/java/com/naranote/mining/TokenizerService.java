@@ -105,7 +105,7 @@ public class TokenizerService {
      * two blocks are laid out identically 0x60 apart, so the shift is exact for
      * every character that has a hiragana counterpart.
      */
-    static String toHiragana(String katakana) {
+    public static String toHiragana(String katakana) {
         if (katakana == null) {
             return null;
         }

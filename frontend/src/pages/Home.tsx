@@ -126,8 +126,9 @@ export function Home() {
       .catch(() => undefined)
     fetch('/api/library')
       .then((response) => (response.ok ? (response.json() as Promise<RecentKanji[]>) : []))
-      // Ten fits two rows in the narrower column the restructure gave this block.
-      .then((all) => setKanji(all.slice(0, 10)))
+      // More than fits at most window sizes, deliberately — the block scrolls
+      // internally rather than the count being tuned to exactly one size.
+      .then((all) => setKanji(all.slice(0, 18)))
       .catch(() => undefined)
   }, [])
 
