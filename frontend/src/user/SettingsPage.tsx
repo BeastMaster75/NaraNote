@@ -2,6 +2,27 @@ import { Page } from '../components/Page'
 import { useUser, type Theme } from './UserContext'
 import './SettingsPage.css'
 
+const CREDITS = [
+  {
+    name: 'KANJIDIC2',
+    href: 'https://www.edrdg.org/wiki/index.php/KANJIDIC_Project',
+    body: 'Kanji meanings, readings and other reference data.',
+    license: 'EDRDG, CC BY-SA 4.0',
+  },
+  {
+    name: 'KanjiVG',
+    href: 'https://kanjivg.tagaini.net/',
+    body: 'Stroke-order diagrams.',
+    license: '© Ulrich Apel, CC BY-SA 3.0',
+  },
+  {
+    name: 'JMdict',
+    href: 'https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project',
+    body: 'Word entries, readings and meanings used across mining, lookup and the Reading deck.',
+    license: 'EDRDG, CC BY-SA 4.0',
+  },
+]
+
 const THEMES: { value: Theme; label: string }[] = [
   { value: 'system', label: 'System' },
   { value: 'light', label: 'Light' },
@@ -129,6 +150,22 @@ export function SettingsPage() {
             />
             <span className="setting-value">{me.sessionSize}</span>
           </div>
+        </section>
+
+        <section id="credits" className="card credits-block">
+          <h3 className="setting-title">Data Credits</h3>
+          <p className="muted small">
+            NaraNote is built on free, community-maintained Japanese reference data. Every page
+            that uses it links back here rather than repeating this in full.
+          </p>
+          <ul className="credits-list">
+            {CREDITS.map((source) => (
+              <li key={source.name}>
+                <a href={source.href}>{source.name}</a>
+                <span className="muted small"> — {source.body} {source.license}.</span>
+              </li>
+            ))}
+          </ul>
         </section>
       </div>
     </Page>

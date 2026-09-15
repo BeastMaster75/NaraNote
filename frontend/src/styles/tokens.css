@@ -1,43 +1,46 @@
 /* ─────────────────────────────────────────────────────────────────────────
-   NaraNote design tokens — lifted from the Claude Design export
-   (`Naranote UI design system/Naranote.dc.html`).
+   NaraNote design tokens.
 
-   Palette: 日本の伝統色 (traditional Japanese colours).
+   Palette: 花見 hanami — soft-spring traditional Japanese colours (sakura,
+   nadeshiko, moegi, fuji, yamabuki, kinari), replacing the earlier autumn-kiln
+   persimmon palette. Chosen deliberately, not lifted from a design export —
+   hand-owned here going forward.
 
-   The governing rule: warmth lives in the chrome — grounds, cards, spacing,
-   accents. Japanese text itself is always full contrast and never below
-   18px, because dense kanji (鬱 is 29 strokes) turn to mud at the sizes and
-   contrast that flatter Latin UI.
-
-   Re-lift this file wholesale if the design changes. Don't edit values here
-   and in the design doc separately.
+   The governing rule still holds regardless of palette: warmth lives in the
+   chrome — grounds, cards, spacing, accents. Japanese text itself is always
+   full contrast and never below 18px, because dense kanji (鬱 is 29 strokes)
+   turn to mud at the sizes and contrast that flatter Latin UI.
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
-  /* ground — warm paper, never white */
-  --nn-paper: #f7f2e6;      /* 生成り kinari — unbleached cream, app ground */
-  --nn-raised: #fdf8ea;     /* 鳥の子 torinoko — eggshell, cards above ground */
-  --nn-sunk: #efe6d2;       /* recessed wells, inputs, table headers */
-  --nn-line: #ddd1b9;       /* hairline dividers, cell borders */
-  --nn-line-soft: #e8dec9;
+  /* ground — pale pink-cream, never white and never literally pink underfoot */
+  --nn-paper: #fbf1ec;      /* pink-tinted 生成り — app ground */
+  --nn-raised: #fffaf8;     /* near-white, cards lift above ground */
+  --nn-sunk: #f3ded7;       /* recessed wells, inputs, table headers */
+  --nn-line: #e6c9c0;       /* hairline dividers, cell borders */
+  --nn-line-soft: #f0ddd6;
 
-  /* accents */
-  --nn-kaki: #d9541f;       /* 柿色 persimmon — primary action, "new" */
-  --nn-kaki-tint: #f8e2d3;
-  --nn-bengara: #8f2e14;    /* 弁柄 red ochre — errors, stroke-order faults */
-  --nn-bengara-tint: #f2ddd5;
-  --nn-yamabuki: #c98708;   /* 山吹 kerria yellow — outstanding / due */
-  --nn-yamabuki-tint: #f7e9c6;
-  --nn-matcha: #6d7a4e;     /* passed / correct */
-  --nn-matcha-tint: #e5e9d5;
+  /* accents — the given swatches are tint-strength; each is deepened here for
+     solid-fill contrast (buttons, links, badge text), with the raw swatch
+     kept as the pale -tint wash. */
+  --nn-kaki: #c9506b;       /* 撫子色 nadeshiko, deepened — primary action, "new" */
+  --nn-kaki-tint: #f6dee3;  /* ≈ 桜色 sakura-iro */
+  --nn-bengara: #b8433a;    /* warm crimson, harmonised with kaki but reads as error */
+  --nn-bengara-tint: #f3dbd6;
+  --nn-yamabuki: #c08a2e;   /* 山吹色 kerria yellow, deepened — outstanding / due */
+  --nn-yamabuki-tint: #f3e6c8;
+  --nn-matcha: #6e8351;     /* 萌黄色 moegi, deepened — passed / correct */
+  --nn-matcha-tint: #e3e8d6;
+  --nn-fuji: #8b76a8;       /* 藤色 fuji, deepened — reserved accent, not yet wired up */
+  --nn-fuji-tint: #e9e2f0;
 
   /* text — Latin UI text may be soft; Japanese never is */
-  --nn-ink: #231f1a;        /* Latin primary */
-  --nn-ink-2: #6b6151;      /* Latin secondary — NOT for Japanese */
-  --nn-ink-3: #8d8371;      /* Latin tertiary, meta, numerals */
-  --nn-jp: #141110;         /* Japanese text — always maximum contrast */
-  --nn-jp-known: #7b7263;   /* the ONE licensed soft Japanese: already-saved words */
-  --nn-on-accent: #fffaf0;
+  --nn-ink: #2b1f22;        /* Latin primary */
+  --nn-ink-2: #7a6169;      /* Latin secondary — NOT for Japanese */
+  --nn-ink-3: #998088;      /* Latin tertiary, meta, numerals */
+  --nn-jp: #1d1315;         /* Japanese text — always maximum contrast */
+  --nn-jp-known: #937e85;   /* the ONE licensed soft Japanese: already-saved words */
+  --nn-on-accent: #fff8f5;
 
   /* type */
   --nn-font-jp: "Hiragino Kaku Gothic ProN", "Hiragino Sans", "Noto Sans JP", "Yu Gothic", YuGothic, "Meiryo", sans-serif;
@@ -63,35 +66,42 @@
   --nn-r-lg: 26px;
   --nn-r-pill: 999px;
 
-  --nn-shadow: 0 1px 2px rgba(60, 45, 25, 0.07);
-  --nn-shadow-lift: 0 6px 20px rgba(60, 45, 25, 0.1);
+  --nn-shadow: 0 1px 2px rgba(90, 40, 55, 0.08);
+  --nn-shadow-lift: 0 6px 20px rgba(90, 40, 55, 0.12);
 }
 
 /* Dark theme is driven entirely by this attribute, set on <html> in main.tsx
    from the system preference. Keeping it attribute-only means one definition
-   of the dark palette rather than a duplicate inside a media query. */
+   of the dark palette rather than a duplicate inside a media query.
+
+   Same hanami family as :root, inverted: a warm near-black plum ground
+   (not the old brown sumi) with the same accent hues brightened for
+   legibility on a dark ground, the same technique the old persimmon dark
+   theme used (deepen for light backgrounds, brighten for dark ones). */
 [data-theme='dark'] {
-  --nn-paper: #1b1815;      /* 墨 sumi ground */
-  --nn-raised: #262117;
-  --nn-sunk: #141210;
-  --nn-line: #3b342b;
-  --nn-line-soft: #2e2823;
+  --nn-paper: #1e1417;      /* plum-black ground */
+  --nn-raised: #2a1b20;
+  --nn-sunk: #150e10;
+  --nn-line: #402a31;
+  --nn-line-soft: #33232a;
 
-  --nn-kaki: #f0793c;
-  --nn-kaki-tint: #3a2317;
-  --nn-bengara: #d1583a;
-  --nn-bengara-tint: #361a14;
-  --nn-yamabuki: #efb63c;
-  --nn-yamabuki-tint: #332711;
-  --nn-matcha: #a4b47a;
-  --nn-matcha-tint: #232817;
+  --nn-kaki: #f08ca3;       /* nadeshiko, brightened */
+  --nn-kaki-tint: #3d232b;
+  --nn-bengara: #e37a6c;    /* crimson, brightened */
+  --nn-bengara-tint: #3a2420;
+  --nn-yamabuki: #e6b84f;   /* kerria yellow, brightened */
+  --nn-yamabuki-tint: #362b14;
+  --nn-matcha: #a9c084;     /* moegi, brightened */
+  --nn-matcha-tint: #24291a;
+  --nn-fuji: #b9a4d9;
+  --nn-fuji-tint: #2a2333;
 
-  --nn-ink: #f2e9d7;
-  --nn-ink-2: #a79c88;
-  --nn-ink-3: #867c6b;
-  --nn-jp: #fdf8ec;
-  --nn-jp-known: #8a8071;
-  --nn-on-accent: #1b1815;
+  --nn-ink: #f5e6ea;
+  --nn-ink-2: #b99aa3;
+  --nn-ink-3: #977c85;
+  --nn-jp: #fbf1f0;
+  --nn-jp-known: #93818a;
+  --nn-on-accent: #1e1417;
 
   --nn-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
   --nn-shadow-lift: 0 8px 24px rgba(0, 0, 0, 0.45);

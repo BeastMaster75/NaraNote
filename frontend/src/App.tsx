@@ -49,11 +49,11 @@ function App() {
           <Route path="*" element={<NotFound />} />
         </Routes>
 
+        {/* The full attribution lives once on Settings — CC BY-SA still wants a
+            mention wherever the licensed data actually shows, so this stays,
+            just as quiet as something almost nobody needs to click gets to be. */}
         <footer className="credits small muted">
-          Kanji data from{' '}
-          <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project">KANJIDIC2</a> (EDRDG,
-          CC BY-SA 4.0). Stroke-order diagrams from{' '}
-          <a href="https://kanjivg.tagaini.net/">KanjiVG</a> &copy; Ulrich Apel, CC BY-SA 3.0.
+          <Link to="/settings#credits">Data credits</Link>
         </footer>
       </div>
     </div>

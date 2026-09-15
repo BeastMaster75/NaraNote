@@ -2,7 +2,7 @@ type LogoProps = {
   /** Rendered width and height in px. The mark is drawn on a 64-unit box and
    *  scales cleanly; it was designed to stay legible down to 16. */
   size?: number
-  /** Swap tile and stroke colours. For the rare placement where the persimmon
+  /** Swap tile and stroke colours. For the rare placement where the pink
    *  tile sits too close to a surrounding accent. */
   reversed?: boolean
   /** Accessible name. Omit when the word "NaraNote" already sits beside the
@@ -19,8 +19,8 @@ type LogoProps = {
  * same geometry with literal colours (a favicon can't read CSS variables).
  */
 export function Logo({ size = 40, reversed = false, label }: LogoProps) {
-  const tile = reversed ? 'var(--nn-brand-cream)' : 'var(--nn-brand-persimmon)'
-  const ink = reversed ? 'var(--nn-brand-persimmon)' : 'var(--nn-brand-cream)'
+  const tile = reversed ? 'var(--nn-brand-cream)' : 'var(--nn-brand-pink)'
+  const ink = reversed ? 'var(--nn-brand-pink)' : 'var(--nn-brand-cream)'
 
   return (
     <svg

@@ -81,8 +81,8 @@ export function WritingCanvas({
     if (!showNumbers) return
 
     const styles = getComputedStyle(canvas)
-    const accent = styles.getPropertyValue('--nn-kaki').trim() || '#d9541f'
-    const halo = styles.getPropertyValue('--nn-raised').trim() || '#fdf8ea'
+    const accent = styles.getPropertyValue('--nn-kaki').trim() || '#c9506b'
+    const halo = styles.getPropertyValue('--nn-raised').trim() || '#fffaf8'
     const fontSize = Math.max(11, size * 0.05)
 
     context.font = `600 ${fontSize}px ui-monospace, Menlo, monospace`
