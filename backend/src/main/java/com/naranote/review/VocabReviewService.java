@@ -10,6 +10,7 @@ import io.github.openspacedrepetition.Scheduler;
 import io.github.openspacedrepetition.State;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -34,7 +35,8 @@ public class VocabReviewService {
             where v.user_id = ?
               and (r.due is null or r.due <= now())
             %s
-            order by r.due asc nulls first, v.created_at asc
+            %s
+            order by r.due asc nulls first, random()
             limit ?
             """;
 
@@ -47,11 +49,24 @@ public class VocabReviewService {
 
     private static final String SOURCE_EQUALS = "and nullif(trim(v.source), '') = ?";
 
+    /**
+     * Exact match, not cumulative — drilling one level this session is a different intent
+     * from the account-wide generation cap. A word's level is derived, not stored: the
+     * hardest (lowest-numbered) level among its kanji, same as the cap uses. A word with any
+     * untagged kanji has no derived level and never matches an active filter.
+     */
+    private static final String LEVEL_EQUALS =
+            """
+            and (select min(k.jlpt_level) from kanji k
+                 where k.literal = any(regexp_split_to_array(v.term, ''))) = ?
+            """;
+
     private static final String COUNT_DUE_SQL =
             """
             select count(*) from vocab_item v
             left join vocab_review r on r.vocab_id = v.id
             where v.user_id = ? and (r.due is null or r.due <= now())
+            %s
             """;
 
     private static final RowMapper<DueWord> DUE_WORD =
@@ -84,25 +99,39 @@ public class VocabReviewService {
      * three decks each saying "4 due" and nothing getting reviewed.
      */
     @Transactional(readOnly = true)
-    public List<DueWord> due(int limit, DeckRef deck) {
+    public List<DueWord> due(int limit, DeckRef deck, Integer jlptLevel) {
+        String levelClause = jlptLevel == null ? "" : LEVEL_EQUALS;
+        List<Object> args = new ArrayList<>();
+        args.add(currentUser.id());
+
+        String deckClause;
         if (deck == null || deck.kind() != DeckRef.Kind.WORDS) {
-            return jdbc.query(DUE_SQL.formatted(""), DUE_WORD, currentUser.id(), limit);
+            deckClause = "";
+        } else if (deck.isUnsorted()) {
+            deckClause = SOURCE_UNSORTED;
+        } else {
+            deckClause = SOURCE_EQUALS;
+            args.add(deck.source());
         }
-        if (deck.isUnsorted()) {
-            return jdbc.query(
-                    DUE_SQL.formatted(SOURCE_UNSORTED), DUE_WORD, currentUser.id(), limit);
+        if (jlptLevel != null) {
+            args.add(jlptLevel);
         }
+        args.add(limit);
+
         return jdbc.query(
-                DUE_SQL.formatted(SOURCE_EQUALS),
-                DUE_WORD,
-                currentUser.id(),
-                deck.source(),
-                limit);
+                DUE_SQL.formatted(deckClause, levelClause), DUE_WORD, args.toArray());
     }
 
     @Transactional(readOnly = true)
-    public long dueCount() {
-        Long count = jdbc.queryForObject(COUNT_DUE_SQL, Long.class, currentUser.id());
+    public long dueCount(Integer jlptLevel) {
+        String levelClause = jlptLevel == null ? "" : LEVEL_EQUALS;
+        List<Object> args = new ArrayList<>();
+        args.add(currentUser.id());
+        if (jlptLevel != null) {
+            args.add(jlptLevel);
+        }
+        Long count =
+                jdbc.queryForObject(COUNT_DUE_SQL.formatted(levelClause), Long.class, args.toArray());
         return count == null ? 0 : count;
     }
 
@@ -150,7 +179,7 @@ public class VocabReviewService {
 
         return Optional.of(
                 new ReviewResult(
-                        vocabId, reviewed.getState().name(), reviewed.getDue(), dueCount()));
+                        vocabId, reviewed.getState().name(), reviewed.getDue(), dueCount(null)));
     }
 
     /** A word never reviewed has no row yet; a fresh Card is what FSRS calls new. */

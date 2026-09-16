@@ -78,6 +78,27 @@ public class RecognitionWordService implements ApplicationRunner {
             return;
         }
 
+        // 0 means no cap — today's unrestricted behaviour. A word whose kanji include
+        // anything harder than the target, or anything with no level data at all, is
+        // skipped below rather than guessed at.
+        int targetLevel =
+                jdbc.queryForObject(
+                        "select target_jlpt_level from app_user where id = ?",
+                        Integer.class,
+                        userId);
+        Map<String, Integer> kanjiLevels =
+                targetLevel == 0
+                        ? Map.of()
+                        : jdbc.query(
+                                "select literal, jlpt_level from kanji where jlpt_level is not null",
+                                rs -> {
+                                    Map<String, Integer> levels = new HashMap<>();
+                                    while (rs.next()) {
+                                        levels.put(rs.getString("literal"), rs.getInt("jlpt_level"));
+                                    }
+                                    return levels;
+                                });
+
         List<Object[]> candidates =
                 jdbc.query(
                         CANDIDATES_SQL,
@@ -99,6 +120,9 @@ public class RecognitionWordService implements ApplicationRunner {
                 continue;
             }
             Set<String> formKanji = kanjiCharsIn(form);
+            if (targetLevel > 0 && !withinLevel(formKanji, kanjiLevels, targetLevel)) {
+                continue;
+            }
             boolean anyCharacterFull =
                     formKanji.stream()
                             .anyMatch(
@@ -134,6 +158,17 @@ public class RecognitionWordService implements ApplicationRunner {
         for (Object[] pair : pairs) {
             generateFor((Long) pair[0], (String) pair[1]);
         }
+    }
+
+    /** True only when every kanji in the word has level data, at or easier than the target. */
+    private static boolean withinLevel(
+            Set<String> formKanji, Map<String, Integer> kanjiLevels, int targetLevel) {
+        return formKanji.stream()
+                .allMatch(
+                        c -> {
+                            Integer level = kanjiLevels.get(c);
+                            return level != null && level >= targetLevel;
+                        });
     }
 
     private static Set<String> kanjiCharsIn(String form) {

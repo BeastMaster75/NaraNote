@@ -26,7 +26,12 @@ import org.springframework.web.bind.annotation.RestController;
 public class UserController {
 
     /** Every value the client needs to render the app for this user. */
-    public record Me(String displayName, String theme, boolean furigana, int sessionSize) {}
+    public record Me(
+            String displayName,
+            String theme,
+            boolean furigana,
+            int sessionSize,
+            int targetJlptLevel) {}
 
     /**
      * A patch: every field is optional and null means "leave it alone". Sending
@@ -37,10 +42,16 @@ public class UserController {
             @Size(min = 1, max = 80) String displayName,
             @Pattern(regexp = "system|light|dark") String theme,
             Boolean furigana,
-            @Min(5) @Max(100) Integer sessionSize) {}
+            @Min(5) @Max(100) Integer sessionSize,
+            // 0 means "no target set" — the real value clears it, since null here means
+            // "leave alone", not "unset".
+            @Min(0) @Max(5) Integer targetJlptLevel) {}
 
     private static final String SELECT =
-            "select display_name, theme, furigana, session_size from app_user where id = ?";
+            """
+            select display_name, theme, furigana, session_size, target_jlpt_level
+            from app_user where id = ?
+            """;
 
     private final JdbcTemplate jdbc;
     private final CurrentUser currentUser;
@@ -72,13 +83,17 @@ public class UserController {
         jdbc.update(
                 """
                 update app_user
-                   set display_name = ?, theme = ?, furigana = ?, session_size = ?
+                   set display_name = ?, theme = ?, furigana = ?, session_size = ?,
+                       target_jlpt_level = ?
                  where id = ?
                 """,
                 displayName,
                 request.theme() == null ? current.theme() : request.theme(),
                 request.furigana() == null ? current.furigana() : request.furigana(),
                 request.sessionSize() == null ? current.sessionSize() : request.sessionSize(),
+                request.targetJlptLevel() == null
+                        ? current.targetJlptLevel()
+                        : request.targetJlptLevel(),
                 userId);
 
         return load(userId);
@@ -92,7 +107,8 @@ public class UserController {
                                 rs.getString("display_name"),
                                 rs.getString("theme"),
                                 rs.getBoolean("furigana"),
-                                rs.getInt("session_size")),
+                                rs.getInt("session_size"),
+                                rs.getInt("target_jlpt_level")),
                 userId);
     }
 }

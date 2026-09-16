@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { BatchAddModal } from './BatchAddModal'
-import { KanjiFilterBar } from './KanjiFilterBar'
+import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
 import './Library.css'
 

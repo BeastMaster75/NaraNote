@@ -27,17 +27,21 @@ public class ReviewController {
         this.reviewService = reviewService;
     }
 
-    /** {@code deck} is a deck id from /api/decks; absent means everything due. */
+    /**
+     * {@code deck} is a deck id from /api/decks; absent means everything due.
+     * {@code jlptLevel} is an exact match (1-5), not a cap; absent means every level.
+     */
     @GetMapping("/due")
     public List<DueWord> due(
             @RequestParam(defaultValue = "20") int limit,
-            @RequestParam(required = false) String deck) {
-        return reviewService.due(Math.clamp(limit, 1, 100), DeckRef.parse(deck));
+            @RequestParam(required = false) String deck,
+            @RequestParam(required = false) Integer jlptLevel) {
+        return reviewService.due(Math.clamp(limit, 1, 100), DeckRef.parse(deck), jlptLevel);
     }
 
     @GetMapping("/due/count")
-    public Map<String, Long> dueCount() {
-        return Map.of("due", reviewService.dueCount());
+    public Map<String, Long> dueCount(@RequestParam(required = false) Integer jlptLevel) {
+        return Map.of("due", reviewService.dueCount(jlptLevel));
     }
 
     @PostMapping("/{id}")

@@ -1,3 +1,4 @@
+import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
 import { useUser, type Theme } from './UserContext'
 import './SettingsPage.css'
@@ -26,6 +27,12 @@ const CREDITS = [
     href: 'https://github.com/davidluzgouveia/kanji-data',
     body: 'Modern N1–N5 JLPT levels, built on Jonathan Waller’s JLPT resources.',
     license: 'David Gouveia, MIT',
+  },
+  {
+    name: 'VOICEVOX:四国めたん',
+    href: 'https://voicevox.hiroshiba.jp/',
+    body: 'Word-reading audio in Review, generated and cached server-side.',
+    license: 'VOICEVOX',
   },
 ]
 
@@ -132,6 +139,23 @@ export function SettingsPage() {
                 Off
               </button>
             </div>
+          </div>
+        </section>
+
+        <section className="setting">
+          <div className="setting-copy">
+            <h3 className="setting-title">JLPT Level</h3>
+            <p className="muted small">
+              Caps the words the Reading deck auto-generates from your kanji to this level
+              and easier — words with a harder or unrated kanji aren&rsquo;t created. Doesn&rsquo;t
+              affect words you save yourself while mining.
+            </p>
+          </div>
+          <div className="setting-control">
+            <KanjiFilterBar
+              jlptLevel={me.targetJlptLevel || null}
+              onJlptLevelChange={(level) => save({ targetJlptLevel: level ?? 0 })}
+            />
           </div>
         </section>
 

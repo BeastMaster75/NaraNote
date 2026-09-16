@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
+import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
 import { downloadFile } from '../lib/download'
 import './ReviewHub.css'
@@ -20,6 +21,8 @@ export function ReviewHub() {
   const [error, setError] = useState(false)
   const [exporting, setExporting] = useState<string | null>(null)
   const [exportError, setExportError] = useState<string | null>(null)
+  const [jlptLevel, setJlptLevel] = useState<number | null>(null)
+  const [filteredDue, setFilteredDue] = useState<number | null>(null)
 
   const load = useCallback(() => {
     setError(false)
@@ -33,6 +36,20 @@ export function ReviewHub() {
   }, [])
 
   useEffect(load, [load])
+
+  // The "Review N due" button should reflect the filter, not the unfiltered
+  // total shown in the deck list below — that list is deck browsing, this is
+  // the count of what a session would actually load right now.
+  useEffect(() => {
+    if (jlptLevel === null) {
+      setFilteredDue(null)
+      return
+    }
+    fetch(`/api/review/due/count?jlptLevel=${jlptLevel}`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: { due: number } | null) => setFilteredDue(data?.due ?? 0))
+      .catch(() => setFilteredDue(0))
+  }, [jlptLevel])
 
   async function exportDeck(deck: Deck, format: 'anki' | 'csv') {
     setExporting(deck.id + format)
@@ -52,8 +69,18 @@ export function ReviewHub() {
   const wordDecks = decks?.filter((deck) => deck.kind === 'WORDS') ?? []
   // Deliberately the total across every deck, not a per-deck sum the user has to
   // add up: one queue is the point of a scheduler.
-  const wordsDue = wordDecks.reduce((sum, deck) => sum + deck.due, 0)
+  const wordsDue = jlptLevel === null
+    ? wordDecks.reduce((sum, deck) => sum + deck.due, 0)
+    : (filteredDue ?? 0)
   const kanjiDeck = decks?.find((deck) => deck.kind === 'KANJI')
+
+  function sessionUrl(deckId?: string) {
+    const params = new URLSearchParams()
+    if (deckId) params.set('deck', deckId)
+    if (jlptLevel !== null) params.set('jlptLevel', String(jlptLevel))
+    const query = params.toString()
+    return query ? `/review/session?${query}` : '/review/session'
+  }
 
   if (error) {
     return (
@@ -98,6 +125,7 @@ export function ReviewHub() {
               One queue across every deck. Reviewing deck by deck is how you end up with
               three decks each saying &ldquo;4 due&rdquo; and nothing done.
             </p>
+            <KanjiFilterBar jlptLevel={jlptLevel} onJlptLevelChange={setJlptLevel} />
           </div>
 
           <div className="hub-start-actions">
@@ -105,7 +133,7 @@ export function ReviewHub() {
               type="button"
               className="btn is-primary hub-go"
               disabled={wordsDue === 0}
-              onClick={() => navigate('/review/session')}
+              onClick={() => navigate(sessionUrl())}
             >
               Review {wordsDue > 0 ? wordsDue : 'Words'}
               {wordsDue > 0 && <span className="hub-go-unit">due</span>}
@@ -156,7 +184,7 @@ export function ReviewHub() {
                       className="btn"
                       disabled={deck.due === 0}
                       onClick={() =>
-                        navigate(`/review/session?deck=${encodeURIComponent(deck.id)}`)
+                        navigate(sessionUrl(deck.id))
                       }
                     >
                       Review

@@ -15,6 +15,8 @@ export type Me = {
   theme: Theme
   furigana: boolean
   sessionSize: number
+  /** 0 means no target set — Reading-deck generation stays unrestricted. */
+  targetJlptLevel: number
 }
 
 /**
@@ -27,6 +29,7 @@ const DEFAULTS: Me = {
   theme: 'system',
   furigana: true,
   sessionSize: 20,
+  targetJlptLevel: 0,
 }
 
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'

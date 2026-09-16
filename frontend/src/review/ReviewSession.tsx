@@ -23,10 +23,22 @@ const RATINGS: { rating: Rating; label: string; hint: string }[] = [
   { rating: 'EASY', label: 'Easy', hint: 'Instantly' },
 ]
 
+/**
+ * /api/tts responses are cached by the browser for a year (see TtsController) — the URL is
+ * the cache key, and it never otherwise changes, so a word played before a server-side voice
+ * change stays stuck on the old voice forever unless the URL changes too. Bump this to match
+ * naranote.voicevox.speaker-id (application.yaml) whenever the default voice changes; the
+ * backend doesn't read this param at all, it exists purely to bust stale client caches.
+ */
+const VOICEVOX_SPEAKER_ID = 2
+
 export function ReviewSession() {
   const { me, loaded } = useUser()
+  const searchParams = useSearchParams()[0]
   // Absent means every deck, which is the default the hub sends you here with.
-  const deck = useSearchParams()[0].get('deck')
+  const deck = searchParams.get('deck')
+  // Absent means every level — an exact match when set, not a cap.
+  const jlptLevel = searchParams.get('jlptLevel')
   const [queue, setQueue] = useState<DueWord[] | null>(null)
   const [index, setIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
@@ -40,7 +52,8 @@ export function ReviewSession() {
     if (!loaded) return
     setError(false)
     const scope = deck ? `&deck=${encodeURIComponent(deck)}` : ''
-    fetch(`/api/review/due?limit=${me.sessionSize}${scope}`)
+    const level = jlptLevel ? `&jlptLevel=${encodeURIComponent(jlptLevel)}` : ''
+    fetch(`/api/review/due?limit=${me.sessionSize}${scope}${level}`)
       .then((response) => {
         if (!response.ok) throw new Error(String(response.status))
         return response.json() as Promise<DueWord[]>
@@ -51,20 +64,22 @@ export function ReviewSession() {
         setRevealed(false)
       })
       .catch(() => setError(true))
-  }, [loaded, me.sessionSize, deck])
+  }, [loaded, me.sessionSize, deck, jlptLevel])
 
   useEffect(load, [load])
 
   const word = queue?.[index]
 
-  // Auto-plays once per reveal. cancel() first in case a prior utterance is
-  // still running from a rapid Space-Space navigation.
+  // Auto-plays once per reveal. Server-generated and cached (see /api/tts) rather than the
+  // browser's speechSynthesis — that only makes sound if the visitor's OS happens to have a
+  // Japanese voice installed, which most don't.
   useEffect(() => {
-    if (!revealed || !word || !window.speechSynthesis) return
-    window.speechSynthesis.cancel()
-    const utterance = new SpeechSynthesisUtterance(word.reading || word.term)
-    utterance.lang = 'ja-JP'
-    window.speechSynthesis.speak(utterance)
+    if (!revealed || !word) return
+    const audio = new Audio(
+      `/api/tts?text=${encodeURIComponent(word.reading || word.term)}&voice=${VOICEVOX_SPEAKER_ID}`,
+    )
+    audio.play().catch(() => {})
+    return () => audio.pause()
   }, [revealed, word])
 
   async function rate(rating: Rating) {
