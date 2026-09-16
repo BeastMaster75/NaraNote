@@ -14,7 +14,7 @@
 	<name>NaraNote</name>
 	<description>Your Japanese Learning Companion</description>
 	<properties>
-		<java.version>21</java.version>
+		<java.version>25</java.version>
 	</properties>
 	<dependencies>
 		<dependency>

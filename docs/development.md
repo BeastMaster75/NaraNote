@@ -2,13 +2,13 @@
 
 ## Stack
 
-- **Backend** — Spring Boot 4.1, Java 21, Maven (via the bundled `mvnw` wrapper)
+- **Backend** — Spring Boot 4.1, Java 25, Maven (via the bundled `mvnw` wrapper)
 - **Database** — PostgreSQL 16 in Docker, schema managed by Flyway
 - **Frontend** — React + TypeScript, built with Vite
 
 ## Prerequisites
 
-JDK 21, Node.js 20+, Docker Desktop — or just Docker Desktop if you'd rather run everything in
+JDK 25, Node.js 20+, Docker Desktop — or just Docker Desktop if you'd rather run everything in
 containers; see [Running it with Docker](#running-it-with-docker) below.
 
 ## Running it
