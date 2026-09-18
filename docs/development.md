@@ -82,7 +82,6 @@ old-scale guess. In Docker, run it via `docker compose exec backend`, same as th
 importers (see [Running it with Docker](#running-it-with-docker)); add
 `--spring.main.web-application-type=none` to the arguments if the `backend` service is already
 running, so the importer's own Spring context doesn't try to bind the same port.
-on a foreign key partway through.
 
 **2. Backend**
 
@@ -221,3 +220,13 @@ also embedded in each stored SVG by the importer, so it survives being copied ar
 **Stroke-order SVGs are recoloured at import time**, not in CSS: strokes become
 `currentColor` and the stroke numbers `var(--nn-kaki)`. KanjiVG sets those as inline styles,
 and an inline style beats any rule a stylesheet could apply.
+
+**TTS is a self-hosted sidecar; translation is BYO-key.** Review's word-reading audio calls
+[VOICEVOX](https://voicevox.hiroshiba.jp/) (`com.naranote.tts`), running as a Docker service
+(`docker-compose.yml`) with no API key — a metered cloud API bills per request and turns "how
+many people use this" into a cost problem, which a self-hosted engine doesn't. Mining's
+translation panel (`com.naranote.translate`) is the exception: it was tried self-hosted first
+(LibreTranslate/Argos), but that engine's free en→ja model collapses onto generic boilerplate
+("contact us") for ordinary short phrases — confirmed by direct testing, not a hunch — so
+translation uses each user's own Gemini key (the same one Settings offers, held via
+`CryptoService` and decrypted per request) instead.

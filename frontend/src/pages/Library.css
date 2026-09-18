@@ -2,11 +2,38 @@
 
 .library-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  gap: 0.6rem;
   margin-bottom: 1.25rem;
+}
+
+.library-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
   flex-wrap: wrap;
+}
+
+.library-search {
+  flex: 1 1 14rem;
+  min-width: 10rem;
+  padding: 0.45rem 0.8rem;
+  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-pill);
+  caret-color: var(--nn-kaki);
+}
+
+.library-sort {
+  padding: 0.45rem 0.7rem;
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-pill);
+  color: var(--nn-ink-2);
+}
+
+.library-stats {
+  margin: 0;
 }
 
 .library-empty-actions {

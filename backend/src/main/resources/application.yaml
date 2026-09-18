@@ -25,3 +25,9 @@ naranote:
     # Shikoku Metan (四国めたん), normal style — a natural adult-woman voice rather than
     # Zundamon's mascot voice. Free, commercial-friendly, credited in Settings.
     speaker-id: ${NARANOTE_VOICEVOX_SPEAKER_ID:2}
+  # AES-256 key (base64, 32 raw bytes) encrypting app_user.gemini_api_key at rest. The default
+  # below is a real generated key, fine for local dev — anyone deploying beyond that should
+  # generate their own (e.g. `openssl rand -base64 32`) and set NARANOTE_ENCRYPTION_KEY, the
+  # same way POSTGRES_PASSWORD is overridden. Losing/rotating this key makes every already-
+  # stored Gemini key undecryptable, so treat it like any other production secret.
+  encryption-key: ${NARANOTE_ENCRYPTION_KEY:IH5xZIdPqgKNTlgsc5meggdDAjN/lFRML82x2bsYdQ0=}

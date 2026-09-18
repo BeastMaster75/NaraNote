@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
 import { useUser, type Theme } from './UserContext'
@@ -41,6 +42,75 @@ const THEMES: { value: Theme; label: string }[] = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ]
+
+/**
+ * Explicit Save/Remove rather than the optimistic autosave every other setting here
+ * uses — a credential shouldn't partially save itself mid-keystroke the way a range
+ * slider's every tick does. Never shows the saved value back, only whether one exists.
+ */
+function GeminiKeySetting({ hasKey }: { hasKey: boolean }) {
+  const { save } = useUser()
+  const [draft, setDraft] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function handleSave() {
+    if (!draft.trim()) return
+    setBusy(true)
+    await save({ geminiApiKey: draft.trim() })
+    setDraft('')
+    setBusy(false)
+  }
+
+  async function handleRemove() {
+    setBusy(true)
+    await save({ geminiApiKey: '' })
+    setBusy(false)
+  }
+
+  return (
+    <section className="setting">
+      <div className="setting-copy">
+        <h3 className="setting-title">Gemini API Key</h3>
+        <p className="muted small">
+          Used by Mining's translation panel — self-hosted translation was tried
+          first, but its free model mangled ordinary phrases too often to trust.
+          Never shown back once saved — only whether one is set. Get a free key
+          at <a href="https://aistudio.google.com/apikey">aistudio.google.com</a>.
+        </p>
+      </div>
+      <div className="setting-control setting-control-key">
+        <span className="muted small">
+          {hasKey ? 'A key is saved.' : 'No key set.'}
+        </span>
+        <input
+          type="password"
+          className="setting-input"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder={hasKey ? 'Replace the saved key…' : 'Paste your API key…'}
+          autoComplete="off"
+          maxLength={200}
+          aria-label="Gemini API key"
+        />
+        <div className="setting-key-actions">
+          <button
+            type="button"
+            className="btn is-primary"
+            onClick={handleSave}
+            disabled={busy || !draft.trim()}
+          >
+            {busy ? 'Saving…' : 'Save'}
+          </button>
+          {hasKey && (
+            <button type="button" className="btn" onClick={handleRemove} disabled={busy}>
+              Remove
+            </button>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
 
 export function SettingsPage() {
   const { me, loaded, save } = useUser()
@@ -181,6 +251,8 @@ export function SettingsPage() {
             <span className="setting-value">{me.sessionSize}</span>
           </div>
         </section>
+
+        <GeminiKeySetting hasKey={me.hasGeminiKey} />
 
         <section id="credits" className="card credits-block">
           <h3 className="setting-title">Data Credits</h3>

@@ -9,38 +9,12 @@
   min-height: 0;
 }
 
-.card.mining-box {
-  gap: 0.8rem;
-}
-
-.mining-controls {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.6rem 1rem;
-}
-
-.mining-controls .mining-actions {
-  margin-left: auto;
-}
-
-/* Once there's a passage on screen the box has done its job, so it shrinks to a
-   line: what you pasted, how much of it you already knew, and the way back. */
+/* The one toolbar shape, before or after analysing — only its contents change. */
 .card.mining-bar {
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
   gap: 0.75rem 1.5rem;
-}
-
-.mining-excerpt {
-  margin: 0;
-  flex: 1 1 14rem;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--nn-jp);
 }
 
 .mining-bar .mining-stats {
@@ -49,7 +23,11 @@
   border-top: none;
 }
 
+/* Stretches to fill .mining-passage exactly like .sentences does once
+   analysed — the two panes start and end at the same height either way. */
 .mining-textarea {
+  flex: 1;
+  min-height: 0;
   width: 100%;
   resize: vertical;
   padding: 1rem 1.1rem;
@@ -61,6 +39,7 @@
 }
 
 .mining-source {
+  flex: 1 1 18rem;
   padding: 0.45rem 0.9rem;
   font: inherit;
   font-size: 13px;
@@ -120,9 +99,42 @@
   gap: 1rem;
 }
 
+/* Same true half-split as .mining-translation, not a narrower fixed-width
+   sidebar — whichever one is showing takes the same half of the row. */
 .mining-detail {
-  width: 24rem;
-  flex: none;
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.mining-detail .word-detail {
+  height: 100%;
+}
+
+.mining-translation {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+}
+
+.mining-translation-panel {
+  height: 100%;
+}
+
+.mining-translation-input {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  resize: vertical;
+  padding: 1rem 1.1rem;
+  line-height: 1.7;
+  font: inherit;
+  color: var(--nn-ink);
+  background: var(--nn-paper);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-md);
+  caret-color: var(--nn-kaki);
 }
 
 @media (max-width: 900px) {
@@ -130,7 +142,8 @@
     flex-direction: column;
   }
 
-  .mining-detail {
+  .mining-detail,
+  .mining-translation {
     width: 100%;
   }
 }
@@ -274,32 +287,6 @@
   max-width: 62rem;
 }
 
-.mining-legend {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.mining-legend .btn {
-  margin-left: auto;
-}
-
-.swatch {
-  display: inline-block;
-  width: 9px;
-  height: 9px;
-  border-radius: var(--nn-r-pill);
-  margin-right: 0.35rem;
-}
-
-.swatch-new {
-  background: var(--nn-kaki);
-}
-
-.swatch-known {
-  background: var(--nn-jp-known);
-}
-
 .sentences {
   display: flex;
   flex-direction: column;
@@ -317,6 +304,9 @@
   margin: 0;
 }
 
+/* Deliberately quiet — every sentence gets one, so it can't compete with the
+   text itself for attention. Sized and coloured as UI chrome, not Japanese
+   content, even though the glyph itself is a kanji. */
 .tok {
   font: inherit;
   color: var(--nn-jp);
@@ -394,9 +384,15 @@
   cursor: pointer;
   border: 0;
   background: none;
-  font-size: 18px;
+  font: inherit;
+  font-size: 12.5px;
   line-height: 1;
   color: var(--nn-ink-3);
+}
+
+.word-close:hover,
+.word-close:focus-visible {
+  color: var(--nn-kaki);
 }
 
 .entries {

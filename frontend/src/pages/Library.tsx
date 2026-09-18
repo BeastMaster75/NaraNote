@@ -8,11 +8,38 @@ import './Library.css'
 type KanjiEntry = {
   literal: string
   strokeCount: number | null
+  grade: number | null
   jlptLevel: number | null
+  frequency: number | null
   meanings: string[]
   onReadings: string[]
   kunReadings: string[]
   addedAt: string
+}
+
+type SortKey = 'added' | 'grade' | 'frequency' | 'strokes' | 'jlpt'
+
+const SORT_LABELS: Record<SortKey, string> = {
+  added: 'Recently Added',
+  grade: 'Grade',
+  frequency: 'Frequency',
+  strokes: 'Strokes',
+  jlpt: 'JLPT Level',
+}
+
+function sortValue(entry: KanjiEntry, key: SortKey): number | null {
+  switch (key) {
+    case 'grade':
+      return entry.grade
+    case 'frequency':
+      return entry.frequency
+    case 'strokes':
+      return entry.strokeCount
+    case 'jlpt':
+      return entry.jlptLevel
+    default:
+      return null
+  }
 }
 
 /**
@@ -28,6 +55,8 @@ export function Library() {
   const [kanji, setKanji] = useState<KanjiEntry[] | null>(null)
   const [error, setError] = useState(false)
   const [jlptLevel, setJlptLevel] = useState<number | null>(null)
+  const [search, setSearch] = useState('')
+  const [sort, setSort] = useState<SortKey>('added')
 
   const reload = useCallback(() => {
     fetch('/api/library')
@@ -43,10 +72,44 @@ export function Library() {
     [kanji]
   )
 
-  const filteredKanji = useMemo(
-    () => (jlptLevel === null ? kanji : kanji?.filter((entry) => entry.jlptLevel === jlptLevel)),
-    [kanji, jlptLevel]
-  )
+  const filteredKanji = useMemo(() => {
+    if (!kanji) return kanji
+    const q = search.trim().toLowerCase()
+    let list = kanji.filter((entry) => {
+      if (jlptLevel !== null && entry.jlptLevel !== jlptLevel) return false
+      if (!q) return true
+      if (entry.literal === search.trim()) return true
+      return [...entry.meanings, ...entry.onReadings, ...entry.kunReadings]
+        .join(' ')
+        .toLowerCase()
+        .includes(q)
+    })
+    if (sort !== 'added') {
+      // JLPT sorts easiest (N5) first, matching how a learner actually thinks
+      // about their own collection; grade/frequency/strokes sort lowest-first
+      // for the same reason — lower is more basic in all three.
+      list = [...list].sort((a, b) => {
+        const av = sortValue(a, sort)
+        const bv = sortValue(b, sort)
+        if (av === null && bv === null) return 0
+        if (av === null) return 1
+        if (bv === null) return -1
+        return sort === 'jlpt' ? bv - av : av - bv
+      })
+    }
+    return list
+  }, [kanji, jlptLevel, search, sort])
+
+  const stats = useMemo(() => {
+    if (!kanji) return null
+    const byLevel: Record<number, number> = {}
+    let unrated = 0
+    for (const entry of kanji) {
+      if (entry.jlptLevel) byLevel[entry.jlptLevel] = (byLevel[entry.jlptLevel] ?? 0) + 1
+      else unrated++
+    }
+    return { byLevel, unrated }
+  }, [kanji])
 
   async function removeKanji(literal: string) {
     await fetch(`/api/library/${encodeURIComponent(literal)}`, { method: 'DELETE' })
@@ -77,18 +140,47 @@ export function Library() {
       ) : (
         <>
           <div className="library-toolbar">
-            <p className="muted small">
-              {jlptLevel === null
-                ? `${kanji.length} ${kanji.length === 1 ? 'character' : 'characters'}`
-                : `${filteredKanji?.length ?? 0} of ${kanji.length} characters`}
-              . Handwriting is scheduled under <Link to="/review">Review</Link>.
+            <div className="library-toolbar-row">
+              <input
+                className="library-search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search meaning, reading, or literal…"
+                aria-label="Search your collection"
+              />
+              <select
+                className="library-sort"
+                value={sort}
+                onChange={(event) => setSort(event.target.value as SortKey)}
+                aria-label="Sort by"
+              >
+                {(Object.keys(SORT_LABELS) as SortKey[]).map((key) => (
+                  <option key={key} value={key}>
+                    {SORT_LABELS[key]}
+                  </option>
+                ))}
+              </select>
+              <KanjiFilterBar jlptLevel={jlptLevel} onJlptLevelChange={setJlptLevel} />
+              <BatchAddModal savedLiterals={savedSet} onDone={reload} />
+            </div>
+
+            <p className="library-stats muted small">
+              {filteredKanji && filteredKanji.length !== kanji.length
+                ? `${filteredKanji.length} of ${kanji.length} shown`
+                : `${kanji.length} ${kanji.length === 1 ? 'character' : 'characters'}`}
+              {stats &&
+                [5, 4, 3, 2, 1]
+                  .filter((level) => stats.byLevel[level])
+                  .map((level) => ` · N${level} ${stats.byLevel[level]}`)
+                  .join('')}
+              {stats && stats.unrated > 0 && ` · unrated ${stats.unrated}`}
+              {' · Handwriting is scheduled under '}
+              <Link to="/review">Review</Link>.
             </p>
-            <KanjiFilterBar jlptLevel={jlptLevel} onJlptLevelChange={setJlptLevel} />
-            <BatchAddModal savedLiterals={savedSet} onDone={reload} />
           </div>
 
           {filteredKanji?.length === 0 && (
-            <p className="muted small">No N{jlptLevel} kanji in your collection yet.</p>
+            <p className="muted small">Nothing matches — try a different search or level.</p>
           )}
 
           <ul className="library-grid">

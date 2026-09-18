@@ -17,6 +17,8 @@ export type Me = {
   sessionSize: number
   /** 0 means no target set — Reading-deck generation stays unrestricted. */
   targetJlptLevel: number
+  /** Presence only — the key itself is never sent back once saved. */
+  hasGeminiKey: boolean
 }
 
 /**
@@ -30,6 +32,7 @@ const DEFAULTS: Me = {
   furigana: true,
   sessionSize: 20,
   targetJlptLevel: 0,
+  hasGeminiKey: false,
 }
 
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
@@ -39,7 +42,8 @@ type UserContextValue = {
   /** Derived from status: true once the initial check has answered, either way. */
   loaded: boolean
   status: AuthStatus
-  save: (patch: Partial<Me>) => Promise<void>
+  /** geminiApiKey is write-only — a real value sets it, '' clears it, never read back. */
+  save: (patch: Partial<Me> & { geminiApiKey?: string }) => Promise<void>
   /** Resolves to an error message on failure, null on success. */
   login: (email: string, password: string) => Promise<string | null>
   register: (email: string, password: string) => Promise<string | null>
@@ -103,9 +107,12 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return () => media.removeEventListener('change', apply)
   }, [me.theme])
 
-  const save = useCallback(async (patch: Partial<Me>) => {
+  const save = useCallback(async (patch: Partial<Me> & { geminiApiKey?: string }) => {
     // Optimistic: a theme switch that waited for a round trip would feel broken.
-    setMe((current) => ({ ...current, ...patch }))
+    // geminiApiKey is excluded from that merge on purpose — it's write-only and never
+    // belongs in local state, even transiently while the real request is in flight.
+    const { geminiApiKey: _geminiApiKey, ...optimistic } = patch
+    setMe((current) => ({ ...current, ...optimistic }))
     try {
       const response = await fetch('/api/me', {
         method: 'PATCH',

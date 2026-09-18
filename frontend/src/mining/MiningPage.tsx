@@ -57,6 +57,24 @@ function hasKanji(text: string) {
   return /[㐀-鿿]/.test(text)
 }
 
+async function translateApi(text: string, toJapanese: boolean) {
+  const response = await fetch('/api/mining/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, toJapanese }),
+  })
+  if (!response.ok) {
+    const body = (await response.json().catch(() => null)) as { message?: string } | null
+    throw new Error(body?.message || `Translation failed (${response.status}).`)
+  }
+  const data = (await response.json()) as { translation: string }
+  return data.translation
+}
+
+function translateErrorMessage(error: unknown) {
+  return error instanceof Error && error.message ? error.message : 'Couldn’t translate that.'
+}
+
 type KanjiPick = { literal: string; sentence: string }
 
 /** Every distinct kanji in a passage, in the order it first appears. */
@@ -85,6 +103,14 @@ export function MiningPage() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [kanjiPick, setKanjiPick] = useState<KanjiPick | null>(null)
+  const [translationEn, setTranslationEn] = useState('')
+  // Which side the Translate button acts on — it always translates the side you
+  // just typed into onto the other side, and never touches the side you're
+  // actively editing. Defaults to 'ja' so an auto-seeded English side (see the
+  // toggle handler) doesn't leave the button pointing at itself.
+  const [lastEdited, setLastEdited] = useState<'ja' | 'en'>('ja')
+  const [translating, setTranslating] = useState(false)
+  const [translateError, setTranslateError] = useState<string | null>(null)
   // The characters you already study — one fetch serving two jobs: the passage
   // reads as a diff against it, and the landing state shows it back to you.
   const [collected, setCollected] = useState<Collected[] | null>(null)
@@ -113,6 +139,8 @@ export function MiningPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Translation never fires on its own — only the Translate button triggers a
+  // request, in either direction. Analysing a passage never touches it.
   async function analyze(input: string) {
     if (!input.trim()) return
     setBusy(true)
@@ -133,6 +161,27 @@ export function MiningPage() {
     }
   }
 
+  /** The Translate button: always translates the side you last edited onto the
+   *  other side, and leaves the side you edited untouched. */
+  async function translatePanel() {
+    setTranslating(true)
+    setTranslateError(null)
+    try {
+      if (lastEdited === 'en') {
+        const japanese = await translateApi(translationEn, true)
+        setText(japanese)
+        setLastEdited('ja')
+        await analyze(japanese)
+      } else {
+        setTranslationEn(await translateApi(text, false))
+      }
+    } catch (error) {
+      setTranslateError(translateErrorMessage(error))
+    } finally {
+      setTranslating(false)
+    }
+  }
+
 
   // Kanji coverage, not word coverage: the page is about characters now, and a
   // word-based figure would report on a collection you no longer add to here.
@@ -141,57 +190,48 @@ export function MiningPage() {
   const coverage =
     passageKanji.length > 0 ? Math.round((knownKanji / passageKanji.length) * 100) : null
 
+  const translateDisabled =
+    translating || (lastEdited === 'en' ? !translationEn.trim() : !text.trim())
+
   return (
     <Page title="Mine" subtitle="Paste Japanese you have read and pull the words out of it.">
       <div className="mining">
-        {/* Before you analyse, the box IS the page — a narrow column of textarea
-            beside an empty void was the old shape, and it read as unfinished.
-            After analysing it collapses, because then the passage is the page. */}
+        {/* One toolbar, before or after analysing — what it offers changes, but
+            it never swaps the whole page shape out from under the two panes
+            below, which stay put throughout. */}
         {!result ? (
-          <section className="card mining-box">
-            <textarea
-              className="mining-textarea jp"
-              value={text}
-              onChange={(event) => setText(event.target.value)}
-              placeholder="日本語をここに貼り付けてください"
-              rows={10}
-              aria-label="Japanese text to analyse"
+          <section className="card mining-bar">
+            <input
+              className="mining-source"
+              value={source}
+              onChange={(event) => setSource(event.target.value)}
+              placeholder="Where it's from (optional)"
+              aria-label="Source"
             />
-            <div className="mining-controls">
-              <input
-                className="mining-source"
-                value={source}
-                onChange={(event) => setSource(event.target.value)}
-                placeholder="Where it's from (optional)"
-                aria-label="Source"
-              />
-              <div className="mining-actions">
-                <button
-                  type="button"
-                  className="btn is-primary"
-                  onClick={() => analyze(text)}
-                  disabled={busy || !text.trim()}
-                >
-                  {busy ? 'Reading…' : 'Analyse'}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  onClick={() => {
-                    setText(SAMPLE)
-                    analyze(SAMPLE)
-                  }}
-                  disabled={busy}
-                >
-                  Try an Example
-                </button>
-              </div>
+            <div className="mining-actions">
+              <button
+                type="button"
+                className="btn is-primary"
+                onClick={() => analyze(text)}
+                disabled={busy || !text.trim()}
+              >
+                {busy ? 'Reading…' : 'Analyse'}
+              </button>
+              <button
+                type="button"
+                className="btn"
+                onClick={() => {
+                  setText(SAMPLE)
+                  analyze(SAMPLE)
+                }}
+                disabled={busy}
+              >
+                Try an Example
+              </button>
             </div>
           </section>
         ) : (
           <section className="card mining-bar">
-            {/* No excerpt of the passage here: it used to truncate what you'd
-                pasted to one clipped line, directly above the full text. */}
             <div className="mining-stats">
               <div className="stat-bar" aria-hidden="true">
                 <span className="stat-known" style={{ width: `${coverage ?? 0}%` }} />
@@ -219,6 +259,8 @@ export function MiningPage() {
                   setText('')
                   setResult(null)
                   setKanjiPick(null)
+                  setTranslationEn('')
+                  setTranslateError(null)
                 }}
                 disabled={busy}
               >
@@ -230,19 +272,27 @@ export function MiningPage() {
 
         {error && <p className="error">{error}</p>}
 
-        {result ? (
-          <div className="mining-stage">
-            <section className="mining-passage">
-              <div className="mining-legend muted small">
-                <span>
-                  <span className="swatch swatch-new" /> not yours yet — tap to file this
-                  sentence under it
-                </span>
-                <span>
-                  <span className="swatch swatch-known" /> already in your collection
-                </span>
-              </div>
-
+        {/* Japanese always on the left, English always on the right — one
+            steady two-pane workspace rather than a shape that changes under
+            you. The left pane is a plain textarea until you analyse, then the
+            tappable/furigana view; there is no second Japanese box anywhere
+            else. The right pane is translation by default, or a tapped
+            kanji's detail while one is picked — closing it brings translation
+            back. Nothing on the right ever requests anything on its own. */}
+        <div className="mining-stage">
+          <section className="mining-passage">
+            {!result ? (
+              <textarea
+                className="mining-textarea jp"
+                value={text}
+                onChange={(event) => {
+                  setText(event.target.value)
+                  setLastEdited('ja')
+                }}
+                placeholder="日本語をここに貼り付けてください"
+                aria-label="Japanese text to analyse"
+              />
+            ) : (
               <div className="sentences">
                 {result.sentences.map((sentence, index) => {
                   const whole = sentenceText(sentence)
@@ -295,27 +345,41 @@ export function MiningPage() {
                   )
                 })}
               </div>
-            </section>
-
-            {/* Its own column, so on a desktop what you clicked sits beside the
-                passage instead of pushing it down the page. */}
-            {kanjiPick && (
-              <aside className="mining-detail">
-                <KanjiPickDetail
-                  key={kanjiPick.literal + kanjiPick.sentence}
-                  literal={kanjiPick.literal}
-                  sentence={kanjiPick.sentence}
-                  source={source}
-                  alreadyYours={library.has(kanjiPick.literal)}
-                  onFiled={loadLibrary}
-                  onClose={() => setKanjiPick(null)}
-                />
-              </aside>
             )}
-          </div>
-        ) : (
-          <RecentlyCollected items={collected} />
-        )}
+          </section>
+
+          {kanjiPick ? (
+            <aside className="mining-detail">
+              <KanjiPickDetail
+                key={kanjiPick.literal + kanjiPick.sentence}
+                literal={kanjiPick.literal}
+                sentence={kanjiPick.sentence}
+                source={source}
+                alreadyYours={library.has(kanjiPick.literal)}
+                onFiled={loadLibrary}
+                onClose={() => setKanjiPick(null)}
+              />
+            </aside>
+          ) : (
+            <aside className="mining-translation">
+              <TranslationPanel
+                hasKey={me.hasGeminiKey}
+                english={translationEn}
+                lastEdited={lastEdited}
+                disabled={translateDisabled}
+                onEnglishChange={(value) => {
+                  setTranslationEn(value)
+                  setLastEdited('en')
+                }}
+                translating={translating}
+                error={translateError}
+                onSubmit={translatePanel}
+              />
+            </aside>
+          )}
+        </div>
+
+        <RecentlyCollected items={collected} />
       </div>
     </Page>
   )
@@ -385,8 +449,8 @@ function KanjiPickDetail({
         <div>
           <span className="word-term jp-lg">{literal}</span>
         </div>
-        <button type="button" className="word-close" onClick={onClose} aria-label="Close">
-          ×
+        <button type="button" className="word-close" onClick={onClose}>
+          ← Translation
         </button>
       </header>
 
@@ -434,6 +498,78 @@ function KanjiPickDetail({
                 : `Add ${literal} With This Sentence`}
           </button>
         )}
+      </div>
+    </section>
+  )
+}
+
+/**
+ * The right pane by default — the Japanese side is the passage itself (see the
+ * main return above), so this is the only Japanese-and-English box on the page,
+ * not a second copy of one. Never fires on its own: the Translate button is the
+ * only trigger, in either direction, and only fills the side you *didn't* just
+ * type into. Translating English into Japanese feeds the result back into the
+ * passage (see translatePanel in MiningPage) so it's immediately minable;
+ * translating Japanese into English is just a read, since the passage itself
+ * doesn't change.
+ */
+function TranslationPanel({
+  hasKey,
+  english,
+  lastEdited,
+  disabled,
+  onEnglishChange,
+  translating,
+  error,
+  onSubmit,
+}: {
+  hasKey: boolean
+  english: string
+  lastEdited: 'ja' | 'en'
+  disabled: boolean
+  onEnglishChange: (value: string) => void
+  translating: boolean
+  error: string | null
+  onSubmit: () => void
+}) {
+  if (!hasKey) {
+    return (
+      <section className="word-detail card mining-translation-panel">
+        <header className="word-head">
+          <span className="kicker">Translation</span>
+        </header>
+        <p className="muted small">
+          Add a Gemini API key in <Link to="/settings">Settings</Link> to translate.
+        </p>
+      </section>
+    )
+  }
+
+  return (
+    <section className="word-detail card mining-translation-panel">
+      <header className="word-head">
+        <span className="kicker">Translation</span>
+      </header>
+
+      <textarea
+        className="mining-translation-input"
+        value={english}
+        onChange={(event) => onEnglishChange(event.target.value)}
+        placeholder="Type English here to translate it into Japanese — or click Translate to read the passage in English."
+        disabled={translating}
+        aria-label="English"
+      />
+
+      {error && <p className="error small">{error}</p>}
+
+      <div className="word-actions">
+        <button type="button" className="btn is-primary" onClick={onSubmit} disabled={disabled}>
+          {translating
+            ? 'Translating…'
+            : lastEdited === 'en'
+              ? '→ 日本語'
+              : '→ English'}
+        </button>
       </div>
     </section>
   )

@@ -3,6 +3,11 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { Page } from '../components/Page'
 import './KanjiLookup.css'
 
+type Sense = { partOfSpeech: string[]; glosses: string[] }
+type WordHit = { id: string; common: boolean; kanji: string | null; reading: string | null; senses: Sense[] }
+type KanjiHit = { literal: string; meanings: string[]; onReadings: string[]; kunReadings: string[] }
+type SearchResponse = { kanji: KanjiHit[]; words: WordHit[] }
+
 type KanjiResponse = {
   literal: string
   strokeCount: number | null
@@ -142,6 +147,12 @@ export function KanjiLookup() {
 
   const [recents, setRecents] = useState<string[]>(readRecents)
 
+  // A separate field from the literal lookup above — that one is deliberately
+  // single-character with IME composition handling built around it, and
+  // "I don't know the character" is a different enough intent to not bend that
+  // logic to fit both.
+  const [search, setSearch] = useState('')
+
   // Stable identity so the panel's effect doesn't re-run on every render.
   const remember = useCallback((found: string) => {
     setRecents(pushRecent(found))
@@ -212,13 +223,120 @@ export function KanjiLookup() {
           </div>
         </div>
 
-        {literal ? (
+        <input
+          className="lookup-search"
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder="Or search by meaning or reading — “water”, みず…"
+          aria-label="Search by meaning or reading"
+        />
+
+        {search.trim() ? (
+          <SearchResults
+            query={search.trim()}
+            onPick={(picked) => {
+              setSearch('')
+              navigate(`/kanji/${picked}`)
+            }}
+          />
+        ) : literal ? (
           <KanjiPanel literal={literal} onFound={remember} />
         ) : (
           <p className="muted">Pick a kanji, or type one.</p>
         )}
       </section>
     </Page>
+  )
+}
+
+/** Debounced — every keystroke firing a request would be both wasteful and, on
+ *  a slower connection, a flood of out-of-order responses to guard against. */
+function SearchResults({
+  query,
+  onPick,
+}: {
+  query: string
+  onPick: (literal: string) => void
+}) {
+  const [results, setResults] = useState<SearchResponse | null>(null)
+  const [status, setStatus] = useState<'loading' | 'ok' | 'error'>('loading')
+
+  useEffect(() => {
+    let cancelled = false
+    setStatus('loading')
+    const timer = setTimeout(() => {
+      fetch(`/api/search?q=${encodeURIComponent(query)}`)
+        .then((response) => {
+          if (!response.ok) throw new Error(String(response.status))
+          return response.json() as Promise<SearchResponse>
+        })
+        .then((data) => {
+          if (cancelled) return
+          setResults(data)
+          setStatus('ok')
+        })
+        .catch(() => {
+          if (!cancelled) setStatus('error')
+        })
+    }, 300)
+
+    return () => {
+      cancelled = true
+      clearTimeout(timer)
+    }
+  }, [query])
+
+  if (status === 'error') return <p className="error">Couldn&rsquo;t reach the server.</p>
+  if (status === 'loading' || !results) return <p className="muted">Searching…</p>
+
+  if (results.kanji.length === 0 && results.words.length === 0) {
+    return <p className="muted">Nothing found for &ldquo;{query}&rdquo;.</p>
+  }
+
+  return (
+    <div className="search-results">
+      {results.kanji.length > 0 && (
+        <Section title="Kanji">
+          <div className="search-kanji-grid">
+            {results.kanji.map((hit) => (
+              <button
+                key={hit.literal}
+                type="button"
+                className="search-kanji-hit jp-lg"
+                onClick={() => onPick(hit.literal)}
+                title={hit.meanings.join(', ')}
+              >
+                {hit.literal}
+              </button>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {results.words.length > 0 && (
+        <Section title="Words">
+          <ul className="search-word-list">
+            {results.words.map((word) => (
+              <li key={word.id} className="search-word-hit">
+                <span className="jp-sm jp-ruby">
+                  {word.kanji ? (
+                    <ruby>
+                      {word.kanji}
+                      <rt>{word.reading}</rt>
+                    </ruby>
+                  ) : (
+                    word.reading
+                  )}
+                </span>
+                <span className="muted small">
+                  {word.senses[0]?.glosses.join(', ') ?? ''}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+    </div>
   )
 }
 
