@@ -4,6 +4,12 @@
 #
 #   docker compose -f docker-compose.prod.yml up --build
 #
+# POSTGRES_PASSWORD and NARANOTE_ENCRYPTION_KEY have no default here on purpose —
+# unlike docker-compose.yml's dev convenience, a real deployment must not be able to
+# silently start on the known values baked into application.yaml/the dev compose file.
+# Set both in a gitignored .env at the repo root (Compose reads it automatically); if
+# either is unset Compose passes an empty value, Postgres refuses to initialize and
+# CryptoService refuses to build an AES key, so this fails fast instead of running insecure.
 services:
   db:
     image: postgres:16
@@ -12,7 +18,7 @@ services:
     environment:
       POSTGRES_DB: naranote
       POSTGRES_USER: ${POSTGRES_USER:-naranote}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-naranote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     volumes:
       - naranote-pgdata:/var/lib/postgresql/data
@@ -40,10 +46,12 @@ services:
         condition: service_started
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-naranote}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-naranote}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/naranote
       NARANOTE_DATA_DIR: /data
       NARANOTE_VOICEVOX_URL: http://voicevox:50021
+      NARANOTE_ENCRYPTION_KEY: ${NARANOTE_ENCRYPTION_KEY}
+      NARANOTE_COOKIE_SECURE: "true"
     ports:
       - "8080:8080"
     # Optional: only needed to run the one-off --import-kanji /

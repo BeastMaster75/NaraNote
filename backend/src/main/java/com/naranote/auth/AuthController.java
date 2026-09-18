@@ -1,5 +1,6 @@
 package com.naranote.auth;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Email;
@@ -9,6 +10,7 @@ import java.time.Duration;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -48,17 +50,29 @@ public class AuthController {
     private final JdbcTemplate jdbc;
     private final BCryptPasswordEncoder passwordEncoder;
     private final SessionService sessionService;
+    private final LoginRateLimiter rateLimiter;
+    private final boolean cookieSecure;
 
     public AuthController(
-            JdbcTemplate jdbc, BCryptPasswordEncoder passwordEncoder, SessionService sessionService) {
+            JdbcTemplate jdbc,
+            BCryptPasswordEncoder passwordEncoder,
+            SessionService sessionService,
+            LoginRateLimiter rateLimiter,
+            @Value("${naranote.cookie-secure:false}") boolean cookieSecure) {
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
         this.sessionService = sessionService;
+        this.rateLimiter = rateLimiter;
+        this.cookieSecure = cookieSecure;
     }
 
     @PostMapping("/register")
     @Transactional
-    public void register(@Valid @RequestBody Credentials request, HttpServletResponse response) {
+    public void register(
+            @Valid @RequestBody Credentials request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
         String email = normalize(request.email());
         Boolean exists =
                 jdbc.queryForObject(
@@ -87,7 +101,11 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public void login(@Valid @RequestBody Credentials request, HttpServletResponse response) {
+    public void login(
+            @Valid @RequestBody Credentials request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
         String email = normalize(request.email());
         List<Object[]> rows =
                 jdbc.query(
@@ -124,6 +142,7 @@ public class AuthController {
                 HttpHeaders.SET_COOKIE,
                 ResponseCookie.from(COOKIE_NAME, "")
                         .httpOnly(true)
+                        .secure(cookieSecure)
                         .sameSite("Lax")
                         .path("/")
                         .maxAge(0)
@@ -136,9 +155,11 @@ public class AuthController {
                 HttpHeaders.SET_COOKIE,
                 ResponseCookie.from(COOKIE_NAME, token)
                         .httpOnly(true)
-                        // TODO: add .secure(true) once this is served over https — omitted
-                        // now because local dev is plain http and Secure cookies are
-                        // silently dropped by the browser over http.
+                        // Driven by naranote.cookie-secure — false for local dev, since
+                        // Secure cookies are silently dropped by the browser over plain
+                        // http; NARANOTE_COOKIE_SECURE=true in docker-compose.prod.yml
+                        // turns it on for the real, https-served deployment.
+                        .secure(cookieSecure)
                         .sameSite("Lax")
                         .path("/")
                         .maxAge(COOKIE_MAX_AGE)

@@ -132,6 +132,14 @@ docker compose exec backend ./mvnw spring-boot:run "-Dspring-boot.run.arguments=
 `static/` resources at build time, so Spring Boot serves both the app and the API from a single
 container on port 8080, no separate frontend service.
 
+Unlike the dev compose file, `docker-compose.prod.yml` has **no fallback for
+`POSTGRES_PASSWORD` or `NARANOTE_ENCRYPTION_KEY`** — both must be set (a gitignored `.env` at the
+repo root works, same as `POSTGRES_USER`/`POSTGRES_PASSWORD` already do for dev) or the stack
+fails to start rather than silently running on the values baked into `application.yaml`. Generate
+the encryption key with `openssl rand -base64 32`; losing or rotating it makes every already-
+stored Gemini key undecryptable. `NARANOTE_COOKIE_SECURE` is already `true` in this file, marking
+the session cookie https-only — don't run this compose file behind plain http.
+
 ```bash
 docker compose -f docker-compose.prod.yml up --build
 ```

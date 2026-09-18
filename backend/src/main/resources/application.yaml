@@ -31,3 +31,7 @@ naranote:
   # same way POSTGRES_PASSWORD is overridden. Losing/rotating this key makes every already-
   # stored Gemini key undecryptable, so treat it like any other production secret.
   encryption-key: ${NARANOTE_ENCRYPTION_KEY:IH5xZIdPqgKNTlgsc5meggdDAjN/lFRML82x2bsYdQ0=}
+  # Marks the session cookie Secure (https-only) — off by default because local dev is
+  # plain http and a Secure cookie would be silently dropped by the browser. Set
+  # NARANOTE_COOKIE_SECURE=true for any real deployment; docker-compose.prod.yml already does.
+  cookie-secure: ${NARANOTE_COOKIE_SECURE:false}
