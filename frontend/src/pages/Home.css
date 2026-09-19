@@ -198,9 +198,9 @@
   box-shadow: var(--nn-shadow);
 }
 
-/* Exactly two rows, clipped rather than scrolled — a scrollbar on an 18-cell
+/* Exactly three rows, clipped rather than scrolled — a scrollbar on an 18-cell
    preview reads as a broken widget, not an invitation to scroll. Fetching
-   more than fits is deliberate: whatever doesn't make the first two rows at
+   more than fits is deliberate: whatever doesn't make the first three rows at
    the current width is simply not shown, so this never falls short of a
    clean fill the way a fixed count tuned to one window size would. */
 .recent-kanji {
@@ -211,7 +211,7 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: calc(2 * 3.2rem + 0.5rem);
+  max-height: calc(3 * 3.2rem + 2 * 0.5rem);
   overflow: hidden;
 }
 

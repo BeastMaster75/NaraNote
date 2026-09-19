@@ -8,8 +8,10 @@ import java.sql.Array;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -66,20 +68,88 @@ public class SearchService {
     }
 
     private List<EntryMatch> searchWords(String query) {
+        // A relevance score, computed per gloss and reduced to the single best (lowest) score
+        // an entry achieves across all its senses. Three components, most significant first:
+        //   tier   — 0 if the gloss, minus a trailing "(qualifier)", is exactly the query
+        //            (水's "water (esp. cool or cold)" strips to "water"; 岩's "rock" already
+        //            is); 1 if the query merely appears as a whole word (給水's "water supply"
+        //            — bounded by a space, not a substring of a longer word); 2 for anything
+        //            else the WHERE clause let through (e.g. "water" inside "seawater" with no
+        //            word boundary, or buried in an unrelated parenthetical four senses deep).
+        //   ord    — which sense the match is in; a word's first, primary sense outranks its
+        //            fourth or fifth.
+        //   idx    — position within that sense's own gloss list; 石's "rock" is its second
+        //            listed translation (after "stone"), 岩's is its first.
+        // These three must be measured on the *same* matching (sense, gloss) pair and combined
+        // into one number before taking MIN() — three separate MIN()s over tier, ord and idx
+        // independently could each come from a different row, synthesizing a "best case" combo
+        // that never actually occurred on any single gloss. Without this whole scheme, "water"
+        // ranked サーバ's incidental "(water) dispenser" sense above 水 itself, and "rock" put
+        // 石 (whose primary translation is "stone", "rock" only second) ahead of 岩.
+        String escapedQuery = escapeRegex(query);
         record EntryRow(String id, boolean common) {}
-        List<EntryRow> entries =
+
+        // Exact written-form match — the query IS the word, whether that's a kana reading
+        // (はな) or a kanji spelling. dict_form holds both kinds of form undifferentiated, so
+        // one equality check covers "every word read はな" the same way it covers "every word
+        // written 花" — no separate kana-vs-kanji branch needed. This used to be entirely
+        // missing: searchWords only ever matched English glosses, so a kana reading query
+        // matched nothing (no English gloss contains Japanese text) regardless of how many
+        // words actually had that reading in dict_form.
+        List<EntryRow> formMatches =
                 jdbc.query(
                         """
                         select distinct de.id, de.common
-                        from dict_sense ds
-                        join dict_entry de on de.id = ds.entry_id
-                        where nn_immutable_glosses_text(ds.glosses) ilike '%' || ? || '%'
+                        from dict_form df
+                        join dict_entry de on de.id = df.entry_id
+                        where df.text = ?
                         order by de.common desc
                         limit ?
                         """,
                         (rs, row) -> new EntryRow(rs.getString("id"), rs.getBoolean("common")),
                         query,
                         MAX_WORDS);
+
+        List<EntryRow> glossMatches =
+                jdbc.query(
+                        """
+                        select de.id, de.common
+                        from dict_sense ds
+                        join dict_entry de on de.id = ds.entry_id
+                        cross join lateral unnest(ds.glosses) with ordinality as g(text, idx)
+                        where nn_immutable_glosses_text(ds.glosses) ilike '%' || ? || '%'
+                        group by de.id, de.common
+                        order by
+                          min(
+                            (case
+                               when regexp_replace(lower(g.text), '\\s*\\([^)]*\\)\\s*$', '') = lower(?)
+                                 then 0
+                               when g.text ~* ('\\y' || ? || '\\y')
+                                 then 1
+                               else 2
+                             end) * 100000 + ds.ord * 1000 + (g.idx - 1)
+                          ) asc,
+                          de.common desc
+                        limit ?
+                        """,
+                        (rs, row) -> new EntryRow(rs.getString("id"), rs.getBoolean("common")),
+                        query,
+                        query,
+                        escapedQuery,
+                        MAX_WORDS);
+
+        // Exact form matches first — typing the word itself is the most unambiguous search
+        // there is — then gloss matches filling whatever room is left, entries deduplicated
+        // rather than shown twice if a word happens to match both ways.
+        Map<String, EntryRow> merged = new LinkedHashMap<>();
+        for (EntryRow row : formMatches) {
+            merged.put(row.id(), row);
+        }
+        for (EntryRow row : glossMatches) {
+            if (merged.size() >= MAX_WORDS) break;
+            merged.putIfAbsent(row.id(), row);
+        }
+        List<EntryRow> entries = List.copyOf(merged.values());
         if (entries.isEmpty()) {
             return List.of();
         }
@@ -131,6 +201,15 @@ public class SearchService {
                     .computeIfAbsent(row.entryId(), k -> new ArrayList<>())
                     .add(new Sense(row.partOfSpeech(), row.glosses()));
         }
+        // The entry query above matched on *any* sense's glosses, but the client only ever
+        // shows senses().get(0) — without this, a word whose matching sense is its third or
+        // fourth meaning displays an unrelated first gloss with no visible connection to what
+        // was searched. A stable sort keeps every other ordering (ord, i.e. dictionary sense
+        // order) intact; it only pulls whichever sense actually matched to the front.
+        String needle = query.toLowerCase(Locale.ROOT);
+        for (List<Sense> senses : sensesByEntry.values()) {
+            senses.sort(Comparator.comparing(sense -> matches(sense, needle) ? 0 : 1));
+        }
 
         return entries.stream()
                 .map(
@@ -143,6 +222,17 @@ public class SearchService {
                                         sensesByEntry.getOrDefault(e.id(), List.of())))
                 .filter(match -> !match.senses().isEmpty())
                 .toList();
+    }
+
+    /** Escapes POSIX advanced-regex metacharacters so a query can be dropped into a Postgres
+     *  {@code ~*} pattern (here, wrapped between two {@code \y} word-boundary markers) without
+     *  a stray {@code (} or {@code .} in what someone typed changing what the pattern means. */
+    private static String escapeRegex(String query) {
+        return query.replaceAll("([\\\\^$.|?*+()\\[\\]{}])", "\\\\$1");
+    }
+
+    private static boolean matches(Sense sense, String needleLower) {
+        return sense.glosses().stream().anyMatch(g -> g.toLowerCase(Locale.ROOT).contains(needleLower));
     }
 
     private static List<String> textArray(Array array) throws SQLException {

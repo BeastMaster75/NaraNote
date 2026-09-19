@@ -15,6 +15,7 @@
   width: 5.5rem;
   padding: 0.5rem 0.9rem;
   text-align: center;
+  color: var(--nn-jp);
   background: var(--nn-sunk);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-pill);
@@ -61,6 +62,7 @@
   width: 100%;
   max-width: 26rem;
   padding: 0.5rem 0.9rem;
+  color: var(--nn-ink);
   background: var(--nn-sunk);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-pill);

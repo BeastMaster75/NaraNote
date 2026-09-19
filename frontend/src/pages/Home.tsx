@@ -126,9 +126,9 @@ export function Home() {
       .catch(() => undefined)
     fetch('/api/library')
       .then((response) => (response.ok ? (response.json() as Promise<RecentKanji[]>) : []))
-      // More than fits at most window sizes, deliberately — the block scrolls
-      // internally rather than the count being tuned to exactly one size.
-      .then((all) => setKanji(all.slice(0, 18)))
+      // More than fits at most window sizes, deliberately — CSS clips to three
+      // rows rather than the count being tuned to exactly one size.
+      .then((all) => setKanji(all.slice(0, 27)))
       .catch(() => undefined)
   }, [])
 
@@ -328,7 +328,8 @@ export function Home() {
             </div>
 
             <p className="muted small">
-              Activity fills itself in from what you did. Click a day to plan it.
+              Activity is logged automatically from what you complete. Click a day to
+              schedule a task.
             </p>
           </section>
 
@@ -384,7 +385,8 @@ function RightNow({ suggestions }: { suggestions: Suggestion[] }) {
       )}
 
       <p className="rightnow-note small">
-        These aren&rsquo;t ticked off — they disappear when they&rsquo;re no longer true.
+        These update automatically rather than being marked complete — each one disappears
+        once it no longer applies.
       </p>
     </aside>
   )

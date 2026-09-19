@@ -13,6 +13,13 @@
    ───────────────────────────────────────────────────────────────────────── */
 
 :root {
+  /* Tells the browser which palette its OWN chrome should follow — form
+     control text/background, scrollbars, autofill — none of which inherit
+     author CSS `color` by default. Without this, an <input> with no explicit
+     `color` renders pure black regardless of [data-theme], because the UA
+     stylesheet resolves it against an assumed light scheme. */
+  color-scheme: light;
+
   /* ground — pale pink-cream, never white and never literally pink underfoot */
   --nn-paper: #fbf1ec;      /* pink-tinted 生成り — app ground */
   --nn-raised: #fffaf8;     /* near-white, cards lift above ground */
@@ -79,6 +86,8 @@
    legibility on a dark ground, the same technique the old persimmon dark
    theme used (deepen for light backgrounds, brighten for dark ones). */
 [data-theme='dark'] {
+  color-scheme: dark;
+
   --nn-paper: #1e1417;      /* plum-black ground */
   --nn-raised: #2a1b20;
   --nn-sunk: #150e10;

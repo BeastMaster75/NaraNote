@@ -122,8 +122,8 @@ export function ReviewHub() {
           <div className="hub-start-copy">
             <h3 className="kicker">Due Now</h3>
             <p className="muted small">
-              One queue across every deck. Reviewing deck by deck is how you end up with
-              three decks each saying &ldquo;4 due&rdquo; and nothing done.
+              A single queue spans every deck. Reviewing decks separately tends to leave
+              several decks marked &ldquo;due&rdquo; with nothing actually reviewed.
             </p>
             <KanjiFilterBar jlptLevel={jlptLevel} onJlptLevelChange={setJlptLevel} />
           </div>
@@ -212,9 +212,11 @@ export function ReviewHub() {
         </ul>
 
         <p className="muted small hub-note">
-          Decks are the &ldquo;where it&rsquo;s from&rdquo; you type when mining — nothing to
-          create or maintain. Change a word&rsquo;s source and it moves.{' '}
-          {kanjiDeck && 'Handwriting is scheduled separately, and Anki cannot check it.'}
+          Decks are generated automatically from the source you enter while mining, so
+          there&rsquo;s nothing to set up or maintain. Changing a word&rsquo;s source moves
+          it to the corresponding deck.{' '}
+          {kanjiDeck &&
+            'Handwriting practice is scheduled separately, since Anki cannot evaluate handwriting.'}
         </p>
       </div>
     </Page>
