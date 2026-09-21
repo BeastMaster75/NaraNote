@@ -14,9 +14,9 @@ type AnalyzeResponse = { sentences: PassageSentence[] }
 type Collected = { literal: string; meanings: string[]; addedAt: string }
 type KanjiPick = { literal: string; sentence: string }
 
-/** What Read's picker page hands over: either a curated book id, or text
- *  already in hand (an upload's extracted text, or a paste). */
-type HandOff = { bookId?: number; text?: string; source?: string }
+/** What Read's picker page hands over: text already in hand — an upload's
+ *  extracted text, or a paste. */
+type HandOff = { text?: string; source?: string }
 
 type Phase = 'record' | 'evaluating' | 'result' | 'summary'
 
@@ -51,33 +51,24 @@ export function ReadingSession() {
 
   useEffect(loadLibrary, [loadLibrary])
 
-  // Fires once on arrival: fetches a curated book's text (if handed a bookId)
-  // or reuses text already in hand, then analyses it the same way Mining does.
+  // Fires once on arrival: analyses whatever text the picker page handed over,
+  // the same way Mining does.
   const started = useRef(false)
   useEffect(() => {
     if (started.current) return
     started.current = true
 
-    if (!handOff || (!handOff.bookId && !handOff.text)) {
+    if (!handOff?.text) {
       setLoadError('Nothing to read — pick something on the Read page.')
       return
     }
 
     void (async () => {
       try {
-        let text = handOff.text ?? null
-        if (handOff.bookId) {
-          const bookResponse = await fetch(`/api/reading/books/${handOff.bookId}`)
-          if (!bookResponse.ok) throw new Error(String(bookResponse.status))
-          const book = (await bookResponse.json()) as { text: string | null }
-          text = book.text
-        }
-        if (!text) throw new Error('No text')
-
         const analyzeResponse = await fetch('/api/reading/analyze', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify({ text: handOff.text }),
         })
         if (!analyzeResponse.ok) throw new Error(String(analyzeResponse.status))
         setResult((await analyzeResponse.json()) as AnalyzeResponse)

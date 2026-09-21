@@ -35,12 +35,6 @@ const CREDITS = [
     body: 'Word-reading audio in Review, generated and cached server-side.',
     license: 'VOICEVOX',
   },
-  {
-    name: '青空文庫 (Aozora Bunko)',
-    href: 'https://www.aozora.gr.jp/',
-    body: "The curated short stories on the Read page's built-in library.",
-    license: 'Public domain',
-  },
 ]
 
 const THEMES: { value: Theme; label: string }[] = [

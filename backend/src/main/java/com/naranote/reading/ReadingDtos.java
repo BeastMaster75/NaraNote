@@ -8,10 +8,6 @@ public final class ReadingDtos {
 
     private ReadingDtos() {}
 
-    public record BookSummary(long id, String title, String author, Integer jlptLevel, Integer charCount) {}
-
-    public record BookDetail(long id, String title, String author, Integer jlptLevel, String text) {}
-
     public record ExtractResponse(String text) {}
 
     /**
