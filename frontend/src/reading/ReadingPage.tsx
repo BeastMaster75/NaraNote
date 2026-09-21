@@ -7,13 +7,6 @@ import './ReadingPage.css'
  * Where a Read session starts: your own text, either a file upload or a
  * straight paste. Hands off to {@code ReadingSession}, which does the actual
  * analysing.
- *
- * <p>A curated built-in library (Aozora Bunko) was tried and pulled: the
- * whole public-domain archive is old enough that nothing in it scored below
- * intermediate, no matter how the difficulty scoring was tuned — it wasn't a
- * bug to fix, it's what public-domain Japanese literature actually is. This
- * page goes back to just what reliably works until a source that actually
- * covers beginner levels replaces it.
  */
 export function ReadingPage() {
   const navigate = useNavigate()

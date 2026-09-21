@@ -124,7 +124,7 @@ public class KanjiLibraryService {
         List<KanjiLibraryEntry> toSave = unique.stream()
                 .filter(knownKanji::contains)
                 .filter(lit -> !existingEntries.contains(lit))
-                .map(lit -> new KanjiLibraryEntry(currentUser.id(), lit, "BATCH"))
+                .map(lit -> new KanjiLibraryEntry(currentUser.id(), lit, source))
                 .toList();
 
         if (!toSave.isEmpty()) {
