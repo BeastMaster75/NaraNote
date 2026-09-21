@@ -51,6 +51,10 @@ export function LoginPage() {
             />
           </label>
 
+          <p className="muted small">
+            <Link to="/forgot-password">Forgot password?</Link>
+          </p>
+
           {error && <p className="error small">{error}</p>}
 
           <button type="submit" className="btn is-primary" disabled={busy}>

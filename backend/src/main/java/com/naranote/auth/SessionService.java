@@ -67,6 +67,15 @@ public class SessionService {
         jdbc.update("delete from app_session where token_hash = ?", hash(rawToken));
     }
 
+    /**
+     * Signs the account out everywhere, not just the current device — used after a password
+     * reset, since the reset itself is evidence the old password (and anything logged in with
+     * it) may not have been trustworthy.
+     */
+    public void revokeAllForUser(long userId) {
+        jdbc.update("delete from app_session where user_id = ?", userId);
+    }
+
     private static String hash(String rawToken) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

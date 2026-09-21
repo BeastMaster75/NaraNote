@@ -122,7 +122,9 @@ export function Home() {
   useEffect(() => {
     fetch('/api/vocab')
       .then((response) => (response.ok ? (response.json() as Promise<RecentWord[]>) : []))
-      .then((all) => setWords(all.slice(0, 4)))
+      // More than fits, deliberately — CSS clips to three rows rather than the
+      // count being tuned to exactly one card height.
+      .then((all) => setWords(all.slice(0, 10)))
       .catch(() => undefined)
     fetch('/api/library')
       .then((response) => (response.ok ? (response.json() as Promise<RecentKanji[]>) : []))
@@ -206,7 +208,7 @@ export function Home() {
             say what to do instead. */}
         <div className="home-lower">
           <section className="recent">
-            <div className="recent-block">
+            <div className="recent-block recent-block-kanji">
               <h3 className="kicker">Kanji You Added</h3>
               <ul className="recent-kanji">
                 {kanji.map((entry) => (
@@ -231,7 +233,7 @@ export function Home() {
             <div className="recent-block">
               <h3 className="kicker">Words You Saved</h3>
               <ul className="recent-words">
-                {words.map((word) => (
+                {words.slice(0, 3).map((word) => (
                   <li key={word.id} className="recent-word">
                     <span className="recent-term jp-sm">{word.term}</span>
                     <span className="recent-meaning">{word.meaning}</span>

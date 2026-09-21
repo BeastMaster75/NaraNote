@@ -16,6 +16,31 @@ spring:
     enabled: true
     locations: classpath:db/migration
 
+  # Boot's 1MB/10MB defaults are fine for JSON bodies but too small for a Read
+  # upload (a PDF/EPUB) or a chunk's recorded audio.
+  servlet:
+    multipart:
+      max-file-size: 20MB
+      max-request-size: 25MB
+
+  # SMTP for verification/password-reset mail (see com.naranote.email.EmailService).
+  # Defaults point at a local Mailpit container (docker-compose.yml) so dev never needs a
+  # real account — open http://localhost:8025 to read whatever the app sends. A real
+  # deployment sets NARANOTE_MAIL_HOST/PORT/USERNAME/PASSWORD to an actual provider (Gmail
+  # app-password SMTP, SendGrid, Mailgun, Resend's SMTP relay, ...); docker-compose.prod.yml
+  # already threads these through with no default, same as POSTGRES_PASSWORD.
+  mail:
+    host: ${NARANOTE_MAIL_HOST:localhost}
+    port: ${NARANOTE_MAIL_PORT:1025}
+    username: ${NARANOTE_MAIL_USERNAME:}
+    password: ${NARANOTE_MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${NARANOTE_MAIL_SMTP_AUTH:false}
+          starttls:
+            enable: ${NARANOTE_MAIL_SMTP_STARTTLS:false}
+
 server:
   port: 8080
 
@@ -35,3 +60,11 @@ naranote:
   # plain http and a Secure cookie would be silently dropped by the browser. Set
   # NARANOTE_COOKIE_SECURE=true for any real deployment; docker-compose.prod.yml already does.
   cookie-secure: ${NARANOTE_COOKIE_SECURE:false}
+  # Origin that verification/password-reset links point at — the frontend's own address, not
+  # this backend's port. Local dev's Vite dev server; a real deployment sets
+  # NARANOTE_APP_BASE_URL to its real domain, same as NARANOTE_COOKIE_SECURE.
+  app-base-url: ${NARANOTE_APP_BASE_URL:http://localhost:5173}
+  mail:
+    # Envelope From — most SMTP providers reject a From address on a domain they don't
+    # own, so this must match whatever NARANOTE_MAIL_* account is actually configured.
+    from: ${NARANOTE_MAIL_FROM:NaraNote <no-reply@naranote.local>}

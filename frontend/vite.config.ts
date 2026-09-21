@@ -12,6 +12,10 @@ export default defineConfig({
     proxy: {
       '/api': process.env.VITE_API_PROXY_TARGET ?? 'http://localhost:8080',
     },
+    // Cloudflare Tunnel (trycloudflare.com or a custom domain) presents a
+    // Host header Vite doesn't recognize by default; allow tunnel hosts
+    // through without disabling the check for every arbitrary host.
+    allowedHosts: ['.trycloudflare.com'],
     // A Windows host directory bind-mounted into Docker Desktop's Linux VM
     // doesn't deliver native filesystem events to chokidar, so HMR silently
     // stops noticing edits — polling is the standard workaround. Off by

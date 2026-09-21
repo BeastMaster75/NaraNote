@@ -90,6 +90,41 @@ class KanjiLibraryServiceTest {
     }
 
     @Test
+    void addBatch_withExplicitSource_tagsEntriesWithIt() {
+        List<String> input = List.of("猫");
+
+        Kanji kanjiNeko = mockKanji("猫");
+        when(kanjiRepository.findAllById(List.of("猫"))).thenReturn(List.of(kanjiNeko));
+        when(libraryRepository.findByIdUserIdOrderByAddedAtDesc(1L)).thenReturn(List.of());
+
+        service.addBatch(input, "READING");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<KanjiLibraryEntry>> captor = ArgumentCaptor.forClass(List.class);
+        verify(libraryRepository).saveAllAndFlush(captor.capture());
+
+        assertThat(captor.getValue()).hasSize(1);
+        assertThat(captor.getValue().get(0).getSource()).isEqualTo("READING");
+    }
+
+    @Test
+    void addBatch_withNoSourceGiven_defaultsToBatch() {
+        List<String> input = List.of("猫");
+
+        Kanji kanjiNeko = mockKanji("猫");
+        when(kanjiRepository.findAllById(List.of("猫"))).thenReturn(List.of(kanjiNeko));
+        when(libraryRepository.findByIdUserIdOrderByAddedAtDesc(1L)).thenReturn(List.of());
+
+        service.addBatch(input);
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<KanjiLibraryEntry>> captor = ArgumentCaptor.forClass(List.class);
+        verify(libraryRepository).saveAllAndFlush(captor.capture());
+
+        assertThat(captor.getValue().get(0).getSource()).isEqualTo("BATCH");
+    }
+
+    @Test
     void addBatch_whenAllAlreadySaved_doesNotCallSaveAll() {
         List<String> input = List.of("漢");
 

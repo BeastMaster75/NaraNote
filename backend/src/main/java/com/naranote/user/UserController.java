@@ -32,9 +32,16 @@ public class UserController {
      * Every value the client needs to render the app for this user. {@code hasGeminiKey} is
      * a presence check, never the key itself — same reason {@code password_hash} never
      * appears here, this is the object the frontend stores in state and renders freely.
+     *
+     * <p>{@code emailVerified} is what {@code RequireVerified} on the frontend gates routing
+     * on, and what settles the account/session gate {@link com.naranote.auth.SessionInterceptor}
+     * enforces server-side — the two must agree, since this is the only place the frontend
+     * gets to ask.
      */
     public record Me(
             String displayName,
+            String email,
+            boolean emailVerified,
             String theme,
             boolean furigana,
             int sessionSize,
@@ -63,8 +70,8 @@ public class UserController {
 
     private static final String SELECT =
             """
-            select display_name, theme, furigana, session_size, target_jlpt_level,
-                   gemini_api_key is not null as has_gemini_key
+            select display_name, email, email_verified, theme, furigana, session_size,
+                   target_jlpt_level, gemini_api_key is not null as has_gemini_key
             from app_user where id = ?
             """;
 
@@ -137,6 +144,8 @@ public class UserController {
                 (rs, row) ->
                         new Me(
                                 rs.getString("display_name"),
+                                rs.getString("email"),
+                                rs.getBoolean("email_verified"),
                                 rs.getString("theme"),
                                 rs.getBoolean("furigana"),
                                 rs.getInt("session_size"),

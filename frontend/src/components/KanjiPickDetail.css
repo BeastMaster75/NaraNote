@@ -1,0 +1,72 @@
+/* Same "word card" language MiningPage.css, KanjiSentences.css and
+   DeckWords.css each keep their own copy of — this codebase duplicates these
+   per-file rather than sharing one global stylesheet, so this follows suit. */
+
+.word-detail {
+  gap: 0.8rem;
+}
+
+.word-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.word-term {
+  font-family: var(--nn-font-jp);
+  color: var(--nn-jp);
+}
+
+.word-close {
+  margin-left: auto;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 12.5px;
+  line-height: 1;
+  color: var(--nn-ink-3);
+}
+
+.word-close:hover,
+.word-close:focus-visible {
+  color: var(--nn-kaki);
+}
+
+.pick-meaning {
+  margin: 0;
+  font-family: var(--nn-font-display);
+  font-size: 1.25rem;
+  line-height: 1.25;
+  color: var(--nn-ink);
+}
+
+.pick-done {
+  color: var(--nn-matcha);
+  font-weight: 600;
+}
+
+.word-context {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  padding: 0.7rem 0.85rem;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-sunk);
+  border-left: 3px solid var(--nn-kaki);
+}
+
+.word-context p {
+  margin: 0;
+  line-height: 1.85;
+}
+
+.word-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.word-actions .btn {
+  text-decoration: none;
+}

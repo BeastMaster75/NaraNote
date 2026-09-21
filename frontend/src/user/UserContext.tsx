@@ -12,6 +12,9 @@ export type Theme = 'system' | 'light' | 'dark'
 
 export type Me = {
   displayName: string
+  email: string
+  /** Gates RequireVerified on the frontend; SessionInterceptor enforces the same thing server-side. */
+  emailVerified: boolean
   theme: Theme
   furigana: boolean
   sessionSize: number
@@ -25,9 +28,13 @@ export type Me = {
  * What the app renders with before the first auth check answers, and what a
  * logged-out session falls back to. These match the column defaults in V12,
  * so an anonymous state looks like a fresh account rather than like nothing.
+ * emailVerified defaults true so this pre-auth shape never itself looks like
+ * something that needs verifying.
  */
 const DEFAULTS: Me = {
   displayName: 'local',
+  email: '',
+  emailVerified: true,
   theme: 'system',
   furigana: true,
   sessionSize: 20,
@@ -48,6 +55,13 @@ type UserContextValue = {
   login: (email: string, password: string) => Promise<string | null>
   register: (email: string, password: string) => Promise<string | null>
   logout: () => Promise<void>
+  /** Consumes a link's token; refreshes `me` so emailVerified flips on success. */
+  verifyEmail: (token: string) => Promise<string | null>
+  /** Re-sends the verification email to the signed-in account. */
+  resendVerification: () => Promise<string | null>
+  /** Always resolves null on a successful request, whether or not the email has an account. */
+  forgotPassword: (email: string) => Promise<string | null>
+  resetPassword: (token: string, newPassword: string) => Promise<string | null>
 }
 
 const UserContext = createContext<UserContextValue>({
@@ -58,6 +72,10 @@ const UserContext = createContext<UserContextValue>({
   login: async () => 'Not ready yet.',
   register: async () => 'Not ready yet.',
   logout: async () => undefined,
+  verifyEmail: async () => 'Not ready yet.',
+  resendVerification: async () => 'Not ready yet.',
+  forgotPassword: async () => 'Not ready yet.',
+  resetPassword: async () => 'Not ready yet.',
 })
 
 export function useUser() {
@@ -173,9 +191,91 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setStatus('anonymous')
   }, [])
 
+  const verifyEmail = useCallback(
+    async (token: string) => {
+      const response = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token }),
+      })
+      if (!response.ok) {
+        return response.status === 400
+          ? 'That verification link is invalid or has expired.'
+          : 'Something went wrong.'
+      }
+      await checkSession()
+      return null
+    },
+    [checkSession],
+  )
+
+  const resendVerification = useCallback(async () => {
+    const response = await fetch('/api/auth/resend-verification', { method: 'POST' })
+    if (!response.ok) {
+      return response.status === 429
+        ? 'Too many attempts. Try again in a few minutes.'
+        : 'Something went wrong.'
+    }
+    return null
+  }, [])
+
+  const forgotPassword = useCallback(async (email: string) => {
+    const response = await fetch('/api/auth/forgot-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    })
+    // The endpoint always answers 200 whether or not the email has an account — see
+    // AuthController.forgotPassword. A non-2xx here means the request itself failed
+    // (bad email format, rate limited), not that the account lookup came back empty.
+    if (!response.ok) {
+      return response.status === 429
+        ? 'Too many attempts. Try again in a few minutes.'
+        : 'Enter a valid email address.'
+    }
+    return null
+  }, [])
+
+  const resetPassword = useCallback(async (token: string, newPassword: string) => {
+    const response = await fetch('/api/auth/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token, newPassword }),
+    })
+    if (!response.ok) {
+      return response.status === 400
+        ? 'That reset link is invalid or has expired.'
+        : 'Check your new password is at least 8 characters.'
+    }
+    return null
+  }, [])
+
   const value = useMemo(
-    () => ({ me, loaded: status !== 'loading', status, save, login, register, logout }),
-    [me, status, save, login, register, logout],
+    () => ({
+      me,
+      loaded: status !== 'loading',
+      status,
+      save,
+      login,
+      register,
+      logout,
+      verifyEmail,
+      resendVerification,
+      forgotPassword,
+      resetPassword,
+    }),
+    [
+      me,
+      status,
+      save,
+      login,
+      register,
+      logout,
+      verifyEmail,
+      resendVerification,
+      forgotPassword,
+      resetPassword,
+    ],
   )
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>

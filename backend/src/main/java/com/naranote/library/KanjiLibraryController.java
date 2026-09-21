@@ -38,12 +38,20 @@ public class KanjiLibraryController {
         return ResponseEntity.noContent().build();
     }
 
-    public record BatchRequest(@NotEmpty List<String> literals) {}
+    /** @param source where these characters came from; must be BATCH or READING if given —
+     *  MANUAL is reserved for the single-character add above. Defaults to BATCH. */
+    public record BatchRequest(@NotEmpty List<String> literals, String source) {}
+
+    private static final List<String> ALLOWED_BATCH_SOURCES = List.of("BATCH", "READING");
 
     /** Add many characters at once. Idempotent: duplicates and already-saved are counted, not rejected. */
     @PutMapping("/batch")
     public KanjiLibraryService.BatchResult addBatch(@Valid @RequestBody BatchRequest request) {
-        return libraryService.addBatch(request.literals());
+        String source = request.source() == null || request.source().isBlank() ? "BATCH" : request.source();
+        if (!ALLOWED_BATCH_SOURCES.contains(source)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Invalid source");
+        }
+        return libraryService.addBatch(request.literals(), source);
     }
 
     @DeleteMapping("/{literal}")

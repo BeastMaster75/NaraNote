@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
-import { useUser, type Theme } from './UserContext'
+import { useUser, type Me, type Theme } from './UserContext'
 import './SettingsPage.css'
 
 const CREDITS = [
@@ -35,6 +35,12 @@ const CREDITS = [
     body: 'Word-reading audio in Review, generated and cached server-side.',
     license: 'VOICEVOX',
   },
+  {
+    name: '青空文庫 (Aozora Bunko)',
+    href: 'https://www.aozora.gr.jp/',
+    body: "The curated short stories on the Read page's built-in library.",
+    license: 'Public domain',
+  },
 ]
 
 const THEMES: { value: Theme; label: string }[] = [
@@ -42,6 +48,70 @@ const THEMES: { value: Theme; label: string }[] = [
   { value: 'light', label: 'Light' },
   { value: 'dark', label: 'Dark' },
 ]
+
+/**
+ * Email + password, routed entirely through the same mailed-link flow the "Forgot
+ * password?" screen uses (see UserContext.forgotPassword) rather than a current-password
+ * form — one flow to secure and test instead of two, and it works from Settings exactly
+ * the way it works from a locked-out login screen.
+ */
+function AccountSetting({ me }: { me: Me }) {
+  const { resendVerification, forgotPassword } = useUser()
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
+  const [resetState, setResetState] = useState<'idle' | 'sending' | 'sent'>('idle')
+
+  async function handleResend() {
+    setResendState('sending')
+    await resendVerification()
+    setResendState('sent')
+  }
+
+  async function handleChangePassword() {
+    setResetState('sending')
+    await forgotPassword(me.email)
+    setResetState('sent')
+  }
+
+  return (
+    <section className="setting">
+      <div className="setting-copy">
+        <h3 className="setting-title">Account</h3>
+        <p className="muted small">
+          {me.email}
+          {!me.emailVerified && ' — email not verified yet.'}
+        </p>
+      </div>
+      <div className="setting-control setting-control-key">
+        {!me.emailVerified && (
+          <button
+            type="button"
+            className="btn"
+            onClick={handleResend}
+            disabled={resendState !== 'idle'}
+          >
+            {resendState === 'idle'
+              ? 'Resend Verification Email'
+              : resendState === 'sending'
+                ? 'Sending…'
+                : 'Sent'}
+          </button>
+        )}
+        <button
+          type="button"
+          className="btn is-primary"
+          onClick={handleChangePassword}
+          disabled={resetState !== 'idle'}
+        >
+          {resetState === 'idle'
+            ? 'Change Password'
+            : resetState === 'sending'
+              ? 'Sending…'
+              : 'Check Your Email'}
+        </button>
+      </div>
+    </section>
+  )
+}
 
 /**
  * Explicit Save/Remove rather than the optimistic autosave every other setting here
@@ -135,13 +205,12 @@ export function SettingsPage() {
   return (
     <Page title="Settings" subtitle="Your account and how the app behaves.">
       <div className="settings">
+        <AccountSetting me={me} />
+
         <section className="setting">
           <div className="setting-copy">
             <h3 className="setting-title">Display Name</h3>
-            <p className="muted small">
-              What the app calls you. There are no accounts yet, so this is local to
-              this install.
-            </p>
+            <p className="muted small">What the app calls you.</p>
           </div>
           <div className="setting-control">
             <input

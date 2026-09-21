@@ -4,12 +4,15 @@
 #
 #   docker compose -f docker-compose.prod.yml up --build
 #
-# POSTGRES_PASSWORD and NARANOTE_ENCRYPTION_KEY have no default here on purpose —
-# unlike docker-compose.yml's dev convenience, a real deployment must not be able to
-# silently start on the known values baked into application.yaml/the dev compose file.
-# Set both in a gitignored .env at the repo root (Compose reads it automatically); if
-# either is unset Compose passes an empty value, Postgres refuses to initialize and
-# CryptoService refuses to build an AES key, so this fails fast instead of running insecure.
+# POSTGRES_PASSWORD, NARANOTE_ENCRYPTION_KEY and the NARANOTE_MAIL_*/NARANOTE_APP_BASE_URL
+# vars have no default here on purpose — unlike docker-compose.yml's dev convenience
+# (Mailpit, localhost), a real deployment must not be able to silently start on values
+# baked into application.yaml/the dev compose file. Set all of these in a gitignored .env
+# at the repo root (Compose reads it automatically); if the required ones are unset,
+# Postgres refuses to initialize and CryptoService refuses to build an AES key, so this
+# fails fast instead of running insecure. A missing mail var won't fail startup the same
+# way — sending will just fail at runtime and get logged (see EmailService) — so double-check
+# NARANOTE_MAIL_HOST/PORT/USERNAME/PASSWORD/FROM and NARANOTE_APP_BASE_URL are actually set.
 services:
   db:
     image: postgres:16
@@ -52,6 +55,14 @@ services:
       NARANOTE_VOICEVOX_URL: http://voicevox:50021
       NARANOTE_ENCRYPTION_KEY: ${NARANOTE_ENCRYPTION_KEY}
       NARANOTE_COOKIE_SECURE: "true"
+      NARANOTE_APP_BASE_URL: ${NARANOTE_APP_BASE_URL}
+      NARANOTE_MAIL_HOST: ${NARANOTE_MAIL_HOST}
+      NARANOTE_MAIL_PORT: ${NARANOTE_MAIL_PORT}
+      NARANOTE_MAIL_USERNAME: ${NARANOTE_MAIL_USERNAME}
+      NARANOTE_MAIL_PASSWORD: ${NARANOTE_MAIL_PASSWORD}
+      NARANOTE_MAIL_SMTP_AUTH: "true"
+      NARANOTE_MAIL_SMTP_STARTTLS: "true"
+      NARANOTE_MAIL_FROM: ${NARANOTE_MAIL_FROM}
     ports:
       - "8080:8080"
     # Optional: only needed to run the one-off --import-kanji /

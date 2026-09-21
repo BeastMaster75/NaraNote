@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, useLocation } from 'react-router'
-import { Marked } from '../components/Marked'
+import { KanjiPickDetail } from '../components/KanjiPickDetail'
 import { Page } from '../components/Page'
+import { hasKanji, Passage, sentenceText } from '../components/Passage'
 import { useUser } from '../user/UserContext'
 import './MiningPage.css'
 
@@ -52,11 +53,6 @@ const RECENT_LIMIT = 8
 const SAMPLE =
   'その古い家の窓から、山吹色の光が漏れていた。彼は毎朝六時に起きて、川沿いを走ることにしている。'
 
-/** Ruby over kana is noise — only annotate a word that actually contains kanji. */
-function hasKanji(text: string) {
-  return /[㐀-鿿]/.test(text)
-}
-
 async function translateApi(text: string, toJapanese: boolean) {
   const response = await fetch('/api/mining/translate', {
     method: 'POST',
@@ -80,10 +76,6 @@ type KanjiPick = { literal: string; sentence: string }
 /** Every distinct kanji in a passage, in the order it first appears. */
 function kanjiIn(text: string) {
   return [...new Set([...text].filter(hasKanji))]
-}
-
-function sentenceText(sentence: Sentence) {
-  return sentence.tokens.map((token) => token.surface).join('')
 }
 
 /** What the home page's paste box hands over when it navigates here. */
@@ -293,58 +285,13 @@ export function MiningPage() {
                 aria-label="Japanese text to analyse"
               />
             ) : (
-              <div className="sentences">
-                {result.sentences.map((sentence, index) => {
-                  const whole = sentenceText(sentence)
-                  return (
-                    <p key={index} className="sentence jp jp-ruby">
-                      {sentence.tokens.map((token, tokenIndex) => {
-                        // Characters are the targets, but the word still owns the
-                        // reading — so the targets go *inside* the ruby base
-                        // rather than replacing it. That keeps furigana while
-                        // making each kanji individually tappable.
-                        const chars = [...token.surface].map((char, charIndex) =>
-                          hasKanji(char) ? (
-                            <button
-                              key={charIndex}
-                              type="button"
-                              className={[
-                                'tok',
-                                'tok-kanji',
-                                library.has(char) && 'is-known',
-                                kanjiPick?.literal === char &&
-                                  kanjiPick?.sentence === whole &&
-                                  'is-selected',
-                              ]
-                                .filter(Boolean)
-                                .join(' ')}
-                              onClick={() => setKanjiPick({ literal: char, sentence: whole })}
-                            >
-                              {char}
-                            </button>
-                          ) : (
-                            <span
-                              key={charIndex}
-                              className={token.content ? undefined : 'tok tok-grammar'}
-                            >
-                              {char}
-                            </span>
-                          ),
-                        )
-
-                        return furigana && token.reading && hasKanji(token.surface) ? (
-                          <ruby key={tokenIndex}>
-                            {chars}
-                            <rt>{token.reading}</rt>
-                          </ruby>
-                        ) : (
-                          <span key={tokenIndex}>{chars}</span>
-                        )
-                      })}
-                    </p>
-                  )
-                })}
-              </div>
+              <Passage
+                sentences={result.sentences}
+                furigana={furigana}
+                library={library}
+                selected={kanjiPick}
+                onKanjiTap={(literal, sentence) => setKanjiPick({ literal, sentence })}
+              />
             )}
           </section>
 
@@ -382,124 +329,6 @@ export function MiningPage() {
         <RecentlyCollected items={collected} />
       </div>
     </Page>
-  )
-}
-
-/**
- * The kanji-first half of mining: one character out of the passage, and the
- * sentence you met it in, filed together. Adding it to the collection is part of
- * the same action rather than a second errand — the character is only worth
- * collecting because of where you found it.
- */
-function KanjiPickDetail({
-  literal,
-  sentence,
-  source,
-  alreadyYours,
-  onFiled,
-  onClose,
-}: {
-  literal: string
-  sentence: string
-  source: string
-  alreadyYours: boolean
-  onFiled: () => void
-  onClose: () => void
-}) {
-  const [kanji, setKanji] = useState<{
-    meanings: string[]
-    onReadings: string[]
-    kunReadings: string[]
-    strokeCount: number | null
-  } | null>(null)
-  const [filed, setFiled] = useState(false)
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    fetch(`/api/kanji/${encodeURIComponent(literal)}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then(setKanji)
-      .catch(() => setKanji(null))
-  }, [literal])
-
-  async function file() {
-    setBusy(true)
-    setError(null)
-    try {
-      const response = await fetch(`/api/kanji/${encodeURIComponent(literal)}/sentences`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sentence, source: source.trim() || null }),
-      })
-      if (!response.ok) throw new Error(String(response.status))
-      setFiled(true)
-      // So the passage behind this panel dims the character straight away.
-      onFiled()
-    } catch {
-      setError('Couldn’t file that sentence.')
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  return (
-    <section className="word-detail card">
-      <header className="word-head">
-        <div>
-          <span className="word-term jp-lg">{literal}</span>
-        </div>
-        <button type="button" className="word-close" onClick={onClose}>
-          ← Translation
-        </button>
-      </header>
-
-      {kanji === null ? (
-        <p className="muted small">Looking it up…</p>
-      ) : (
-        <>
-          <p className="pick-meaning">{kanji.meanings.slice(0, 4).join(', ') || '—'}</p>
-          <p className="muted small">
-            {kanji.onReadings.join('・') || '—'} / {kanji.kunReadings.join('・') || '—'} ·{' '}
-            {kanji.strokeCount ?? '—'} strokes
-            {alreadyYours && ' · already in your collection'}
-          </p>
-        </>
-      )}
-
-      <div className="word-context">
-        <span className="kicker">Sentence to File</span>
-        <p className="jp">
-          <Marked text={sentence} needle={literal} />
-        </p>
-      </div>
-
-      {error && <p className="error small">{error}</p>}
-
-      <div className="word-actions">
-        {filed ? (
-          <>
-            <span className="pick-done small">Filed under {literal}</span>
-            <Link to={`/collection/${encodeURIComponent(literal)}`} className="btn">
-              See {literal}
-            </Link>
-          </>
-        ) : (
-          <button
-            type="button"
-            className="btn is-primary"
-            onClick={file}
-            disabled={busy || kanji === null}
-          >
-            {busy
-              ? 'Filing…'
-              : alreadyYours
-                ? `File This Sentence Under ${literal}`
-                : `Add ${literal} With This Sentence`}
-          </button>
-        )}
-      </div>
-    </section>
   )
 }
 

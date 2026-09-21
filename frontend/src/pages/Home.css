@@ -198,6 +198,13 @@
   box-shadow: var(--nn-shadow);
 }
 
+/* Sized to its own three rows rather than sharing a 50/50 split with Words —
+   a shared flex:1 squeezed Kanji below what three rows need and clipped the
+   third row mid-glyph. */
+.recent-block-kanji {
+  flex: none;
+}
+
 /* Exactly three rows, clipped rather than scrolled — a scrollbar on an 18-cell
    preview reads as a broken widget, not an invitation to scroll. Fetching
    more than fits is deliberate: whatever doesn't make the first three rows at
@@ -211,7 +218,10 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: calc(3 * 3.2rem + 2 * 0.5rem);
+  /* height, not max-height: this reserves the full three-row size before the
+     fetch resolves too, so the card doesn't hug the tiny "None yet" fallback
+     and then visibly pop to full size once kanji load in. */
+  height: calc(3 * 3.2rem + 2 * 0.5rem + 0.3rem);
   overflow: hidden;
 }
 
@@ -235,20 +245,25 @@
   background: var(--nn-kaki-tint);
 }
 
+/* Exactly three rows, same clip-not-scroll rule as the kanji strip above. */
 .recent-words {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.3rem;
   list-style: none;
   margin: 0;
   padding: 0;
+  /* height, not max-height — same reserved-space reasoning as .recent-kanji. */
+  height: calc(3 * 2.05rem + 2 * 0.3rem);
+  overflow: hidden;
 }
 
 .recent-word {
   display: flex;
   align-items: baseline;
   gap: 0.7rem;
-  padding-bottom: 0.4rem;
+  height: 2.05rem;
+  padding-bottom: 0.3rem;
   border-bottom: 1px solid var(--nn-line-soft);
 }
 

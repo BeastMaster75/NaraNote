@@ -90,12 +90,19 @@ public class KanjiLibraryService {
     /** Result of a batch add: how many were added, already present, or unknown. */
     public record BatchResult(int added, int alreadySaved, int notFound, List<String> notFoundLiterals) {}
 
+    /** Same as {@link #addBatch(List, String)}, tagged {@code "BATCH"} — the original caller
+     *  (bulk-pasting kanji from text) and default when no more specific source applies. */
+    @Transactional
+    public BatchResult addBatch(List<String> literals) {
+        return addBatch(literals, "BATCH");
+    }
+
     /**
      * Add many characters at once. Each literal must be a single code point.
      * Unknown characters and duplicates are counted but never cause a failure.
      */
     @Transactional
-    public BatchResult addBatch(List<String> literals) {
+    public BatchResult addBatch(List<String> literals, String source) {
         // Deduplicate while preserving order for a predictable result.
         List<String> unique = literals.stream().distinct().toList();
 

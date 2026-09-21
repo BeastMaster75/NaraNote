@@ -1,5 +1,7 @@
 package com.naranote.auth;
 
+import com.naranote.email.EmailService;
+import com.naranote.user.CurrentUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
@@ -25,8 +27,10 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Register, login, logout. Phase 1 only — no email confirmation yet (that's a
- * later phase), so accounts are usable the moment they're created.
+ * Register, login, logout, and the two token-mailing flows that hang off them: email
+ * verification (new accounts start {@code email_verified = false} and are gated out of the
+ * rest of the app by {@link SessionInterceptor} until they click the link) and forgot/reset
+ * password.
  *
  * <p>Logs which email attempted what, and whether it succeeded — never the
  * password. {@link com.naranote.logging.RequestLoggingInterceptor} already
@@ -47,23 +51,42 @@ public class AuthController {
             @NotBlank @Email @Size(max = 200) String email,
             @NotBlank @Size(min = 8, max = 200) String password) {}
 
+    public record TokenRequest(@NotBlank String token) {}
+
+    public record ForgotPasswordRequest(@NotBlank @Email @Size(max = 200) String email) {}
+
+    public record ResetPasswordRequest(
+            @NotBlank String token, @NotBlank @Size(min = 8, max = 200) String newPassword) {}
+
     private final JdbcTemplate jdbc;
     private final BCryptPasswordEncoder passwordEncoder;
     private final SessionService sessionService;
     private final LoginRateLimiter rateLimiter;
     private final boolean cookieSecure;
+    private final EmailVerificationService emailVerificationService;
+    private final PasswordResetService passwordResetService;
+    private final EmailService emailService;
+    private final CurrentUser currentUser;
 
     public AuthController(
             JdbcTemplate jdbc,
             BCryptPasswordEncoder passwordEncoder,
             SessionService sessionService,
             LoginRateLimiter rateLimiter,
-            @Value("${naranote.cookie-secure:false}") boolean cookieSecure) {
+            @Value("${naranote.cookie-secure:false}") boolean cookieSecure,
+            EmailVerificationService emailVerificationService,
+            PasswordResetService passwordResetService,
+            EmailService emailService,
+            CurrentUser currentUser) {
         this.jdbc = jdbc;
         this.passwordEncoder = passwordEncoder;
         this.sessionService = sessionService;
         this.rateLimiter = rateLimiter;
         this.cookieSecure = cookieSecure;
+        this.emailVerificationService = emailVerificationService;
+        this.passwordResetService = passwordResetService;
+        this.emailService = emailService;
+        this.currentUser = currentUser;
     }
 
     @PostMapping("/register")
@@ -97,6 +120,11 @@ public class AuthController {
                         passwordEncoder.encode(request.password()));
 
         log.info("Registered new account: user={} email={}", userId, email);
+        // Best-effort: EmailService swallows and logs delivery failures rather than throwing,
+        // so a broken mail transport doesn't roll back an otherwise-successful registration —
+        // the account exists either way and resendVerification() covers a first send that
+        // never arrived.
+        emailService.sendVerificationEmail(email, email, emailVerificationService.issue(userId));
         setSessionCookie(sessionService.issue(userId), response);
     }
 
@@ -148,6 +176,102 @@ public class AuthController {
                         .maxAge(0)
                         .build()
                         .toString());
+    }
+
+    /**
+     * Confirms an address from the link mailed by register()/resendVerification(). Token-only
+     * on purpose — the click may land in a different browser than the one that registered, so
+     * this can't depend on a session cookie being present. Public in {@link SessionInterceptor}
+     * for the same reason, and exempt from its verification gate so a signed-in-but-unverified
+     * user clicking their own link (the common case) isn't blocked before reaching here.
+     */
+    @PostMapping("/verify")
+    public void verify(@Valid @RequestBody TokenRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
+        long userId =
+                emailVerificationService
+                        .consume(request.token())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.BAD_REQUEST,
+                                                "That verification link is invalid or has expired"));
+        log.info("Email verified: user={}", userId);
+    }
+
+    /** Re-sends the verification email to whichever account the caller's session belongs to. */
+    @PostMapping("/resend-verification")
+    public void resendVerification(HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
+        long userId = currentUser.id();
+        List<Object[]> rows =
+                jdbc.query(
+                        "select email, email_verified from app_user where id = ?",
+                        (rs, row) -> new Object[] {rs.getString("email"), rs.getBoolean("email_verified")},
+                        userId);
+        if (rows.isEmpty() || Boolean.TRUE.equals(rows.getFirst()[1])) {
+            // Already verified (or, in principle, a vanished account) — nothing to resend.
+            return;
+        }
+
+        String email = (String) rows.getFirst()[0];
+        emailService.sendVerificationEmail(email, email, emailVerificationService.issue(userId));
+        log.info("Resent verification email: user={}", userId);
+    }
+
+    /**
+     * Always answers the same way whether or not the address has an account — the response
+     * (and the UI built on it) must not become a way to check which emails are registered.
+     * An account without a password yet (the unclaimed seeded local user, see
+     * ClaimLocalAccountRunner) has nothing to reset either, so it's treated the same as
+     * "no such account."
+     */
+    @PostMapping("/forgot-password")
+    public void forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
+        String email = normalize(request.email());
+        List<Object[]> rows =
+                jdbc.query(
+                        "select id, password_hash from app_user where lower(email) = ?",
+                        (rs, row) -> new Object[] {rs.getLong("id"), rs.getString("password_hash")},
+                        email);
+
+        if (rows.isEmpty() || rows.getFirst()[1] == null) {
+            log.info("Password reset requested for unknown/unclaimed email: {}", email);
+            return;
+        }
+
+        long userId = (long) rows.getFirst()[0];
+        emailService.sendPasswordResetEmail(email, email, passwordResetService.issue(userId));
+        log.info("Password reset email sent: user={}", userId);
+    }
+
+    /**
+     * Token-only, like verify() — reached from an emailed link, not necessarily the browser
+     * that's currently signed in as this (or any) account. Signs the account out everywhere
+     * afterwards: a password reset is reason enough to distrust whatever sessions already
+     * existed.
+     */
+    @PostMapping("/reset-password")
+    public void resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request, HttpServletRequest httpRequest) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
+        long userId =
+                passwordResetService
+                        .consume(request.token())
+                        .orElseThrow(
+                                () ->
+                                        new ResponseStatusException(
+                                                HttpStatus.BAD_REQUEST,
+                                                "That reset link is invalid or has expired"));
+
+        jdbc.update(
+                "update app_user set password_hash = ? where id = ?",
+                passwordEncoder.encode(request.newPassword()),
+                userId);
+        sessionService.revokeAllForUser(userId);
+        log.info("Password reset: user={}", userId);
     }
 
     private void setSessionCookie(String token, HttpServletResponse response) {

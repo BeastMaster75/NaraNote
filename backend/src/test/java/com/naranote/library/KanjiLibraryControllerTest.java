@@ -24,12 +24,34 @@ class KanjiLibraryControllerTest {
     void addBatch_delegatesToService() {
         var literals = List.of("漢", "字");
         var expected = new KanjiLibraryService.BatchResult(2, 0, 0, List.of());
-        when(libraryService.addBatch(literals)).thenReturn(expected);
+        when(libraryService.addBatch(literals, "BATCH")).thenReturn(expected);
 
-        var request = new KanjiLibraryController.BatchRequest(literals);
+        var request = new KanjiLibraryController.BatchRequest(literals, null);
         var actual = controller.addBatch(request);
 
         assertThat(actual).isEqualTo(expected);
-        verify(libraryService).addBatch(literals);
+        verify(libraryService).addBatch(literals, "BATCH");
+    }
+
+    @Test
+    void addBatch_withReadingSource_delegatesToService() {
+        var literals = List.of("漢");
+        var expected = new KanjiLibraryService.BatchResult(1, 0, 0, List.of());
+        when(libraryService.addBatch(literals, "READING")).thenReturn(expected);
+
+        var request = new KanjiLibraryController.BatchRequest(literals, "READING");
+        var actual = controller.addBatch(request);
+
+        assertThat(actual).isEqualTo(expected);
+        verify(libraryService).addBatch(literals, "READING");
+    }
+
+    @Test
+    void addBatch_withInvalidSource_rejects() {
+        var request = new KanjiLibraryController.BatchRequest(List.of("漢"), "HACKED");
+
+        org.junit.jupiter.api.Assertions.assertThrows(
+                org.springframework.web.server.ResponseStatusException.class,
+                () -> controller.addBatch(request));
     }
 }

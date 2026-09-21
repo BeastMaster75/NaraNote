@@ -20,7 +20,8 @@ public class KanjiLibraryEntry {
     @Column(name = "added_at", insertable = false, updatable = false)
     private Instant addedAt;
 
-    /** How the character got here — MANUAL today, MINING once that exists. */
+    /** How the character got here — MANUAL (single add), BATCH (pasted text), or
+     *  READING (met while practising a Read passage). */
     private String source;
 
     KanjiLibraryEntry(long userId, String literal, String source) {

@@ -1,0 +1,171 @@
+/* Same two-pane shape as Mining's .mining-stage: passage on one side, whatever
+   owns the other half (kanji detail, the record control, or the summary). */
+.reading-stage {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.reading-passage {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+}
+
+.reading-detail,
+.reading-control {
+  flex: 1;
+  min-width: 0;
+  align-self: stretch;
+}
+
+.reading-control {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .reading-stage {
+    flex-direction: column;
+  }
+
+  .reading-detail,
+  .reading-control {
+    width: 100%;
+  }
+}
+
+.reading-record {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  align-items: flex-start;
+}
+
+.reading-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  height: 100%;
+  padding: 2rem 1rem;
+  text-align: center;
+}
+
+.reading-spinner {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  border: 3px solid var(--nn-line);
+  border-top-color: var(--nn-kaki);
+  animation: reading-spin 0.8s linear infinite;
+}
+
+@keyframes reading-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.reading-result {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.reading-verdict {
+  align-self: flex-start;
+  font-family: var(--nn-font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-kaki-tint);
+  color: var(--nn-ink-3);
+}
+
+.reading-verdict.is-match {
+  background: var(--nn-matcha-tint);
+  color: var(--nn-matcha);
+}
+
+.reading-verdict.is-mismatch {
+  background: var(--nn-bengara-tint, var(--nn-kaki-tint));
+  color: var(--nn-bengara);
+}
+
+.reading-transcript {
+  margin: 0;
+  line-height: 1.85;
+}
+
+.reading-misreads {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  background: var(--nn-sunk);
+  border-radius: var(--nn-r-md);
+}
+
+.reading-feedback {
+  margin: 0;
+}
+
+.reading-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.reading-kanji-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.reading-kanji-chip {
+  cursor: pointer;
+  font-family: var(--nn-font-jp-serif);
+  font-size: 20px;
+  width: 2.6rem;
+  height: 2.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--nn-jp);
+  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+  border-radius: var(--nn-r-md);
+}
+
+.reading-kanji-chip:hover:not(:disabled) {
+  border-color: var(--nn-kaki);
+  background: var(--nn-kaki-tint);
+}
+
+.reading-kanji-chip.is-added {
+  cursor: default;
+  color: var(--nn-jp-known);
+  border-color: transparent;
+  background: transparent;
+}
+
+.reading-kanji-chip:disabled:not(.is-added) {
+  opacity: 0.5;
+  cursor: wait;
+}

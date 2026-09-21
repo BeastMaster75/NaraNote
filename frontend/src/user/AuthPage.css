@@ -31,3 +31,16 @@
   outline: 2px solid var(--nn-kaki);
   outline-offset: 1px;
 }
+
+/* An inline action that reads as a link (Log Out from the verify-email screen)
+   rather than a button — a pill button stranded inside a sentence looks wrong. */
+.link-button {
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-size: inherit;
+  color: var(--nn-kaki);
+  text-decoration: underline;
+  cursor: pointer;
+}

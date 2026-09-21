@@ -148,50 +148,9 @@
   }
 }
 
-/* Single characters as targets. Tighter than a word button because they sit
-   inside running text and must not push the line apart. */
-.tok-kanji {
-  cursor: pointer;
-  border-radius: 4px;
-  padding: 0 0.06em;
-  color: var(--nn-jp);
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid var(--nn-line);
-}
-
-/* The one sanctioned dim on Japanese: characters already in your collection
-   recede so the passage reads as a diff of what you don't have yet. Still
-   tappable — you may want to file another sentence under one you own. */
-.tok-kanji.is-known {
-  color: var(--nn-jp-known);
-  border-bottom-color: transparent;
-}
-
-.tok-kanji:hover,
-.tok-kanji:focus-visible {
-  background: var(--nn-kaki-tint);
-  border-bottom-color: var(--nn-kaki);
-}
-
-.tok-kanji.is-selected {
-  background: var(--nn-kaki-tint);
-  color: var(--nn-kaki);
-  border-bottom-color: var(--nn-kaki);
-}
-
-.pick-meaning {
-  margin: 0;
-  font-family: var(--nn-font-display);
-  font-size: 1.25rem;
-  line-height: 1.25;
-  color: var(--nn-ink);
-}
-
-.pick-done {
-  color: var(--nn-matcha);
-  font-weight: 600;
-}
+/* .tok-kanji and its states now live in components/Passage.css, alongside the
+   markup that uses them. .pick-meaning/.pick-done moved to
+   components/KanjiPickDetail.css for the same reason. */
 
 .mining-recent {
   display: flex;
@@ -281,45 +240,7 @@
   margin-left: auto;
 }
 
-/* Japanese at 19px stops being comfortable somewhere past ~45 characters a
-   line, so the passage keeps a measure even when nothing is selected beside it. */
-.sentences {
-  max-width: 62rem;
-}
-
-.sentences {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  padding: 1.1rem 1.3rem;
-  background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-lg);
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-}
-
-.sentence {
-  margin: 0;
-}
-
-/* Deliberately quiet — every sentence gets one, so it can't compete with the
-   text itself for attention. Sized and coloured as UI chrome, not Japanese
-   content, even though the glyph itself is a kanji. */
-.tok {
-  font: inherit;
-  color: var(--nn-jp);
-  background: none;
-  border: 0;
-  padding: 0;
-}
-
-/* Particles and punctuation: present so the sentence reads as written, but not
-   offered — clicking them would only ever be a mis-click. */
-.tok-grammar {
-  color: var(--nn-ink-3);
-}
+/* .sentences/.sentence/.tok/.tok-grammar now live in components/Passage.css. */
 
 .tok-word {
   cursor: pointer;

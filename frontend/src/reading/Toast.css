@@ -1,0 +1,27 @@
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: 1.5rem;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1rem;
+  background: var(--nn-ink);
+  color: var(--nn-paper);
+  border-radius: var(--nn-r-pill);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  z-index: 50;
+  font-size: 13px;
+}
+
+.toast-action {
+  cursor: pointer;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--nn-kaki-tint);
+  text-decoration: underline;
+  padding: 0;
+}
