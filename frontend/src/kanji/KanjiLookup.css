@@ -439,15 +439,15 @@
   box-shadow: var(--nn-shadow);
   text-decoration: none;
   transition:
-    border-color 0.15s ease,
-    box-shadow 0.15s ease,
-    transform 0.15s var(--nn-ease);
+    background-color 0.15s ease,
+    border-color 0.15s ease;
 }
 
+/* Colour only, no lift or big shadow: the grid scrolls, so it clips at its
+   edges and a raised tile in the first row or column would be cut off. */
 .your-kanji-tile:hover {
   border-color: var(--nn-kaki);
-  box-shadow: var(--nn-shadow-lift);
-  transform: translateY(-2px);
+  background: var(--nn-kaki-tint);
 }
 
 .your-kanji-glyph {

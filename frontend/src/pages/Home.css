@@ -4,6 +4,13 @@
   gap: 1.25rem;
   flex: 1;
   min-height: 0;
+  visibility: hidden;
+}
+
+/* Everything at once, once its data is in (see Home.tsx). */
+.home.is-ready {
+  visibility: visible;
+  animation: nn-fade 0.22s ease both;
 }
 
 /* ── Opening band: capture on the left, what to do next on the right ────────
@@ -231,8 +238,7 @@
   height: var(--tile);
   transition:
     background-color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s var(--nn-ease);
+    border-color 0.15s ease;
   border-radius: var(--nn-r-md);
   background: var(--nn-paper);
   border: 1px solid var(--nn-line-soft);
@@ -244,10 +250,11 @@
   text-decoration: none;
 }
 
+/* Colour only, no lift: each tile's cell clips (that is what hides the
+   overflow rows), so a tile that moved would lose its top border. */
 .recent-glyph:hover {
   border-color: var(--nn-kaki);
   background: var(--nn-kaki-tint);
-  transform: translateY(-2px);
 }
 
 /* Whole rows up to the card's height, same clip-not-scroll rule as the kanji. */

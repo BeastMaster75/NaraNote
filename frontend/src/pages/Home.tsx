@@ -165,21 +165,41 @@ function monthLabels(weeks: Date[][]) {
   })
 }
 
+/**
+ * True once loading has taken long enough that an empty page would be worse
+ * than one filling in — a slow or unreachable backend shouldn't leave a blank
+ * screen.
+ */
+function useSlowLoad(ms = 700) {
+  const [slow, setSlow] = useState(false)
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSlow(true), ms)
+    return () => window.clearTimeout(timer)
+  }, [ms])
+  return slow
+}
+
 export function Home() {
   const navigate = useNavigate()
-  const [activity, setActivity] = useState<Map<string, ActivityDay>>(new Map())
-  const [tasks, setTasks] = useState<Task[]>([])
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([])
+  // null until first loaded. The page stays hidden until every one of these has
+  // arrived: shown straight away, it painted its empty states (zero totals,
+  // "None yet", "all caught up") and then rebuilt itself piece by piece as five
+  // requests landed at different moments.
+  const [activity, setActivity] = useState<Map<string, ActivityDay> | null>(null)
+  const [tasks, setTasks] = useState<Task[] | null>(null)
+  const [suggestions, setSuggestions] = useState<Suggestion[] | null>(null)
   const [selectedDate, setSelectedDate] = useState<string | null>(null)
-  const [words, setWords] = useState<RecentWord[]>([])
-  const [kanji, setKanji] = useState<RecentKanji[]>([])
+  const [words, setWords] = useState<RecentWord[] | null>(null)
+  const [kanji, setKanji] = useState<RecentKanji[] | null>(null)
+  const loaded = !!(activity && tasks && suggestions && words && kanji)
+  const slow = useSlowLoad()
   const [text, setText] = useState('')
   const [source, setSource] = useState('')
 
   const [activityRef, { weeks: weekCount, cell }] = useActivityLayout()
   const weeks = stripWeeks(weekCount)
   const days = weeks.flat()
-  const [kanjiRef, { size: tile, rows: tileRows }] = useFitTiles(kanji.length, KANJI_TILES)
+  const [kanjiRef, { size: tile, rows: tileRows }] = useFitTiles(kanji?.length ?? 0, KANJI_TILES)
 
   // The strip spans several calendar months and /api/activity is per-month, so
   // fetch each month it touches and merge them into one lookup. Keyed on the
@@ -206,12 +226,12 @@ export function Home() {
   const reload = useCallback(() => {
     fetch('/api/tasks')
       .then((response) => (response.ok ? (response.json() as Promise<Task[]>) : []))
+      .catch(() => [] as Task[])
       .then(setTasks)
-      .catch(() => undefined)
     fetch('/api/tasks/suggestions')
       .then((response) => (response.ok ? (response.json() as Promise<Suggestion[]>) : []))
+      .catch(() => [] as Suggestion[])
       .then(setSuggestions)
-      .catch(() => undefined)
   }, [])
 
   useEffect(reload, [reload])
@@ -221,19 +241,19 @@ export function Home() {
       .then((response) => (response.ok ? (response.json() as Promise<RecentWord[]>) : []))
       // More than fits, deliberately — CSS shows whole rows up to the card's
       // height rather than the count being tuned to one window size.
+      .catch(() => [] as RecentWord[])
       .then((all) => setWords(all.slice(0, 24)))
-      .catch(() => undefined)
     fetch('/api/library')
       .then((response) => (response.ok ? (response.json() as Promise<RecentKanji[]>) : []))
       // More than fits at most window sizes, deliberately — CSS shows whole rows
       // up to the card's height rather than the count being tuned to one size.
+      .catch(() => [] as RecentKanji[])
       .then((all) => setKanji(all.slice(0, 60)))
-      .catch(() => undefined)
   }, [])
 
   const todayKey = dayKey(new Date())
 
-  const totals = [...activity.values()].reduce(
+  const totals = [...(activity ?? new Map<string, ActivityDay>()).values()].reduce(
     (sum, day) => ({
       drawn: sum.drawn + day.drawn,
       reviewed: sum.reviewed + day.reviewed,
@@ -243,7 +263,7 @@ export function Home() {
   )
 
   const openTasksByDate = new Map<string, number>()
-  for (const task of tasks) {
+  for (const task of tasks ?? []) {
     if (!task.dueDate || task.done) continue
     openTasksByDate.set(task.dueDate, (openTasksByDate.get(task.dueDate) ?? 0) + 1)
   }
@@ -257,7 +277,9 @@ export function Home() {
 
   return (
     <Page>
-      <div className="home">
+      {/* Hidden, not unmounted, while loading: the grids still lay out, so the
+          tile and cell sizes are already right when it appears. */}
+      <div className={`home${loaded || slow ? ' is-ready' : ''}`} aria-busy={!loaded}>
         <section className="hero">
           <div className="hero-capture">
             {/* Not "NaraNote": the logo sits a few pixels away in the rail, and a
@@ -298,7 +320,7 @@ export function Home() {
             </div>
           </div>
 
-          <RightNow suggestions={suggestions} />
+          <RightNow suggestions={suggestions ?? []} />
         </section>
 
         {/* The record is a wide, short band across the page — the shape a heatmap
@@ -348,7 +370,7 @@ export function Home() {
             <div className="activity-grid" ref={activityRef}>
               {days.map((date) => {
                 const key = dayKey(date)
-                const day = activity.get(key)
+                const day = activity?.get(key)
                 const openTasks = openTasksByDate.get(key) ?? 0
                 const count = day ? day.drawn + day.reviewed + day.added : 0
                 const level = count === 0 ? 0 : count < 5 ? 1 : count < 15 ? 2 : 3
@@ -396,7 +418,7 @@ export function Home() {
               ref={kanjiRef}
               style={{ '--tile': `${tile}px`, '--rows': tileRows } as CSSProperties}
             >
-              {kanji.map((entry) => (
+              {(kanji ?? []).map((entry) => (
                 <li key={entry.literal}>
                   <Link
                     to={`/kanji/${entry.literal}`}
@@ -407,7 +429,7 @@ export function Home() {
                   </Link>
                 </li>
               ))}
-              {kanji.length === 0 && (
+              {kanji?.length === 0 && (
                 <li className="muted small">
                   None yet — find one on the <Link to="/kanji">kanji page</Link>.
                 </li>
@@ -418,13 +440,13 @@ export function Home() {
           <section className="recent-block">
             <h3 className="kicker">Words You Saved</h3>
             <ul className="recent-words">
-              {words.map((word) => (
+              {(words ?? []).map((word) => (
                 <li key={word.id} className="recent-word">
                   <span className="recent-term jp-sm">{word.term}</span>
                   <span className="recent-meaning">{word.meaning}</span>
                 </li>
               ))}
-              {words.length === 0 && (
+              {words?.length === 0 && (
                 <li className="muted small">
                   None yet — paste something above and save what you don&rsquo;t know.
                 </li>
@@ -433,7 +455,7 @@ export function Home() {
           </section>
 
           <TaskPanel
-            tasks={tasks}
+            tasks={tasks ?? []}
             selectedDate={selectedDate}
             onClearDate={() => setSelectedDate(null)}
             onChanged={reload}
