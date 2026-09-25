@@ -62,6 +62,11 @@ type UserContextValue = {
   /** Always resolves null on a successful request, whether or not the email has an account. */
   forgotPassword: (email: string) => Promise<string | null>
   resetPassword: (token: string, newPassword: string) => Promise<string | null>
+  /**
+   * Deletes the account and everything in it, confirmed with the password. On success the
+   * server has already cleared the session cookie, and status flips to anonymous.
+   */
+  deleteAccount: (password: string) => Promise<string | null>
 }
 
 const UserContext = createContext<UserContextValue>({
@@ -76,6 +81,7 @@ const UserContext = createContext<UserContextValue>({
   resendVerification: async () => 'Not ready yet.',
   forgotPassword: async () => 'Not ready yet.',
   resetPassword: async () => 'Not ready yet.',
+  deleteAccount: async () => 'Not ready yet.',
 })
 
 export function useUser() {
@@ -250,6 +256,23 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return null
   }, [])
 
+  const deleteAccount = useCallback(async (password: string) => {
+    const response = await fetch('/api/auth/account', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    })
+    if (!response.ok) {
+      // 403 is a wrong password on a session that's still fine — see AuthController.
+      if (response.status === 403) return 'That password isn’t right.'
+      if (response.status === 429) return 'Too many attempts. Try again in a few minutes.'
+      return 'Something went wrong. Nothing was deleted.'
+    }
+    setMe(DEFAULTS)
+    setStatus('anonymous')
+    return null
+  }, [])
+
   const value = useMemo(
     () => ({
       me,
@@ -263,6 +286,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       resendVerification,
       forgotPassword,
       resetPassword,
+      deleteAccount,
     }),
     [
       me,
@@ -275,6 +299,7 @@ export function UserProvider({ children }: { children: ReactNode }) {
       resendVerification,
       forgotPassword,
       resetPassword,
+      deleteAccount,
     ],
   )
 

@@ -1,0 +1,20 @@
+# The public front door (docker-compose.prod.yml). Caddy obtains and renews the TLS
+# certificate for NARANOTE_DOMAIN on its own, and redirects plain http to https.
+#
+# Only TLS, compression and proxying live here. Security headers are set by the app
+# itself (SecurityHeadersFilter), so they ship with the code and are tested with it.
+#
+# Caddy replaces X-Forwarded-For with the address that actually connected to it,
+# so a client can't spoof its IP to dodge the login rate limiter. That also means:
+# don't put another proxy (e.g. Cloudflare's orange cloud) in front of this without
+# configuring trusted_proxies — every visitor would then share one IP.
+
+{$NARANOTE_DOMAIN} {
+	encode zstd gzip
+	reverse_proxy app:8080
+}
+
+# The apex is canonical. www gets its own certificate and a permanent redirect.
+www.{$NARANOTE_DOMAIN} {
+	redir https://{$NARANOTE_DOMAIN}{uri} permanent
+}

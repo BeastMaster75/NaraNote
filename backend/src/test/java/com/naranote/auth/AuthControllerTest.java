@@ -211,6 +211,58 @@ class AuthControllerTest {
         verify(jdbc).update("delete from app_session where user_id = ?", 1L);
     }
 
+    @Test
+    void deleteAccount_wrongPassword_is403_andDeletesNothing() {
+        when(currentUser.id()).thenReturn(7L);
+        when(jdbc.query(anyString(), any(RowMapper.class), eq(7L)))
+                .thenReturn(List.of(passwordEncoder.encode("correct-horse-battery")));
+
+        MockHttpServletResponse response = response();
+        assertThatThrownBy(
+                        () ->
+                                controller.deleteAccount(
+                                        new AuthController.DeleteAccountRequest("wrong-password"),
+                                        request(),
+                                        response))
+                .isInstanceOfSatisfying(
+                        ResponseStatusException.class,
+                        // Not 401: the session is valid, and the client reads 401 as signed out.
+                        e -> assertThat(e.getStatusCode().value()).isEqualTo(403));
+
+        verify(jdbc, never()).update("delete from app_user where id = ?", 7L);
+        assertThat(response.getHeader("Set-Cookie")).isNull();
+    }
+
+    @Test
+    void deleteAccount_correctPassword_deletesTheUserRow_andClearsTheCookie() {
+        when(currentUser.id()).thenReturn(7L);
+        when(jdbc.query(anyString(), any(RowMapper.class), eq(7L)))
+                .thenReturn(List.of(passwordEncoder.encode("correct-horse-battery")));
+
+        MockHttpServletResponse response = response();
+        controller.deleteAccount(
+                new AuthController.DeleteAccountRequest("correct-horse-battery"), request(), response);
+
+        // One statement: everything the user owns cascades from app_user.
+        verify(jdbc).update("delete from app_user where id = ?", 7L);
+        assertThat(response.getHeader("Set-Cookie")).contains("Max-Age=0");
+    }
+
+    @Test
+    void deleteAccount_consultsTheRateLimiterBeforeCheckingThePassword() {
+        MockHttpServletRequest req = request();
+        req.setRemoteAddr("203.0.113.9");
+        doThrow(tooManyRequests()).when(rateLimiter).check("203.0.113.9");
+
+        assertThatThrownBy(
+                        () ->
+                                controller.deleteAccount(
+                                        new AuthController.DeleteAccountRequest("whatever"), req, response()))
+                .isInstanceOf(ResponseStatusException.class);
+
+        verify(jdbc, never()).query(anyString(), any(RowMapper.class), any());
+    }
+
     private void mockLookup(List<Object[]> rows) {
         when(jdbc.query(anyString(), any(RowMapper.class), eq(EMAIL))).thenReturn(rows);
     }

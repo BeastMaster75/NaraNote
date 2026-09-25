@@ -64,6 +64,9 @@ naranote:
   # this backend's port. Local dev's Vite dev server; a real deployment sets
   # NARANOTE_APP_BASE_URL to its real domain, same as NARANOTE_COOKIE_SECURE.
   app-base-url: ${NARANOTE_APP_BASE_URL:http://localhost:5173}
+  # Where the privacy page tells people to write (data requests, questions). Served publicly
+  # by /api/site. Empty in dev; docker-compose.prod.yml requires it.
+  contact-email: ${NARANOTE_CONTACT_EMAIL:}
   mail:
     # Envelope From — most SMTP providers reject a From address on a domain they don't
     # own, so this must match whatever NARANOTE_MAIL_* account is actually configured.

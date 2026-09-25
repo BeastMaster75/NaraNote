@@ -4,6 +4,10 @@ data/
 
 # Secrets and local overrides
 .env
+
+# Database dumps from the prod backup service (docker-compose.prod.yml) —
+# user data, never committed.
+backups/
 *.local.yaml
 *.local.yml
 

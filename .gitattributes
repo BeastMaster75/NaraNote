@@ -1,0 +1,6 @@
+# Files executed inside Linux containers must keep LF line endings even in a
+# Windows checkout (core.autocrlf=true): a shebang or `set -eu` ending in \r
+# fails with a baffling error on the server.
+*.sh            text eol=lf
+backend/mvnw    text eol=lf
+deploy/Caddyfile text eol=lf

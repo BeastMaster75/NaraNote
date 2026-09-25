@@ -87,6 +87,26 @@ class SessionInterceptorTest {
     }
 
     @Test
+    void unverifiedSession_canStillDeleteTheAccount() throws Exception {
+        // A mistyped address can never be verified; that account must still be removable.
+        when(sessionService.resolve(TOKEN)).thenReturn(Optional.of(1L));
+
+        MockHttpServletRequest request = request("/api/auth/account", TOKEN);
+        request.setMethod("DELETE");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        assertThat(interceptor.preHandle(request, response, new Object())).isTrue();
+    }
+
+    @Test
+    void noSession_siteFacts_areReadable() throws Exception {
+        // The privacy page is public, and it reads its contact address from here.
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        assertThat(interceptor.preHandle(request("/api/site", null), response, new Object())).isTrue();
+    }
+
+    @Test
     void verifiedSession_protectedPath_isAllowedThrough() throws Exception {
         when(sessionService.resolve(TOKEN)).thenReturn(Optional.of(1L));
         when(jdbc.queryForObject("select email_verified from app_user where id = ?", Boolean.class, 1L))

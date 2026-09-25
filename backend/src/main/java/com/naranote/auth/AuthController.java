@@ -20,6 +20,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +28,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 /**
- * Register, login, logout, and the two token-mailing flows that hang off them: email
+ * Register, login, logout, account deletion, and the two token-mailing flows that hang off them: email
  * verification (new accounts start {@code email_verified = false} and are gated out of the
  * rest of the app by {@link SessionInterceptor} until they click the link) and forgot/reset
  * password.
@@ -57,6 +58,8 @@ public class AuthController {
 
     public record ResetPasswordRequest(
             @NotBlank String token, @NotBlank @Size(min = 8, max = 200) String newPassword) {}
+
+    public record DeleteAccountRequest(@NotBlank @Size(max = 200) String password) {}
 
     private final JdbcTemplate jdbc;
     private final BCryptPasswordEncoder passwordEncoder;
@@ -166,16 +169,48 @@ public class AuthController {
             HttpServletResponse response) {
         sessionService.resolve(token).ifPresent(userId -> log.info("Logout: user={}", userId));
         sessionService.revoke(token);
-        response.addHeader(
-                HttpHeaders.SET_COOKIE,
-                ResponseCookie.from(COOKIE_NAME, "")
-                        .httpOnly(true)
-                        .secure(cookieSecure)
-                        .sameSite("Lax")
-                        .path("/")
-                        .maxAge(0)
-                        .build()
-                        .toString());
+        clearSessionCookie(response);
+    }
+
+    /**
+     * Deletes the signed-in account and everything it owns. Every table holding a user's data
+     * references {@code app_user} with {@code on delete cascade} — collection, sentences, review
+     * state and history, tasks, sessions, pending email tokens — so the one delete below is the
+     * whole erasure, and it is atomic. Shared caches ({@code tts_audio}, keyed by reading, not
+     * by user) and the reference data are not personal and stay.
+     *
+     * <p>Asks for the password even though the caller is signed in: a session left open on a
+     * shared computer shouldn't be enough to destroy years of review history. 403 rather than
+     * 401 on a wrong password, because the session itself is fine — a 401 would read to the
+     * client as "you've been signed out". Rate-limited like login, since this is a password
+     * check an attacker holding a stolen session could otherwise hammer.
+     *
+     * <p>Exempt from the email-verification gate (see {@link SessionInterceptor}): someone who
+     * registered with a mistyped address must still be able to remove the account.
+     */
+    @DeleteMapping("/account")
+    @Transactional
+    public void deleteAccount(
+            @Valid @RequestBody DeleteAccountRequest request,
+            HttpServletRequest httpRequest,
+            HttpServletResponse response) {
+        rateLimiter.check(httpRequest.getRemoteAddr());
+        long userId = currentUser.id();
+        List<String> hashes =
+                jdbc.query(
+                        "select password_hash from app_user where id = ?",
+                        (rs, row) -> rs.getString("password_hash"),
+                        userId);
+        String storedHash = hashes.isEmpty() ? null : hashes.getFirst();
+        if (storedHash == null || !passwordEncoder.matches(request.password(), storedHash)) {
+            log.warn("Account deletion refused, wrong password: user={}", userId);
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Wrong password");
+        }
+
+        jdbc.update("delete from app_user where id = ?", userId);
+        // The id only — logging the address would keep the one thing just erased.
+        log.info("Account deleted: user={}", userId);
+        clearSessionCookie(response);
     }
 
     /**
@@ -287,6 +322,19 @@ public class AuthController {
                         .sameSite("Lax")
                         .path("/")
                         .maxAge(COOKIE_MAX_AGE)
+                        .build()
+                        .toString());
+    }
+
+    private void clearSessionCookie(HttpServletResponse response) {
+        response.addHeader(
+                HttpHeaders.SET_COOKIE,
+                ResponseCookie.from(COOKIE_NAME, "")
+                        .httpOnly(true)
+                        .secure(cookieSecure)
+                        .sameSite("Lax")
+                        .path("/")
+                        .maxAge(0)
                         .build()
                         .toString());
     }

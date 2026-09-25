@@ -4,7 +4,7 @@
 #   docker build -t naranote .
 # or via docker-compose.prod.yml.
 
-FROM node:20-alpine AS frontend-build
+FROM node:24-alpine AS frontend-build
 WORKDIR /frontend
 COPY frontend/package.json frontend/package-lock.json ./
 RUN npm ci

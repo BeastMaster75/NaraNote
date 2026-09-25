@@ -1,7 +1,7 @@
 # Dev only. Source is bind-mounted at runtime (see docker-compose.yml); this
 # image just carries node_modules, built inside Linux so Vite's esbuild
 # binary matches the container rather than a Windows host install.
-FROM node:20-alpine
+FROM node:24-alpine
 
 WORKDIR /app
 

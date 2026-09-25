@@ -1,27 +1,34 @@
-# The deployable shape: one app container (frontend built and embedded into
-# the backend jar, see the root Dockerfile) plus the database. No frontend
-# service, no bind mounts, no dev-only ports.
+# The deployable shape: Caddy in front (HTTPS), one app container (frontend
+# built and embedded into the backend jar, see the root Dockerfile), the
+# database, its nightly backups, and the VOICEVOX speech engine. Setup, first
+# deploy, upgrades and restores are in docs/deployment.md.
 #
-#   docker compose -f docker-compose.prod.yml up --build
+#   docker compose -f docker-compose.prod.yml up -d --build
 #
-# POSTGRES_PASSWORD, NARANOTE_ENCRYPTION_KEY and the NARANOTE_MAIL_*/NARANOTE_APP_BASE_URL
-# vars have no default here on purpose — unlike docker-compose.yml's dev convenience
-# (Mailpit, localhost), a real deployment must not be able to silently start on values
-# baked into application.yaml/the dev compose file. Set all of these in a gitignored .env
-# at the repo root (Compose reads it automatically); if the required ones are unset,
-# Postgres refuses to initialize and CryptoService refuses to build an AES key, so this
-# fails fast instead of running insecure. A missing mail var won't fail startup the same
-# way — sending will just fail at runtime and get logged (see EmailService) — so double-check
-# NARANOTE_MAIL_HOST/PORT/USERNAME/PASSWORD/FROM and NARANOTE_APP_BASE_URL are actually set.
+# Every secret and every per-deployment value is required, and written as
+# ${VAR:?...}: Compose refuses to start at all if one is missing, naming it,
+# instead of starting on a default baked into application.yaml or the dev
+# compose file. Put them in a gitignored .env at the repo root (Compose reads
+# it automatically) — .env.example lists them all.
+
+# Docker's default log driver never rotates. On a small server that fills the
+# disk in months; cap every service at 5 × 10 MB.
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   db:
     image: postgres:16
     container_name: naranote-db
     restart: unless-stopped
+    logging: *logging
     environment:
       POSTGRES_DB: naranote
       POSTGRES_USER: ${POSTGRES_USER:-naranote}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_INITDB_ARGS: "--encoding=UTF8"
     volumes:
       - naranote-pgdata:/var/lib/postgresql/data
@@ -31,10 +38,34 @@ services:
       timeout: 5s
       retries: 10
 
+  # pg_dump once at start and then every 24 hours into ./backups on the host,
+  # keeping NARANOTE_BACKUP_KEEP_DAYS days. These sit on the same disk as the
+  # database, so they cover mistakes and corruption, not a lost server — copy
+  # ./backups somewhere else too (docs/deployment.md).
+  backup:
+    image: postgres:16
+    container_name: naranote-backup
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: ["sh", "/deploy/backup.sh"]
+    environment:
+      PGHOST: db
+      PGDATABASE: naranote
+      PGUSER: ${POSTGRES_USER:-naranote}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      BACKUP_KEEP_DAYS: ${NARANOTE_BACKUP_KEEP_DAYS:-14}
+    volumes:
+      - ./backups:/backups
+      - ./deploy/backup.sh:/deploy/backup.sh:ro
+
   voicevox:
     image: voicevox/voicevox_engine:cpu-latest
     container_name: naranote-voicevox
     restart: unless-stopped
+    logging: *logging
 
   app:
     build:
@@ -42,6 +73,7 @@ services:
       dockerfile: Dockerfile
     container_name: naranote-app
     restart: unless-stopped
+    logging: *logging
     depends_on:
       db:
         condition: service_healthy
@@ -49,26 +81,54 @@ services:
         condition: service_started
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-naranote}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/naranote
+      # Trust the X-Forwarded-* headers Caddy sets (Tomcat accepts them only from
+      # private-network addresses, which is where Caddy sits). Without this every
+      # request appears to come from Caddy: the login rate limiter would count all
+      # visitors as one, and the app couldn't tell the request arrived over https.
+      SERVER_FORWARD_HEADERS_STRATEGY: native
       NARANOTE_DATA_DIR: /data
       NARANOTE_VOICEVOX_URL: http://voicevox:50021
-      NARANOTE_ENCRYPTION_KEY: ${NARANOTE_ENCRYPTION_KEY}
+      NARANOTE_ENCRYPTION_KEY: ${NARANOTE_ENCRYPTION_KEY:?set NARANOTE_ENCRYPTION_KEY in .env}
       NARANOTE_COOKIE_SECURE: "true"
-      NARANOTE_APP_BASE_URL: ${NARANOTE_APP_BASE_URL}
-      NARANOTE_MAIL_HOST: ${NARANOTE_MAIL_HOST}
-      NARANOTE_MAIL_PORT: ${NARANOTE_MAIL_PORT}
-      NARANOTE_MAIL_USERNAME: ${NARANOTE_MAIL_USERNAME}
-      NARANOTE_MAIL_PASSWORD: ${NARANOTE_MAIL_PASSWORD}
+      NARANOTE_APP_BASE_URL: https://${NARANOTE_DOMAIN:?set NARANOTE_DOMAIN in .env}
+      NARANOTE_CONTACT_EMAIL: ${NARANOTE_CONTACT_EMAIL:?set NARANOTE_CONTACT_EMAIL in .env}
+      NARANOTE_MAIL_HOST: ${NARANOTE_MAIL_HOST:?set NARANOTE_MAIL_HOST in .env}
+      NARANOTE_MAIL_PORT: ${NARANOTE_MAIL_PORT:?set NARANOTE_MAIL_PORT in .env}
+      NARANOTE_MAIL_USERNAME: ${NARANOTE_MAIL_USERNAME:?set NARANOTE_MAIL_USERNAME in .env}
+      NARANOTE_MAIL_PASSWORD: ${NARANOTE_MAIL_PASSWORD:?set NARANOTE_MAIL_PASSWORD in .env}
       NARANOTE_MAIL_SMTP_AUTH: "true"
       NARANOTE_MAIL_SMTP_STARTTLS: "true"
-      NARANOTE_MAIL_FROM: ${NARANOTE_MAIL_FROM}
-    ports:
-      - "8080:8080"
-    # Optional: only needed to run the one-off --import-kanji /
-    # --import-dictionary commands against a prod-shaped image.
+      NARANOTE_MAIL_FROM: ${NARANOTE_MAIL_FROM:?set NARANOTE_MAIL_FROM in .env}
+    # No published port: the only way in is through Caddy. Reference data for
+    # the one-off import commands is read from ./data (docs/deployment.md).
     volumes:
       - ./data:/data
 
+  caddy:
+    image: caddy:2
+    container_name: naranote-caddy
+    restart: unless-stopped
+    logging: *logging
+    depends_on:
+      - app
+    environment:
+      NARANOTE_DOMAIN: ${NARANOTE_DOMAIN:?set NARANOTE_DOMAIN in .env}
+    # Host ports are overridable only so a test run can sit beside something
+    # already using 80/443; a real server leaves them alone.
+    ports:
+      - "${NARANOTE_HTTP_PORT:-80}:80"
+      - "${NARANOTE_HTTPS_PORT:-443}:443"
+      - "${NARANOTE_HTTPS_PORT:-443}:443/udp"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates and the ACME account. Losing this volume means re-issuing
+      # every certificate, and Let's Encrypt rate-limits that.
+      - caddy-data:/data
+      - caddy-config:/config
+
 volumes:
   naranote-pgdata:
+  caddy-data:
+  caddy-config:

@@ -28,7 +28,10 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @Component
 public class SessionInterceptor implements HandlerInterceptor {
 
-    /** No session required — you can't already have one to reach these. */
+    /**
+     * No session required — you can't already have one to reach these. {@code /api/site} is
+     * the public page facts (the privacy page's contact address), readable before signing up.
+     */
     private static final Set<String> PUBLIC_PATHS =
             Set.of(
                     "/api/auth/register",
@@ -36,9 +39,14 @@ public class SessionInterceptor implements HandlerInterceptor {
                     "/api/auth/logout",
                     "/api/auth/verify",
                     "/api/auth/forgot-password",
-                    "/api/auth/reset-password");
+                    "/api/auth/reset-password",
+                    "/api/site");
 
-    /** Reachable by a signed-in-but-unverified account; everything else answers 403. */
+    /**
+     * Reachable by a signed-in-but-unverified account; everything else answers 403. Deleting
+     * the account is here because an address typed wrong at registration can never be
+     * verified, and that account must still be removable.
+     */
     private static final Set<String> VERIFICATION_EXEMPT_PATHS =
             Set.of(
                     "/api/me",
@@ -46,7 +54,9 @@ public class SessionInterceptor implements HandlerInterceptor {
                     "/api/auth/verify",
                     "/api/auth/resend-verification",
                     "/api/auth/forgot-password",
-                    "/api/auth/reset-password");
+                    "/api/auth/reset-password",
+                    "/api/auth/account",
+                    "/api/site");
 
     private final SessionService sessionService;
     private final JdbcTemplate jdbc;

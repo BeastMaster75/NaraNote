@@ -2,6 +2,8 @@
 # never land in an image layer — it's licensed third-party data, gitignored
 # on purpose and mounted in at runtime instead.
 data/
+backups/
+.env
 .git/
 .idea/
 .vscode/

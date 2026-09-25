@@ -1,0 +1,84 @@
+# Every push to main and every pull request: the frontend lints and builds, the
+# backend's tests run against a real Postgres, and the production image builds.
+# Nothing is deployed from here.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch makes the older run pointless.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  frontend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      # tsc -b and the Vite build, the same command the Dockerfile runs.
+      - run: npm run build
+
+  backend:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    # NaraNoteApplicationTests boots the whole app, which runs every Flyway
+    # migration against a real database — the only test that proves the
+    # migrations and the entities agree.
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: naranote
+          POSTGRES_USER: naranote
+          POSTGRES_PASSWORD: naranote
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U naranote -d naranote"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/naranote
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: maven
+      # The executable bit doesn't always survive a Windows checkout.
+      - run: chmod +x mvnw
+      - run: ./mvnw -B verify
+
+  image:
+    runs-on: ubuntu-latest
+    # Only worth the few minutes once the code itself is known good.
+    needs: [frontend, backend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
