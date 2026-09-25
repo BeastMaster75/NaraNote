@@ -174,8 +174,6 @@ export function Library() {
                   .map((level) => ` · N${level} ${stats.byLevel[level]}`)
                   .join('')}
               {stats && stats.unrated > 0 && ` · unrated ${stats.unrated}`}
-              {' · Handwriting is scheduled under '}
-              <Link to="/review">Review</Link>.
             </p>
           </div>
 

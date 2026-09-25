@@ -6,36 +6,54 @@
  * measure below, and focused single-task screens take a centred .focus column. */
 .page {
   width: 100%;
-  padding: 2rem 2.5rem 2rem;
+  padding: 1.5rem 2.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
   /* Fills exactly the space .app-main has available instead of growing to
      content, so a page with an internally-scrolling section (flex: 1;
      min-height: 0; overflow-y: auto down that section's own ancestor chain)
-     doesn't also make the whole page scroll. overflow-y: auto is load-bearing
-     here, not decorative: without it, a page whose content still exceeds its
-     box (e.g. a kanji with more practice history, words and related
-     characters than most) renders past the box's edge with the default
-     overflow: visible and overlaps whatever comes next — the credits footer —
-     instead of either fitting or scrolling cleanly within its own box. */
+     doesn't also make the whole page scroll. overflow-y: auto is a last
+     resort, not the design: every page is laid out to fit a 1280x720 viewport
+     (a 1080p laptop at 150% scaling), and this only catches content that
+     genuinely can't — an unusually long kanji entry, say — so it scrolls
+     cleanly inside its box rather than spilling past it. */
   flex: 1 1 auto;
   min-height: 0;
   overflow-y: auto;
 }
 
+/* One row: title, a few words beside it, page controls at the right. */
+.page-head {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+  min-height: 2.4rem;
+}
+
 .page-head h2 {
-  font-size: 2rem;
+  font-size: 1.75rem;
   color: var(--nn-ink);
 }
 
-.page-head p {
-  margin: 0.35rem 0 0;
+.page-subtitle {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--nn-ink-2);
+}
+
+.page-actions {
+  margin-left: auto;
+  align-self: center;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
 }
 
 /* Prose keeps a readable measure even when the page around it is wide.
    Roughly 62 characters is the comfortable span for continuous text. */
-.page-head p,
 .card > p,
 .page > p.muted {
   max-width: 62ch;
@@ -45,15 +63,11 @@
    centred card, the title reads as a stray label sitting on its own rather than
    as the heading of what's below it. */
 .page:has(> .focus) .page-head {
-  text-align: center;
-}
-
-.page:has(> .focus) .page-head p {
-  margin-inline: auto;
+  justify-content: center;
 }
 
 @media (max-width: 900px) {
   .page {
-    padding: 1.5rem 1.25rem 2.5rem;
+    padding: 1.25rem 1.25rem 2rem;
   }
 }

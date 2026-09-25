@@ -119,7 +119,7 @@
   font-size: 13px;
   color: var(--nn-ink);
   caret-color: var(--nn-kaki);
-  background: var(--nn-sunk);
+  background: var(--nn-field);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-pill);
 }

@@ -59,9 +59,83 @@
 }
 
 .rail-label {
-  font-size: 9.5px;
+  font-size: 10.5px;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.03em;
+}
+
+.rail-item {
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.rail-item:active {
+  transform: scale(0.96);
+}
+
+/* The account sits at the foot of the rail, pushed there by auto margin. */
+.rail-account {
+  margin-top: auto;
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.rail-small {
+  display: grid;
+  place-items: center;
+  width: 2.1rem;
+  height: 2.1rem;
+  cursor: pointer;
+  border-radius: var(--nn-r-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--nn-ink-2);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.rail-small:hover {
+  color: var(--nn-ink);
+  background: var(--nn-raised);
+}
+
+.rail-avatar {
+  display: grid;
+  place-items: center;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin-top: 2px;
+  border-radius: var(--nn-r-pill);
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+  font-family: var(--nn-font-display);
+  font-size: 15px;
+  line-height: 1;
+  text-decoration: none;
+  box-shadow: 0 0 0 3px transparent;
+  transition: box-shadow 0.15s ease;
+}
+
+.rail-avatar:hover,
+.rail-avatar.is-active {
+  color: var(--nn-on-accent);
+  box-shadow: 0 0 0 3px var(--nn-kaki-tint);
+}
+
+.rail-credits {
+  font-size: 10px;
+  color: var(--nn-ink-3);
+  text-decoration: none;
+}
+
+.rail-credits:hover {
+  color: var(--nn-kaki);
+  text-decoration: underline;
 }
 
 /* Narrow screens: the rail becomes a horizontal bar across the top. Enough to
@@ -83,6 +157,13 @@
     margin-bottom: 0;
   }
 
+  /* 56px suits the tall rail; across the top of a phone it would make the bar
+     taller than its items. */
+  .rail-brand svg {
+    width: 40px;
+    height: 40px;
+  }
+
   .rail-items {
     flex-direction: row;
     width: auto;
@@ -90,5 +171,12 @@
 
   .rail-item {
     width: 58px;
+  }
+
+  .rail-account {
+    margin-top: 0;
+    margin-left: auto;
+    padding-top: 0;
+    flex-direction: row;
   }
 }

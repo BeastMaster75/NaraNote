@@ -1,21 +1,86 @@
-.reading-custom {
-  gap: 0.75rem;
-  max-width: 40rem;
+/* Two ways in, side by side and filling the page: a file, or a paste. A
+   half-width card with the rest of the page empty made the start of a session
+   look like an afterthought. */
+.reading-start {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: 34rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.4fr);
+  align-items: stretch;
+  gap: 1.25rem;
 }
 
-.reading-custom-row {
-  display: flex;
+.card.reading-drop {
   align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  text-align: center;
+  border: 2px dashed var(--nn-line);
+  box-shadow: none;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.card.reading-drop.is-dragging {
+  border-color: var(--nn-kaki);
+  background: var(--nn-kaki-tint);
+}
+
+.reading-drop.is-busy {
+  opacity: 0.7;
+}
+
+.reading-drop-icon {
+  width: 2.6rem;
+  height: 2.6rem;
+  color: var(--nn-kaki);
+}
+
+.reading-drop-title {
+  font-size: 1.3rem;
+  color: var(--nn-ink);
+}
+
+.reading-or {
+  align-self: center;
+  font-family: var(--nn-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nn-ink-3);
+}
+
+.card.reading-custom {
   gap: 0.75rem;
+  min-height: 0;
 }
 
 .reading-paste {
+  flex: 1 1 auto;
   min-height: 8rem;
+  width: 100%;
   padding: 0.8rem 0.95rem;
   line-height: 1.8;
-  background: var(--nn-paper);
+  background: var(--nn-field);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-md);
   caret-color: var(--nn-kaki);
-  resize: vertical;
+  resize: none;
+}
+
+.reading-custom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 800px) {
+  .reading-start {
+    grid-template-columns: minmax(0, 1fr);
+    max-height: none;
+  }
 }

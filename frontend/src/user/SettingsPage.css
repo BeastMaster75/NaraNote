@@ -1,37 +1,66 @@
-/* A settings form is one of the few screens with a genuine reading measure, so
-   it takes a centred column rather than stretching to 1600px and leaving each
-   control marooned a metre from its label. */
+/* Two columns of grouped cards, centred. A settings form keeps a reading measure
+   rather than stretching edge to edge and leaving each control marooned far
+   from its label. */
 .settings {
   width: 100%;
-  max-width: 58rem;
+  max-width: 74rem;
   margin-inline: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  align-items: start;
 }
 
+.settings-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.card.setting-group {
+  gap: 0;
+  padding-block: 1rem 0.4rem;
+}
+
+.setting-group > .kicker {
+  margin-bottom: 0.35rem;
+}
+
+/* One row of a group: label and hint on the left, control on the right,
+   hairlines between rows rather than a card each. */
 .setting {
   display: grid;
-  grid-template-columns: minmax(min(20rem, 100%), 1fr) minmax(min(14rem, 100%), 16rem);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 15rem);
   align-items: center;
-  gap: 1.5rem;
-  padding: 1.15rem 1.4rem;
-  background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-lg);
-  box-shadow: var(--nn-shadow);
+  gap: 1rem;
+  padding: 0.7rem 0;
+}
+
+.setting + .setting {
+  border-top: 1px solid var(--nn-line-soft);
+}
+
+.setting:has(> .setting-copy:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.setting.is-stacked {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.55rem;
 }
 
 .setting-copy {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.1rem;
   min-width: 0;
 }
 
 .setting-title {
   margin: 0;
-  font-size: 15px;
+  font-family: var(--nn-font-ui);
+  font-size: 14px;
   font-weight: 600;
   color: var(--nn-ink);
 }
@@ -39,6 +68,11 @@
 .setting-control {
   display: flex;
   justify-content: flex-end;
+  min-width: 0;
+}
+
+.setting.is-stacked .setting-control {
+  justify-content: flex-start;
 }
 
 .setting-input {
@@ -48,7 +82,7 @@
   font-size: 13.5px;
   color: var(--nn-ink);
   caret-color: var(--nn-kaki);
-  background: var(--nn-sunk);
+  background: var(--nn-field);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-pill);
 }
@@ -59,14 +93,14 @@
   padding: 3px;
   gap: 3px;
   border-radius: var(--nn-r-pill);
-  background: var(--nn-sunk);
+  background: var(--nn-paper);
   border: 1px solid var(--nn-line);
 }
 
 .segment {
   flex: 1;
   cursor: pointer;
-  padding: 0.4rem 0.6rem;
+  padding: 0.35rem 0.6rem;
   font-family: var(--nn-font-ui);
   font-size: 12.5px;
   font-weight: 600;
@@ -74,6 +108,9 @@
   background: transparent;
   border: 0;
   border-radius: var(--nn-r-pill);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
 .segment:hover:not(.is-on) {
@@ -85,12 +122,14 @@
   color: var(--nn-on-accent);
 }
 
-.setting-control-range {
+.setting-range {
+  display: flex;
   align-items: center;
   gap: 0.9rem;
+  width: 100%;
 }
 
-.setting-control-range input[type='range'] {
+.setting-range input[type='range'] {
   flex: 1;
   min-width: 0;
   accent-color: var(--nn-kaki);
@@ -106,24 +145,24 @@
   color: var(--nn-ink);
 }
 
-.setting-control-key {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.5rem;
-}
-
-.setting-control-key .muted {
-  text-align: right;
-}
-
-.setting-key-actions {
+.setting-key {
   display: flex;
-  justify-content: flex-end;
   gap: 0.5rem;
+  width: 100%;
 }
 
-.credits-block {
-  gap: 0.6rem;
+.setting-key .setting-input {
+  flex: 1;
+  min-width: 0;
+}
+
+.card.settings-credits {
+  grid-column: 1 / -1;
+  flex-direction: row;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  padding-block: 0.8rem;
 }
 
 .credits-list {
@@ -131,14 +170,22 @@
   margin: 0;
   padding: 0;
   display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  flex-wrap: wrap;
+  gap: 0.3rem 1.25rem;
+  font-size: 13px;
 }
 
-@media (max-width: 720px) {
+@media (max-width: 1000px) {
+  .settings {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 40rem;
+  }
+}
+
+@media (max-width: 560px) {
   .setting {
     grid-template-columns: minmax(0, 1fr);
-    gap: 0.85rem;
+    gap: 0.55rem;
   }
 
   .setting-control {

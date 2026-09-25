@@ -24,8 +24,8 @@
 .rightnow {
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-  padding: 1.4rem 1.5rem 1.5rem;
+  gap: 0.8rem;
+  padding: 1.2rem 1.4rem 1.3rem;
   background: var(--nn-raised);
   border: 1px solid var(--nn-line-soft);
   border-radius: var(--nn-r-lg);
@@ -41,7 +41,7 @@
 
 .hero-head h2 {
   font-family: var(--nn-font-display);
-  font-size: 2.1rem;
+  font-size: 1.55rem;
   font-weight: 400;
   line-height: 1;
   margin: 0;
@@ -56,22 +56,17 @@
    flush instead of leaving a gap under the shorter one. */
 .hero-textarea {
   flex: 1;
-  min-height: 8.5rem;
-  resize: vertical;
+  min-height: 5rem;
+  resize: none;
   width: 100%;
   padding: 0.9rem 1rem;
   border-radius: var(--nn-r-md);
   border: 1px solid var(--nn-line);
-  background: var(--nn-sunk);
+  background: var(--nn-field);
   color: var(--nn-jp);
   font-family: var(--nn-font-jp);
   font-size: var(--nn-jp-body);
   line-height: 1.85;
-}
-
-.hero-textarea:focus-visible {
-  outline: 2px solid var(--nn-kaki);
-  outline-offset: 1px;
 }
 
 .hero-actions {
@@ -87,7 +82,7 @@
   padding: 0.55rem 0.9rem;
   border-radius: var(--nn-r-pill);
   border: 1px solid var(--nn-line);
-  background: var(--nn-sunk);
+  background: var(--nn-field);
   color: var(--nn-ink);
   font-family: var(--nn-font-ui);
   font-size: 13px;
@@ -115,11 +110,16 @@
   background: var(--nn-paper);
   text-decoration: none;
   color: inherit;
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s var(--nn-ease);
 }
 
 .rightnow-tile:hover {
   border-color: var(--nn-kaki);
   background: var(--nn-kaki-tint);
+  transform: translateX(3px);
 }
 
 .rightnow-count {
@@ -164,28 +164,11 @@
   gap: 0.8rem;
 }
 
-.rightnow-note {
-  margin: 0;
-  padding-top: 0.7rem;
-  border-top: 1px solid var(--nn-line-soft);
-  color: var(--nn-ink-3);
-}
-
 /* ── Recently collected ────────────────────────────────────────────────────
    The collection is the payoff of the whole app, and the home page showed
    none of it. */
 
-/* A column in the lower row, so its two blocks stack. It turns back into a row
-   at the width where the lower row drops to two columns and this spans both. */
-.recent {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
-  min-width: 0;
-}
-
 .recent-block {
-  flex: 1;
   min-width: 0;
   min-height: 0;
   display: flex;
@@ -198,43 +181,64 @@
   box-shadow: var(--nn-shadow);
 }
 
-/* Sized to its own three rows rather than sharing a 50/50 split with Words —
-   a shared flex:1 squeezed Kanji below what three rows need and clipped the
-   third row mid-glyph. */
-.recent-block-kanji {
-  flex: none;
-}
-
-/* Exactly three rows, clipped rather than scrolled — a scrollbar on an 18-cell
-   preview reads as a broken widget, not an invitation to scroll. Fetching
-   more than fits is deliberate: whatever doesn't make the first three rows at
-   the current width is simply not shown, so this never falls short of a
-   clean fill the way a fixed count tuned to one window size would. */
+/* Tiles sized by useTileSize (--tile): as large as lets every kanji fit, down to
+   3.2rem. Past that, as many whole rows as the card has height for, clipped
+   rather than scrolled — a scrollbar on a preview reads as a broken widget, not
+   an invitation to scroll. Only the rows that fit are declared; every item
+   past them lands in an implicit row of zero height, so the clip always falls
+   between rows and never through the middle of a glyph. */
 .recent-kanji {
-  display: flex;
-  flex-wrap: wrap;
-  align-content: flex-start;
+  --tile: 3.2rem;
+  --rows: 3;
+  flex: 1 1 0;
+  min-height: 3.2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, var(--tile));
+  grid-template-rows: repeat(var(--rows), var(--tile));
+  grid-auto-rows: 0;
   gap: 0.5rem;
+  /* Exactly the rows in use (useTileSize), centred in whatever height is left.
+     "safe": with more kanji than fit, the hidden rows' gaps make the grid taller
+     than its box, and a plain centre would push the top row out of view. */
+  align-content: safe center;
+  /* The width rarely divides into whole tiles; spread the remainder between
+     them rather than leaving a strip down the right-hand side. */
+  justify-content: space-between;
   list-style: none;
   margin: 0;
   padding: 0;
-  /* height, not max-height: this reserves the full three-row size before the
-     fetch resolves too, so the card doesn't hug the tiny "None yet" fallback
-     and then visibly pop to full size once kanji load in. */
-  height: calc(3 * 3.2rem + 2 * 0.5rem + 0.3rem);
   overflow: hidden;
+}
+
+/* Items in the zero-height overflow rows must clip too, or their contents
+   paint over the rows that are showing. */
+.recent-kanji > li,
+.recent-words > li {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The "None yet" line spans the grid instead of sitting in one tile's cell. */
+.recent-kanji > li.muted {
+  grid-column: 1 / -1;
+  grid-row: 1 / span 2;
 }
 
 .recent-glyph {
   display: grid;
   place-items: center;
-  width: 3.2rem;
-  height: 3.2rem;
+  width: var(--tile);
+  height: var(--tile);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s var(--nn-ease);
   border-radius: var(--nn-r-md);
   background: var(--nn-paper);
   border: 1px solid var(--nn-line-soft);
   font-family: var(--nn-font-jp);
-  font-size: var(--nn-jp-xl);
+  /* Never below the 44px the design sets for kanji in lists. */
+  font-size: max(var(--nn-jp-xl), calc(var(--tile) * 0.62));
   line-height: 1;
   color: var(--nn-jp);
   text-decoration: none;
@@ -243,33 +247,38 @@
 .recent-glyph:hover {
   border-color: var(--nn-kaki);
   background: var(--nn-kaki-tint);
+  transform: translateY(-2px);
 }
 
-/* Exactly three rows, same clip-not-scroll rule as the kanji strip above. */
+/* Whole rows up to the card's height, same clip-not-scroll rule as the kanji. */
 .recent-words {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
+  flex: 1 1 0;
+  min-height: 2.05rem;
+  display: grid;
+  grid-template-rows: repeat(auto-fill, 2.2rem);
+  grid-auto-rows: 0;
+  row-gap: 0.25rem;
   list-style: none;
   margin: 0;
   padding: 0;
-  /* height, not max-height — same reserved-space reasoning as .recent-kanji. */
-  height: calc(3 * 2.05rem + 2 * 0.3rem);
   overflow: hidden;
 }
 
 .recent-word {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 0.7rem;
-  height: 2.05rem;
-  padding-bottom: 0.3rem;
-  border-bottom: 1px solid var(--nn-line-soft);
+  /* No height, padding or border of its own: the grid row sets its size, and
+     only a box with none of those can collapse to nothing in an overflow row.
+     The separator is drawn inside it instead, where the clip reaches it. */
+  position: relative;
 }
 
-.recent-word:last-child {
-  border-bottom: none;
-  padding-bottom: 0;
+.recent-word::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 0;
+  border-bottom: 1px solid var(--nn-line-soft);
 }
 
 .recent-term {
@@ -285,34 +294,19 @@
   white-space: nowrap;
 }
 
-/* ── Lower band: the record, and the things you chose to do ─────────────── */
+/* ── The record: a band across the page ──────────────────────────────────── */
 
-/* Everything below the hero, in one row: what you've collected, the record, and
-   your tasks. Three bands stacked made home 1376px and the only page that
-   scrolled.
- *
- * Stretched, not start-aligned: these three are rarely the same natural height,
- * and letting the short ones end early leaves holes along the bottom. */
-.home-lower {
-  display: grid;
-  grid-template-columns:
-    minmax(min(18rem, 100%), 0.9fr)
-    minmax(min(26rem, 100%), 1.4fr)
-    minmax(min(17rem, 100%), 19rem);
-  gap: 1.25rem;
-  align-items: stretch;
-  /* Bounds the row to .home's available height instead of growing to match
-     whatever the tallest column's content needs — that column (tasks) now
-     scrolls internally within its own card instead. */
-  flex: 1;
-  min-height: 0;
-}
-
+/* Natural height — seven rows of cells and a header — rather than stretched to
+   a row the way it was as a column, which left most of its card empty. How many
+   weeks show is worked out from the width (useActivityLayout, --weeks), and the
+   cell size from the screen's height (--cell). */
 .activity {
+  --cell: 14px;
+  --weeks: 26;
   display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  padding: 1.25rem 1.4rem 1.4rem;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 0.9rem 1.4rem;
   background: var(--nn-raised);
   border: 1px solid var(--nn-line-soft);
   border-radius: var(--nn-r-lg);
@@ -320,16 +314,24 @@
 }
 
 .activity-head {
+  flex: 0 0 9.5rem;
   display: flex;
-  align-items: center;
-  gap: 1rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 .activity-totals {
   display: flex;
-  gap: 1.25rem;
-  margin: 0 0 0 auto;
+  flex-direction: column;
+  gap: 0.3rem;
+  margin: 0;
+}
+
+.activity-totals div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.6rem;
 }
 
 .activity-totals dt {
@@ -342,9 +344,9 @@
 }
 
 .activity-totals dd {
-  margin: 0.15rem 0 0;
+  margin: 0;
   font-family: var(--nn-font-display);
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   line-height: 1;
   color: var(--nn-ink);
 }
@@ -352,21 +354,28 @@
 /* Weekday labels down the left, month labels along the top, cells filling the
    rest — the top-left corner is deliberately empty. */
 .activity-body {
+  flex: 1 1 auto;
+  min-width: 0;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   grid-template-rows: auto auto;
-  gap: 5px 8px;
+  gap: 4px 8px;
+}
+
+/* Months and cells share one track definition, or the labels drift out of line
+   with the columns they name. The weeks are chosen to fill the width, so the
+   few px left over spread into the gaps. */
+.activity-months,
+.activity-grid {
+  grid-column: 2;
+  grid-template-columns: repeat(var(--weeks), var(--cell));
+  justify-content: space-between;
+  column-gap: 4px;
 }
 
 .activity-months {
-  grid-column: 2;
   grid-row: 1;
   display: grid;
-  /* Same track sizing and distribution as the cells below, or the month labels
-     drift out of line with the columns they name. */
-  grid-template-columns: repeat(26, minmax(0, 40px));
-  justify-content: space-between;
-  gap: 4px;
 }
 
 .activity-months span,
@@ -378,41 +387,44 @@
   text-transform: uppercase;
   color: var(--nn-ink-3);
   white-space: nowrap;
+  line-height: var(--cell);
 }
 
 .activity-weekdays {
   grid-column: 1;
   grid-row: 2;
   display: grid;
-  grid-template-rows: repeat(7, 1fr);
-  gap: 4px;
-  align-items: center;
+  grid-template-rows: repeat(7, var(--cell));
+  row-gap: 4px;
 }
 
-/* Columns cap at 40px and the leftover width goes into the gaps rather than into
-   the cells. Cells are square, so an uncapped 1fr column on a wide screen would
-   make the card as tall as it is wide — a 26-week strip turning into a wall. */
 .activity-grid {
-  grid-column: 2;
   grid-row: 2;
   display: grid;
-  grid-template-rows: repeat(7, 1fr);
+  grid-template-rows: repeat(7, var(--cell));
   grid-auto-flow: column;
-  grid-auto-columns: minmax(0, 40px);
-  justify-content: space-between;
-  gap: 4px;
+  row-gap: 4px;
 }
 
 /* A button, not a div: clicking a day selects it for the task panel, so it has
-   to be focusable and reachable from the keyboard like any other control. */
+   to be focusable and reachable from the keyboard like any other control.
+   An empty day is an outline, not a fill. Filled pink, the empty days had the
+   same visual weight as the green ones and the strip read as mostly data. */
 .activity-cell {
-  aspect-ratio: 1;
-  min-width: 0;
+  width: var(--cell);
+  height: var(--cell);
   padding: 0;
   border-radius: 4px;
-  border: 1px solid transparent;
-  background: var(--nn-sunk);
+  border: 1px solid var(--nn-line);
+  background: transparent;
   cursor: pointer;
+  transition: transform 0.12s var(--nn-ease);
+}
+
+.activity-cell.level-1,
+.activity-cell.level-2,
+.activity-cell.level-3 {
+  border-color: transparent;
 }
 
 .activity-cell.level-1 {
@@ -450,27 +462,29 @@
 
 .activity-cell:hover {
   border-color: var(--nn-ink-3);
+  transform: scale(1.25);
 }
 
-/* Three columns need roughly 1500px before the activity strip gets squeezed.
-   Below that the collected blocks span the full width as a row of two, with the
-   record and the tasks beneath them. */
-@media (max-width: 1500px) {
-  .home-lower {
-    grid-template-columns: minmax(min(26rem, 100%), 1fr) minmax(min(17rem, 100%), 19rem);
-  }
+.activity-hint {
+  margin: 0;
+  color: var(--nn-ink-3);
+}
 
-  .recent {
-    grid-column: 1 / -1;
-    flex-direction: row;
-  }
+/* ── Below the record: three columns sharing the rest of the height ─────── */
 
-  /* In a row the kanji block must share the width. Left at flex: none it sizes
-     to its max-content — every glyph on one line — and pushed the page 600px
-     sideways at 1280. */
-  .recent-block-kanji {
-    flex: 1.4 1 0;
-  }
+/* Each of the three can use whatever height it gets — tiles grow, the word list
+   shows more rows, the task list shows more tasks — so the row takes the rest
+   of the page and none of them is left mostly empty. */
+.home-lower {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.2fr)
+    minmax(0, 1fr)
+    minmax(min(17rem, 100%), 21rem);
+  gap: 1.25rem;
+  align-items: stretch;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (max-width: 1100px) {
@@ -479,24 +493,24 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .recent {
+  .activity {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  /* Twenty-six columns sharing a phone's width gives 6px cells, which are too
-     small to see and far too small to tap. Below the stacking point the cells
-     keep a fixed size and the strip scrolls inside its own card instead — the
-     page itself must never scroll sideways. */
-  .activity-body {
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
+  .activity-head {
+    flex-basis: auto;
   }
 
-  .activity-grid {
-    grid-auto-columns: 18px;
+  /* Stacked, nothing bounds the row's height, so the previews go back to a
+     fixed three rows instead of flexing to fill it. */
+  .recent-kanji {
+    flex: none;
+    height: calc(3 * 3.2rem + 2 * 0.5rem);
   }
 
-  .activity-months {
-    grid-template-columns: repeat(26, 18px);
+  .recent-words {
+    flex: none;
+    height: calc(3 * 2.2rem + 2 * 0.25rem);
   }
 }

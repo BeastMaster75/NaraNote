@@ -48,7 +48,7 @@ type Collected = {
  * Enough to show the page has a history without turning the landing state into
  * the collection page — that already exists, and this is a link to it.
  */
-const RECENT_LIMIT = 8
+const RECENT_LIMIT = 16
 
 const SAMPLE =
   'その古い家の窓から、山吹色の光が漏れていた。彼は毎朝六時に起きて、川沿いを走ることにしている。'
@@ -186,7 +186,7 @@ export function MiningPage() {
     translating || (lastEdited === 'en' ? !translationEn.trim() : !text.trim())
 
   return (
-    <Page title="Mine" subtitle="Paste Japanese you have read and pull the words out of it.">
+    <Page title="Mine" subtitle="Pull the words out of what you read.">
       <div className="mining">
         {/* One toolbar, before or after analysing — what it offers changes, but
             it never swaps the whole page shape out from under the two panes
@@ -296,7 +296,7 @@ export function MiningPage() {
           </section>
 
           {kanjiPick ? (
-            <aside className="mining-detail">
+            <aside className="mining-detail nn-reveal">
               <KanjiPickDetail
                 key={kanjiPick.literal + kanjiPick.sentence}
                 literal={kanjiPick.literal}
@@ -422,10 +422,8 @@ function RecentlyCollected({ items }: { items: Collected[] | null }) {
       <section className="mining-recent">
         <h3 className="kicker">Nothing Collected Yet</h3>
         <p className="muted mining-firstrun">
-          Paste a paragraph from whatever you&rsquo;re reading and hit Analyse. Kanji you
-          already have come back dimmed, so what stands out is what&rsquo;s new. Tap one and
-          the sentence you met it in is filed under it — which is what you&rsquo;ll see when
-          you practise writing it.
+          Paste a paragraph and hit Analyse. Kanji you already have come back dimmed, so
+          what&rsquo;s new stands out.
         </p>
       </section>
     )

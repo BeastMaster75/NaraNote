@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type ReactNode } from 'react'
 import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
 import { useUser, type Me, type Theme } from './UserContext'
@@ -44,12 +44,48 @@ const THEMES: { value: Theme; label: string }[] = [
 ]
 
 /**
+ * A labelled control inside a group. The hint is a few words, not a paragraph:
+ * the reasoning behind a setting belongs in the code, not in front of the user.
+ */
+function Row({
+  title,
+  hint,
+  stacked,
+  children,
+}: {
+  title: string
+  hint?: ReactNode
+  /** Control under the label rather than beside it, for controls wider than half a card. */
+  stacked?: boolean
+  children?: ReactNode
+}) {
+  return (
+    <div className={`setting${stacked ? ' is-stacked' : ''}`}>
+      <div className="setting-copy">
+        <h4 className="setting-title">{title}</h4>
+        {hint && <p className="muted small">{hint}</p>}
+      </div>
+      {children && <div className="setting-control">{children}</div>}
+    </div>
+  )
+}
+
+function Group({ title, id, children }: { title: string; id?: string; children: ReactNode }) {
+  return (
+    <section className="card setting-group" id={id}>
+      <h3 className="kicker">{title}</h3>
+      {children}
+    </section>
+  )
+}
+
+/**
  * Email + password, routed entirely through the same mailed-link flow the "Forgot
  * password?" screen uses (see UserContext.forgotPassword) rather than a current-password
  * form — one flow to secure and test instead of two, and it works from Settings exactly
  * the way it works from a locked-out login screen.
  */
-function AccountSetting({ me }: { me: Me }) {
+function AccountRows({ me }: { me: Me }) {
   const { resendVerification, forgotPassword } = useUser()
   const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
   const [resetState, setResetState] = useState<'idle' | 'sending' | 'sent'>('idle')
@@ -67,15 +103,8 @@ function AccountSetting({ me }: { me: Me }) {
   }
 
   return (
-    <section className="setting">
-      <div className="setting-copy">
-        <h3 className="setting-title">Account</h3>
-        <p className="muted small">
-          {me.email}
-          {!me.emailVerified && ' — email not verified yet.'}
-        </p>
-      </div>
-      <div className="setting-control setting-control-key">
+    <>
+      <Row title="Email" hint={me.emailVerified ? me.email : `${me.email} — not verified yet`}>
         {!me.emailVerified && (
           <button
             type="button"
@@ -84,26 +113,30 @@ function AccountSetting({ me }: { me: Me }) {
             disabled={resendState !== 'idle'}
           >
             {resendState === 'idle'
-              ? 'Resend Verification Email'
+              ? 'Resend Verification'
               : resendState === 'sending'
                 ? 'Sending…'
                 : 'Sent'}
           </button>
         )}
+      </Row>
+      {/* An ordinary button: changing a password is occasional housekeeping, and
+          as the page's only solid-pink button it read as the main thing to do. */}
+      <Row title="Password" hint="We’ll email you a link.">
         <button
           type="button"
-          className="btn is-primary"
+          className="btn"
           onClick={handleChangePassword}
           disabled={resetState !== 'idle'}
         >
           {resetState === 'idle'
-            ? 'Change Password'
+            ? 'Send Reset Link'
             : resetState === 'sending'
               ? 'Sending…'
               : 'Check Your Email'}
         </button>
-      </div>
-    </section>
+      </Row>
+    </>
   )
 }
 
@@ -111,8 +144,11 @@ function AccountSetting({ me }: { me: Me }) {
  * Explicit Save/Remove rather than the optimistic autosave every other setting here
  * uses — a credential shouldn't partially save itself mid-keystroke the way a range
  * slider's every tick does. Never shows the saved value back, only whether one exists.
+ *
+ * <p>Gemini because self-hosted translation was tried first, and its free model
+ * mangled ordinary phrases too often to trust.
  */
-function GeminiKeySetting({ hasKey }: { hasKey: boolean }) {
+function GeminiKeyRow({ hasKey }: { hasKey: boolean }) {
   const { save } = useUser()
   const [draft, setDraft] = useState('')
   const [busy, setBusy] = useState(false)
@@ -132,20 +168,17 @@ function GeminiKeySetting({ hasKey }: { hasKey: boolean }) {
   }
 
   return (
-    <section className="setting">
-      <div className="setting-copy">
-        <h3 className="setting-title">Gemini API Key</h3>
-        <p className="muted small">
-          Used by Mining's translation panel — self-hosted translation was tried
-          first, but its free model mangled ordinary phrases too often to trust.
-          Never shown back once saved — only whether one is set. Get a free key
+    <Row
+      title="Gemini API Key"
+      stacked
+      hint={
+        <>
+          For translation on Mine. {hasKey ? 'A key is saved.' : 'No key set.'} Get a free one
           at <a href="https://aistudio.google.com/apikey">aistudio.google.com</a>.
-        </p>
-      </div>
-      <div className="setting-control setting-control-key">
-        <span className="muted small">
-          {hasKey ? 'A key is saved.' : 'No key set.'}
-        </span>
+        </>
+      }
+    >
+      <div className="setting-key">
         <input
           type="password"
           className="setting-input"
@@ -156,23 +189,21 @@ function GeminiKeySetting({ hasKey }: { hasKey: boolean }) {
           maxLength={200}
           aria-label="Gemini API key"
         />
-        <div className="setting-key-actions">
-          <button
-            type="button"
-            className="btn is-primary"
-            onClick={handleSave}
-            disabled={busy || !draft.trim()}
-          >
-            {busy ? 'Saving…' : 'Save'}
+        <button
+          type="button"
+          className="btn is-primary"
+          onClick={handleSave}
+          disabled={busy || !draft.trim()}
+        >
+          {busy ? 'Saving…' : 'Save'}
+        </button>
+        {hasKey && (
+          <button type="button" className="btn" onClick={handleRemove} disabled={busy}>
+            Remove
           </button>
-          {hasKey && (
-            <button type="button" className="btn" onClick={handleRemove} disabled={busy}>
-              Remove
-            </button>
-          )}
-        </div>
+        )}
       </div>
-    </section>
+    </Row>
   )
 }
 
@@ -196,138 +227,107 @@ export function SettingsPage() {
     void save({ displayName: trimmed })
   }
 
+  // Two columns of grouped cards. One full-width card per setting made this the
+  // tallest page in the app — 1150px, against a 720px laptop screen.
   return (
     <Page title="Settings" subtitle="Your account and how the app behaves.">
       <div className="settings">
-        <AccountSetting me={me} />
+        <div className="settings-column">
+          <Group title="Account">
+            <Row title="Display Name">
+              <input
+                key={me.displayName}
+                className="setting-input"
+                defaultValue={me.displayName}
+                maxLength={80}
+                onBlur={(event) => commitName(event.currentTarget)}
+                onKeyDown={(event) => event.key === 'Enter' && commitName(event.currentTarget)}
+                aria-label="Display name"
+              />
+            </Row>
+            <AccountRows me={me} />
+          </Group>
 
-        <section className="setting">
-          <div className="setting-copy">
-            <h3 className="setting-title">Display Name</h3>
-            <p className="muted small">What the app calls you.</p>
-          </div>
-          <div className="setting-control">
-            <input
-              key={me.displayName}
-              className="setting-input"
-              defaultValue={me.displayName}
-              maxLength={80}
-              onBlur={(event) => commitName(event.currentTarget)}
-              onKeyDown={(event) =>
-                event.key === 'Enter' && commitName(event.currentTarget)
-              }
-              aria-label="Display name"
-            />
-          </div>
-        </section>
-
-        <section className="setting">
-          <div className="setting-copy">
-            <h3 className="setting-title">Theme</h3>
-            <p className="muted small">
-              System follows whatever your device is set to, and changes with it.
-            </p>
-          </div>
-          <div className="setting-control">
-            <div className="segmented" role="group" aria-label="Theme">
-              {THEMES.map((option) => (
+          <Group title="Appearance">
+            <Row title="Theme" hint="System follows your device.">
+              <div className="segmented" role="group" aria-label="Theme">
+                {THEMES.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`segment${me.theme === option.value ? ' is-on' : ''}`}
+                    aria-pressed={me.theme === option.value}
+                    onClick={() => save({ theme: option.value })}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+            </Row>
+            <Row title="Furigana by Default" hint="When you analyse a passage.">
+              <div className="segmented" role="group" aria-label="Furigana by default">
                 <button
-                  key={option.value}
                   type="button"
-                  className={`segment${me.theme === option.value ? ' is-on' : ''}`}
-                  aria-pressed={me.theme === option.value}
-                  onClick={() => save({ theme: option.value })}
+                  className={`segment${me.furigana ? ' is-on' : ''}`}
+                  aria-pressed={me.furigana}
+                  onClick={() => save({ furigana: true })}
                 >
-                  {option.label}
+                  On
                 </button>
-              ))}
-            </div>
-          </div>
-        </section>
+                <button
+                  type="button"
+                  className={`segment${!me.furigana ? ' is-on' : ''}`}
+                  aria-pressed={!me.furigana}
+                  onClick={() => save({ furigana: false })}
+                >
+                  Off
+                </button>
+              </div>
+            </Row>
+          </Group>
+        </div>
 
-        <section className="setting">
-          <div className="setting-copy">
-            <h3 className="setting-title">Furigana by Default</h3>
-            <p className="muted small">
-              Whether readings start switched on when you analyse a passage. You can
-              still toggle them per passage.
-            </p>
-          </div>
-          <div className="setting-control">
-            <div className="segmented" role="group" aria-label="Furigana by default">
-              <button
-                type="button"
-                className={`segment${me.furigana ? ' is-on' : ''}`}
-                aria-pressed={me.furigana}
-                onClick={() => save({ furigana: true })}
-              >
-                On
-              </button>
-              <button
-                type="button"
-                className={`segment${!me.furigana ? ' is-on' : ''}`}
-                aria-pressed={!me.furigana}
-                onClick={() => save({ furigana: false })}
-              >
-                Off
-              </button>
-            </div>
-          </div>
-        </section>
+        <div className="settings-column">
+          <Group title="Study">
+            {/* Caps the words the Reading deck auto-generates from your kanji;
+                words you save yourself while mining are never filtered. */}
+            <Row title="JLPT Level" hint="Reading deck words go up to this level." stacked>
+              <KanjiFilterBar
+                jlptLevel={me.targetJlptLevel || null}
+                onJlptLevelChange={(level) => save({ targetJlptLevel: level ?? 0 })}
+              />
+            </Row>
+            <Row title="Session Length" hint="Cards per review or writing session.">
+              <div className="setting-range">
+                <input
+                  type="range"
+                  min={5}
+                  max={100}
+                  step={5}
+                  value={me.sessionSize}
+                  disabled={!loaded}
+                  onChange={(event) => save({ sessionSize: Number(event.target.value) })}
+                  aria-label="Session length"
+                />
+                <span className="setting-value">{me.sessionSize}</span>
+              </div>
+            </Row>
+          </Group>
 
-        <section className="setting">
-          <div className="setting-copy">
-            <h3 className="setting-title">JLPT Level</h3>
-            <p className="muted small">
-              Caps the words the Reading deck auto-generates from your kanji to this level
-              and easier — words with a harder or unrated kanji aren&rsquo;t created. Doesn&rsquo;t
-              affect words you save yourself while mining.
-            </p>
-          </div>
-          <div className="setting-control">
-            <KanjiFilterBar
-              jlptLevel={me.targetJlptLevel || null}
-              onJlptLevelChange={(level) => save({ targetJlptLevel: level ?? 0 })}
-            />
-          </div>
-        </section>
+          <Group title="Translation">
+            <GeminiKeyRow hasKey={me.hasGeminiKey} />
+          </Group>
+        </div>
 
-        <section className="setting">
-          <div className="setting-copy">
-            <h3 className="setting-title">Session Length</h3>
-            <p className="muted small">
-              How many cards a review or handwriting session pulls at once. Shorter
-              sessions are easier to actually finish.
-            </p>
-          </div>
-          <div className="setting-control setting-control-range">
-            <input
-              type="range"
-              min={5}
-              max={100}
-              step={5}
-              value={me.sessionSize}
-              disabled={!loaded}
-              onChange={(event) => save({ sessionSize: Number(event.target.value) })}
-              aria-label="Session length"
-            />
-            <span className="setting-value">{me.sessionSize}</span>
-          </div>
-        </section>
-
-        <GeminiKeySetting hasKey={me.hasGeminiKey} />
-
-        <section id="credits" className="card credits-block">
-          <h3 className="setting-title">Data Credits</h3>
-          <p className="muted small">
-            NaraNote is built on free, community-maintained Japanese reference data. Every page
-            that uses it links back here rather than repeating this in full.
-          </p>
+        {/* Attribution is a licence condition; the rail's Credits link lands here.
+            One line under both columns — what each source provides is on hover. */}
+        <section className="card settings-credits" id="credits">
+          <h3 className="kicker">Data Credits</h3>
           <ul className="credits-list">
             {CREDITS.map((source) => (
-              <li key={source.name}>
+              <li key={source.name} title={source.body}>
                 <a href={source.href}>{source.name}</a>
-                <span className="muted small"> — {source.body} {source.license}.</span>
+                <span className="muted small"> {source.license}</span>
               </li>
             ))}
           </ul>

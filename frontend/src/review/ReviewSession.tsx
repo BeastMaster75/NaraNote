@@ -146,7 +146,7 @@ export function ReviewSession() {
 
   if (queue.length === 0 || index >= queue.length) {
     return (
-      <Page title="Review" subtitle="Words you have saved, when they are due.">
+      <Page title="Review" subtitle="Words from your kanji, when they’re due.">
         <div className="focus">
           <section className="card">
             <h3 className="kicker">{done > 0 ? 'Session Finished' : 'Nothing Due'}</h3>
@@ -154,7 +154,7 @@ export function ReviewSession() {
               {done > 0
                 ? `You reviewed ${done} ${done === 1 ? 'word' : 'words'}.`
                 : 'Nothing is due right now.'}{' '}
-              Save more from <Link to="/mine">Mine</Link>, or pick another deck.
+              More words appear as your <Link to="/collection">kanji collection</Link> grows.
             </p>
             <div className="session-done-actions">
               <Link to="/review" className="btn is-primary">
@@ -171,18 +171,24 @@ export function ReviewSession() {
   }
 
   return (
-    <Page title="Review" subtitle="What does it mean?">
-      <div className="focus">
+    <Page
+      title="Review"
+      subtitle="What does it mean?"
+      actions={
         <div className="session-progress muted small">
-          {index + 1} of {queue.length}
           {word!.isNew && <span className="tag-new">new</span>}
+          {index + 1} of {queue.length}
         </div>
-
+      }
+    >
+      {/* Centred in the page's height as well as its width: top-aligned, the card
+          sat under the header with the lower half of the screen empty. */}
+      <div className="focus review-stage">
         <section className="card review-card">
           <span className="review-term jp-lg">{word!.term}</span>
 
           {revealed ? (
-            <>
+            <div className="review-answer nn-reveal">
               {word!.reading && <span className="review-reading jp-sm">{word!.reading}</span>}
               <p className="review-meaning">{word!.meaning}</p>
               {word!.sentence && (
@@ -191,7 +197,7 @@ export function ReviewSession() {
                   {word!.source && <span className="review-source">{word!.source}</span>}
                 </p>
               )}
-            </>
+            </div>
           ) : (
             <p className="muted small">
               Recall the meaning, then reveal. <kbd>Space</kbd>
@@ -200,13 +206,13 @@ export function ReviewSession() {
         </section>
 
         {!revealed ? (
-          <div>
+          <div className="review-actions">
             <button type="button" className="btn is-primary" onClick={() => setRevealed(true)}>
               Show the Meaning
             </button>
           </div>
         ) : (
-          <div className="ratings">
+          <div className="ratings nn-reveal">
             {RATINGS.map(({ rating, label, hint }, i) => (
               <button
                 key={rating}

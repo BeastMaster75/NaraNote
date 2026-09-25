@@ -108,7 +108,10 @@
   white-space: nowrap;
 }
 
+/* text-decoration: a Link styled as a button otherwise keeps the link
+   underline ("Words" on the Review hub). */
 .btn {
+  text-decoration: none;
   cursor: pointer;
   font-family: var(--nn-font-ui);
   font-size: 13px;
@@ -120,9 +123,21 @@
   background: transparent;
 }
 
+.btn {
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    transform 0.1s ease;
+}
+
 .btn:hover:not(:disabled) {
   color: var(--nn-ink);
   background: var(--nn-sunk);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
 }
 
 .btn:disabled {
@@ -182,21 +197,17 @@ code {
   color: var(--nn-bengara);
 }
 
-/* Attribution is a licence condition for KANJIDIC2, KanjiVG and JMdict, so a
-   mention sits in the layout rather than on one page — it can't be navigated
-   away from. Deliberately just a link now, not the full sentence: the full
-   text lives once on Settings (#credits), and this is only here so the
-   licence's "reasonable to the medium" requirement is still met without
-   repeating three lines of legal text at the bottom of every page. */
-.credits {
-  width: 100%;
-  margin-top: auto;
-  padding: 0.4rem 2.5rem;
-  text-align: right;
-}
+/* Shown on the card you're pointing at rather than on every card at once: a
+   wall of × marks read as clutter, and as an invitation to delete. Always
+   visible where there is no hover (touch), and whenever it has focus. */
+@media (hover: hover) {
+  .row-delete {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
 
-@media (max-width: 900px) {
-  .credits {
-    padding: 0.4rem 1.25rem;
+  :hover > .row-delete,
+  .row-delete:focus-visible {
+    opacity: 1;
   }
 }

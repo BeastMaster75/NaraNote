@@ -1,10 +1,28 @@
 /* Width comes from the .focus column now, which centres the whole session
    rather than just capping this one card and leaving it against the left edge. */
+.review-stage {
+  flex: 1 1 auto;
+  justify-content: center;
+  padding-bottom: 6vh;
+}
+
 .review-card {
   align-items: center;
   text-align: center;
   gap: 0.6rem;
   padding: 2.5rem 1.5rem;
+}
+
+.review-answer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.review-actions {
+  display: flex;
+  justify-content: center;
 }
 
 .review-term {
@@ -36,7 +54,7 @@
   text-align: left;
   line-height: 1.9;
   border-radius: var(--nn-r-md);
-  background: var(--nn-sunk);
+  background: var(--nn-paper);
   border-left: 3px solid var(--nn-kaki);
 }
 

@@ -8,24 +8,28 @@ type PageProps = {
    * one, which would leave a line of text alone in the top-left corner.
    */
   title?: string
+  /** A few words beside the title, not a sentence under it. */
   subtitle?: string
+  /** Controls that belong to the whole page, set at the right of the title row. */
+  actions?: ReactNode
   children: ReactNode
 }
 
 /**
- * Shared chrome for every screen: a title block, then whatever the page is.
+ * Shared chrome for every screen: one title row, then whatever the page is.
  *
- * <p>There is no longer a narrow/wide distinction — every page fills the
- * available width, and readable line length is a property of the text inside
- * rather than of the page frame.
+ * <p>The title, its subtitle and any page-level controls share a single row.
+ * Stacked, they cost ~110px on every page before any content — the largest
+ * single reason pages scrolled on a laptop-height screen.
  */
-export function Page({ title, subtitle, children }: PageProps) {
+export function Page({ title, subtitle, actions, children }: PageProps) {
   return (
     <div className="page">
       {title && (
         <header className="page-head">
           <h2>{title}</h2>
-          {subtitle && <p className="muted">{subtitle}</p>}
+          {subtitle && <p className="page-subtitle">{subtitle}</p>}
+          {actions && <div className="page-actions">{actions}</div>}
         </header>
       )}
       {children}

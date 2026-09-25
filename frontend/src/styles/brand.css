@@ -5,6 +5,8 @@
    tokens.css; this file is hand-owned and safe to edit. */
 
 :root {
-  --nn-brand-pink: #c9506b;  /* the tile — matches the hanami palette's primary */
+  --nn-brand-pink: #c9506b;  /* the note — matches the hanami palette's primary */
   --nn-brand-cream: #fbf1ec; /* the strokes — matches the hanami palette's ground */
+  --nn-brand-pink-deep: #9e3a52;  /* the note's folded corner, its underside in shade */
+  --nn-brand-cream-deep: #e6c9c0; /* the same fold on the reversed (cream) note */
 }

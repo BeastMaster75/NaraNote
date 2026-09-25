@@ -6,11 +6,16 @@
   <!-- 撫子色 accent bar down the left edge -->
   <rect x="0" y="0" width="10" height="320" rx="5" fill="#c9506b"/>
 
-  <!-- The mark: katakana ナ in two strokes, on its pink tile -->
+  <!-- The mark: ナラ written on a folded-corner note -->
   <g transform="translate(88 90) scale(2.1875)">
-    <rect width="64" height="64" rx="17" fill="#c9506b"/>
-    <path d="M13 27 H51" stroke="#fbf1ec" stroke-width="8" stroke-linecap="round" fill="none"/>
-    <path d="M41 15 C41 32 40 42 27 50" stroke="#fbf1ec" stroke-width="8" stroke-linecap="round" fill="none"/>
+    <path d="M12 2 H52 A10 10 0 0 1 62 12 V47 L47 62 H12 A10 10 0 0 1 2 52 V12 A10 10 0 0 1 12 2 Z" fill="#c9506b"/>
+    <path d="M62 47 L47 62 V53 A6 6 0 0 1 53 47 Z" fill="#9e3a52"/>
+    <g stroke="#fbf1ec" stroke-linecap="round" stroke-linejoin="round" fill="none">
+      <path d="M9 26 H35" stroke-width="8.5"/>
+      <path d="M29.5 13.5 C29.5 29.5 28.5 38.5 17 46.5" stroke-width="8.5"/>
+      <path d="M45.5 20.5 H55.5" stroke-width="6.5"/>
+      <path d="M44.5 32.5 H56.5 C56.5 39 53 43.5 46 46" stroke-width="6.5"/>
+    </g>
   </g>
 
   <!-- Georgia is the serif fallback the app's display font declares. An SVG

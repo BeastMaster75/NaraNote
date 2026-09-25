@@ -19,7 +19,6 @@ import { RequireAuth } from './user/RequireAuth'
 import { RequireVerified } from './user/RequireVerified'
 import { ResetPasswordPage } from './user/ResetPasswordPage'
 import { SettingsPage } from './user/SettingsPage'
-import { TopBar } from './user/TopBar'
 import { VerifyEmailPage } from './user/VerifyEmailPage'
 import './App.css'
 
@@ -36,9 +35,11 @@ function NotFound() {
 }
 
 /**
- * The nav rail, top bar and credits line are chrome for the authenticated
- * app — a layout route so /login and /register (outside RequireAuth) don't
- * render a nav rail full of links that would just bounce back to /login.
+ * The nav rail is the chrome for the authenticated app — a layout route so
+ * /login and /register (outside RequireAuth) don't render a nav rail full of
+ * links that would just bounce back to /login. The account controls and the
+ * data credits live in the rail too, so every pixel of height below it
+ * belongs to the page.
  */
 function AppShell() {
   return (
@@ -46,16 +47,7 @@ function AppShell() {
       <NavRail />
 
       <div className="app-main">
-        <TopBar />
-
         <Outlet />
-
-        {/* The full attribution lives once on Settings — CC BY-SA still wants a
-            mention wherever the licensed data actually shows, so this stays,
-            just as quiet as something almost nobody needs to click gets to be. */}
-        <footer className="credits small muted">
-          <Link to="/settings#credits">Data credits</Link>
-        </footer>
       </div>
     </div>
   )

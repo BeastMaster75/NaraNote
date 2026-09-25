@@ -128,8 +128,7 @@ export function BatchAddModal({ savedLiterals, onDone, variant = 'default' }: Ba
 
         <div className="batch-body">
           <p className="muted small">
-            Paste any text containing kanji — a word list, a sentence, or a study guide.
-            Every unique character will be extracted and added to your library.
+            Paste any text with kanji in it. Every new character is added to your library.
           </p>
 
           {!result ? (

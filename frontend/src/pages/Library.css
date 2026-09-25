@@ -19,15 +19,19 @@
   min-width: 10rem;
   padding: 0.45rem 0.8rem;
   color: var(--nn-ink);
-  background: var(--nn-sunk);
+  background: var(--nn-field);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-pill);
   caret-color: var(--nn-kaki);
 }
 
 .library-sort {
-  padding: 0.45rem 0.7rem;
-  background: var(--nn-raised);
+  /* Room on the right for the shared chevron (index.css). */
+  padding: 0.45rem 2rem 0.45rem 0.9rem;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  background-color: var(--nn-raised);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-pill);
   color: var(--nn-ink-2);

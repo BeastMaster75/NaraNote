@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { Page } from '../components/Page'
 import { useUser } from '../user/UserContext'
@@ -107,9 +107,12 @@ function Marking({ check }: { check: StrokeCheck }) {
 }
 
 /** Everything the stage row has to fit, in px. Mirrors PracticeSession.css. */
-const MAX_CANVAS = 420
+const MAX_CANVAS = 560
+const MIN_CANVAS = 220
 const ANSWER_WIDTH = 400 // .answer flex-basis, 25rem
 const STAGE_GAP = 20 // .session-stage gap, 1.25rem
+/** The Undo / Clear / Show the Answer row under the box, plus the gap above it. */
+const ACTIONS_HEIGHT = 36 + 12
 /**
  * Never share the row with the answer for less than this. A cramped box is
  * worse to write in than a stacked answer is to read, so below the threshold
@@ -117,59 +120,84 @@ const STAGE_GAP = 20 // .session-stage gap, 1.25rem
  */
 const MIN_BESIDE_ANSWER = 340
 
-function canvasSizeFor(stageWidth: number) {
+function canvasSizeFor(stageWidth: number, stageHeight: number) {
   const beside = stageWidth - ANSWER_WIDTH - STAGE_GAP
-  const available = beside >= MIN_BESIDE_ANSWER ? beside : stageWidth
-  return Math.floor(Math.min(MAX_CANVAS, available))
+  const byWidth = beside >= MIN_BESIDE_ANSWER ? beside : stageWidth
+  // Only side by side does height bind: stacked, the answer is below the fold
+  // by construction and the box may as well be comfortable.
+  const byHeight = beside >= MIN_BESIDE_ANSWER ? stageHeight - ACTIONS_HEIGHT : Infinity
+  return Math.floor(Math.max(MIN_CANVAS, Math.min(MAX_CANVAS, byWidth, byHeight)))
 }
+
+/** Gap between the clue and the stage, in px. Mirrors .session's gap. */
+const SESSION_GAP = 16
 
 /**
  * A larger box is genuinely easier to write a kanji in, so take the room when
- * the row has it. Strokes are stored normalised, so resizing doesn't invalidate
- * anything already drawn.
+ * the row has it — but only the room there is. Strokes are stored normalised,
+ * so resizing doesn't invalidate anything already drawn.
  *
- * <p>Measures the stage rather than the window: the box has to fit the row it
- * actually sits in, and a `window.innerWidth` breakpoint got that wrong twice —
- * it ignored the page's padding and max-width, and it only updated on `resize`,
- * so any layout change that moved the row without resizing the window left a
- * stale size behind.
+ * <p>Measures the session column rather than the window: the box has to fit the
+ * row it actually sits in, and a `window.innerWidth` breakpoint got that wrong
+ * twice — it ignored the page's padding and max-width, and it only updated on
+ * `resize`, so any layout change that moved the row without resizing the window
+ * left a stale size behind.
+ *
+ * <p>Height counts as much as width. Sized by width alone, the box took 420px on
+ * a 720px-tall laptop and pushed the rating buttons off screen. The budget is
+ * the column's height less the clue above it. The column is measured rather
+ * than a stretched stage so the clue and the stage can sit together, centred
+ * as one group, instead of pinned to the top with the spare height left below.
  *
  * <p>Reserves the answer's width unconditionally, revealed or not, so the box
  * doesn't resize under your hand the moment you ask for the answer.
  */
 function useCanvasSize() {
-  const [stage, setStage] = useState<HTMLDivElement | null>(null)
-  const [size, setSize] = useState(MAX_CANVAS)
+  const [column, setColumn] = useState<HTMLDivElement | null>(null)
+  const [layout, setLayout] = useState({ size: MAX_CANVAS, budget: 0 })
+
+  // clientWidth/clientHeight rather than getBoundingClientRect: layout size, so a
+  // transform on an ancestor (the answer's ease-in, say) can't distort it. The
+  // column is sized by the page (flex: 1; min-height: 0), so the canvas inside it
+  // can't feed back into what is being measured.
+  const measure = useCallback((node: HTMLDivElement) => {
+    const prompt = node.querySelector<HTMLElement>('.prompt')
+    const width = node.clientWidth
+    const budget = node.clientHeight - (prompt?.offsetHeight ?? 0) - SESSION_GAP
+    // 0 while the element is detached or hidden; keep the last good size.
+    if (width <= 0 || budget <= 0) return
+    const size = canvasSizeFor(width, budget)
+    setLayout((previous) =>
+      previous.size === size && previous.budget === budget ? previous : { size, budget },
+    )
+  }, [])
 
   // Measures in the ref callback, which runs during commit, so the first paint
   // is already the right size rather than MAX_CANVAS corrected a frame later.
-  // Safe to read layout here: the stage is sized by its parent, so the canvas
-  // inside it can't feed back into the width being measured.
-  const ref = useCallback((node: HTMLDivElement | null) => {
-    setStage(node)
-    if (node) {
-      const width = node.getBoundingClientRect().width
-      if (width > 0) setSize(canvasSizeFor(width))
-    }
-  }, [])
+  const ref = useCallback(
+    (node: HTMLDivElement | null) => {
+      setColumn(node)
+      if (node) measure(node)
+    },
+    [measure],
+  )
 
   useEffect(() => {
-    if (!stage) return
-    const observer = new ResizeObserver(([entry]) => {
-      const width = entry.contentRect.width
-      // 0 while the element is detached or hidden; keep the last good size.
-      if (width > 0) setSize(canvasSizeFor(width))
-    })
-    observer.observe(stage)
+    if (!column) return
+    const observer = new ResizeObserver(() => measure(column))
+    observer.observe(column)
+    // The clue can change height on its own — a longer meaning wraps.
+    const prompt = column.querySelector('.prompt')
+    if (prompt) observer.observe(prompt)
     return () => observer.disconnect()
-  }, [stage])
+  }, [column, measure])
 
-  return [ref, size] as const
+  return [ref, layout] as const
 }
 
 export function PracticeSession() {
   const { me, loaded } = useUser()
-  const [stageRef, canvasSize] = useCanvasSize()
+  const [sessionRef, { size: canvasSize, budget: stageBudget }] = useCanvasSize()
   const [queue, setQueue] = useState<DueCard[] | null>(null)
   const [index, setIndex] = useState(0)
   const [strokes, setStrokes] = useState<Stroke[]>([])
@@ -281,14 +309,18 @@ export function PracticeSession() {
   }
 
   return (
-    <Page title="Write" subtitle="Read the clue, write the character, then check yourself.">
-      <div className="focus is-wide">
+    <Page
+      title="Write"
+      subtitle="Recall it, write it, check it."
+      actions={
         <div className="session-progress muted small">
-          {index + 1} of {queue.length}
           {card?.isNew && <span className="tag-new">new</span>}
+          {index + 1} of {queue.length}
         </div>
-
-        <div className="session">
+      }
+    >
+      <div className="focus is-wide session-fill">
+        <div className="session" ref={sessionRef}>
           <section className="card prompt">
             <div className="prompt-clue">
               <h3 className="kicker">Write the Kanji For</h3>
@@ -310,7 +342,10 @@ export function PracticeSession() {
             </dl>
           </section>
 
-          <div className="session-stage" ref={stageRef}>
+          <div
+            className="session-stage"
+            style={{ '--stage-budget': `${stageBudget}px` } as CSSProperties}
+          >
             <div className="session-work">
               <div className="canvas-wrap" style={{ width: canvasSize, height: canvasSize }}>
                 <WritingCanvas
@@ -342,11 +377,22 @@ export function PracticeSession() {
                 >
                   Clear
                 </button>
+                {/* In the same row as Undo and Clear: a row of its own under the
+                    box cost the height the box itself needed. */}
+                {!revealed && (
+                  <button
+                    type="button"
+                    className="btn is-primary"
+                    onClick={() => setRevealed(true)}
+                  >
+                    Show the Answer
+                  </button>
+                )}
               </div>
             </div>
 
             {revealed && (
-              <section className="card answer">
+              <section className="card answer nn-reveal">
                 <h3 className="kicker">The Answer</h3>
                 <div className="answer-body">
                   <span className="answer-glyph">{card!.literal}</span>
@@ -360,47 +406,37 @@ export function PracticeSession() {
                   <Marking check={check} />
                 ) : (
                   <p className="muted small">
-                    You drew {strokes.length}; it has {card!.strokeCount ?? '—'}. Your strokes are
-                    numbered in the order you made them — compare them one by one against the
-                    diagram.
+                    You drew {strokes.length}; it has {card!.strokeCount ?? '—'}.
                   </p>
                 )}
+
+                {/* Inside the answer rather than a row under the whole stage, so
+                    revealing the answer never adds height to the page. */}
+                <div className="ratings">
+                  {RATINGS.map(({ rating, label, hint }) => (
+                    <button
+                      key={rating}
+                      type="button"
+                      className={`btn rating rating-${rating.toLowerCase()}${
+                        rating === suggested ? ' is-suggested' : ''
+                      }`}
+                      onClick={() => rate(rating)}
+                      disabled={saving}
+                    >
+                      <span className="rating-label">
+                        {label}
+                        {rating === suggested && (
+                          <span className="rating-suggested">Suggested</span>
+                        )}
+                      </span>
+                      <span className="rating-hint">{hint}</span>
+                    </button>
+                  ))}
+                </div>
               </section>
             )}
           </div>
         </div>
-
-        {!revealed ? (
-          <div>
-            <button
-              type="button"
-              className="btn is-primary"
-              onClick={() => setRevealed(true)}
-            >
-              Show the Answer
-            </button>
-          </div>
-        ) : (
-          <div className="ratings">
-            {RATINGS.map(({ rating, label, hint }) => (
-              <button
-                key={rating}
-                type="button"
-                className={`btn rating rating-${rating.toLowerCase()}${
-                  rating === suggested ? ' is-suggested' : ''
-                }`}
-                onClick={() => rate(rating)}
-                disabled={saving}
-              >
-                <span className="rating-label">
-                  {label}
-                  {rating === suggested && <span className="rating-suggested">Suggested</span>}
-                </span>
-                <span className="rating-hint">{hint}</span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
     </Page>
   )

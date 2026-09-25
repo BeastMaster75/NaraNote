@@ -115,7 +115,11 @@ export function TaskPanel({ tasks, selectedDate, onClearDate, onChanged }: TaskP
             onChange={(event) => setTitle(event.target.value)}
             maxLength={200}
           />
-          <div className="task-form-row">
+          {/* The date, kanji and Add button appear once there is a task to add,
+              or a day was picked to plan one. Always shown, they took a second
+              row of the card's height before a single task was visible. */}
+          {(title.trim() || selectedDate) && (
+          <div className="task-form-row nn-reveal">
             <input
               type="date"
               className="task-input task-date"
@@ -134,6 +138,7 @@ export function TaskPanel({ tasks, selectedDate, onClearDate, onChanged }: TaskP
               Add
             </button>
           </div>
+          )}
         </form>
 
         {visible.length === 0 ? (

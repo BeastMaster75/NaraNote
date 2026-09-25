@@ -146,8 +146,8 @@ export function DeckWords() {
           <section className="card">
             <h3 className="kicker">No Words Here</h3>
             <p className="muted">
-              This deck is empty. Save words from <Link to="/mine">Mine</Link> with this
-              source to fill it.
+              Nothing here yet. Words appear as your{' '}
+              <Link to="/collection">kanji collection</Link> grows.
             </p>
           </section>
         ) : (

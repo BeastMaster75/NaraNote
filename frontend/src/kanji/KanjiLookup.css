@@ -1,7 +1,10 @@
+/* Fills the page's remaining height so the card below can size to it. */
 .lookup {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1rem;
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .lookup-controls {
@@ -16,7 +19,7 @@
   padding: 0.5rem 0.9rem;
   text-align: center;
   color: var(--nn-jp);
-  background: var(--nn-sunk);
+  background: var(--nn-field);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-pill);
   caret-color: var(--nn-kaki);
@@ -41,8 +44,15 @@
   line-height: 1.2;
 }
 
+.chip {
+  transition:
+    border-color 0.15s ease,
+    transform 0.15s var(--nn-ease);
+}
+
 .chip:hover {
   border-color: var(--nn-kaki);
+  transform: translateY(-1px);
 }
 
 /* Your own history reads as slightly more solid than the fallback examples. */
@@ -59,11 +69,12 @@
 }
 
 .lookup-search {
-  width: 100%;
+  flex: 1 1 16rem;
   max-width: 26rem;
+  margin-left: auto;
   padding: 0.5rem 0.9rem;
   color: var(--nn-ink);
-  background: var(--nn-sunk);
+  background: var(--nn-field);
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-pill);
   caret-color: var(--nn-kaki);
@@ -117,11 +128,14 @@
   background: var(--nn-sunk);
 }
 
+/* Takes the rest of the page's height; the body inside takes the rest of this. */
 .kanji {
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  padding: 1.5rem 1.6rem;
+  gap: 1.1rem;
+  padding: 1.2rem 1.5rem;
   border-radius: var(--nn-r-lg);
   background: var(--nn-raised);
   border: 1px solid var(--nn-line-soft);
@@ -137,7 +151,7 @@
 
 .kanji-glyph {
   font-family: var(--nn-font-jp-serif);
-  font-size: 108px;
+  font-size: 92px;
   line-height: 1;
   color: var(--nn-jp);
 }
@@ -166,17 +180,17 @@
   color: var(--nn-ink);
 }
 
-/* A fixed row height, the same for every kanji regardless of how much data it
-   has — a character with one reading and no words gets the same card size as
-   one with a full page of both, rather than the card resizing per-character.
-   stretch (not flex-start) makes all three columns actually reach that height
-   instead of sizing to their own shorter content. */
+/* Whatever height the page has left, the same for every kanji regardless of
+   how much data it has, so the card doesn't resize per character. It used to be
+   a fixed 28rem, which was the right size on exactly one screen height and made
+   the page scroll on every laptop. stretch makes all three columns reach it. */
 .kanji-body {
+  flex: 1 1 0;
+  min-height: 16rem;
   display: flex;
   gap: 2rem;
   flex-wrap: wrap;
   align-items: stretch;
-  height: 28rem;
 }
 
 /* Sections flow into columns as the page widens rather than one stretching to
@@ -319,7 +333,8 @@
   gap: 0.15rem;
   padding: 0.5rem 0.7rem;
   border-radius: var(--nn-r-md);
-  background: var(--nn-sunk);
+  background: var(--nn-paper);
+  border: 1px solid var(--nn-line-soft);
 }
 
 .your-word {
@@ -346,8 +361,13 @@
   color: var(--nn-kaki);
 }
 
+/* A size container, so the animation below can fit its height as well as its
+   width: the square is as big as the column allows, less the kicker above and
+   the controls below it. */
 .kanji-strokes {
-  flex: 0 0 auto;
+  flex: 0 0 300px;
+  container-type: size;
+  min-height: 0;
 }
 
 /* KanjiVG ships a fixed 109x109 box; let it scale, and let the strokes take the
@@ -358,11 +378,92 @@
   color: var(--nn-jp);
 }
 
-/* Give the diagram more room once there is room to give. */
+.kanji-strokes .stroke-order {
+  width: min(100cqw, 100cqh - 4.5rem);
+}
+
 @media (min-width: 1200px) {
-  .stroke-order {
-    width: 320px;
+  .kanji-strokes {
+    flex-basis: 320px;
   }
+}
+
+@media (max-width: 900px) {
+  .kanji-strokes {
+    container-type: normal;
+  }
+
+  .kanji-strokes .stroke-order {
+    width: 260px;
+  }
+}
+
+/* ── Your kanji: the landing state ─────────────────────────────────────── */
+
+.your-kanji {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.your-kanji-count {
+  margin-left: 0.4rem;
+  color: var(--nn-kaki);
+}
+
+/* A list that grows without limit scrolls inside itself; the page doesn't. */
+.your-kanji-grid {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  list-style: none;
+  margin: 0;
+  padding: 2px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr));
+  grid-auto-rows: max-content;
+  gap: 0.6rem;
+}
+
+.your-kanji-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.85rem 0.5rem 0.7rem;
+  border-radius: var(--nn-r-md);
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line-soft);
+  box-shadow: var(--nn-shadow);
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s var(--nn-ease);
+}
+
+.your-kanji-tile:hover {
+  border-color: var(--nn-kaki);
+  box-shadow: var(--nn-shadow-lift);
+  transform: translateY(-2px);
+}
+
+.your-kanji-glyph {
+  font-family: var(--nn-font-jp-serif);
+  font-size: 40px;
+  line-height: 1;
+  color: var(--nn-jp);
+}
+
+.your-kanji-meaning {
+  max-width: 100%;
+  font-size: 12px;
+  color: var(--nn-ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .stroke-order svg {

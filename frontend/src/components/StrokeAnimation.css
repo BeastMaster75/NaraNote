@@ -153,6 +153,7 @@
 
 .stroke-anim-count {
   margin-left: 0.3rem;
+  white-space: nowrap;
   font-family: var(--nn-font-mono);
   font-size: 11px;
   letter-spacing: 0.06em;

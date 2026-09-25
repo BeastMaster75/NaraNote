@@ -1,18 +1,22 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useNavigate } from 'react-router'
 import { Page } from '../components/Page'
 import './ReadingPage.css'
 
+const ACCEPT = '.txt,.pdf,.epub'
+
 /**
- * Where a Read session starts: your own text, either a file upload or a
- * straight paste. Hands off to {@code ReadingSession}, which does the actual
- * analysing.
+ * Where a Read session starts: your own text, either a file or a straight paste.
+ * Hands off to {@code ReadingSession}, which does the actual analysing. Nothing
+ * here is saved on the server — the text lives for the session only.
  */
 export function ReadingPage() {
   const navigate = useNavigate()
+  const fileInput = useRef<HTMLInputElement>(null)
   const [pasted, setPasted] = useState('')
   const [uploading, setUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [dragging, setDragging] = useState(false)
 
   function openPasted() {
     if (!pasted.trim()) return
@@ -41,18 +45,54 @@ export function ReadingPage() {
 
   return (
     <Page title="Read" subtitle="Read a passage aloud and see how it went.">
-      <section className="card reading-custom">
-        <h3 className="kicker">Bring Your Own</h3>
-        <p className="muted small">
-          Upload a .txt, .pdf or .epub file, or paste text directly — analysed for this
-          session only, never saved on the server.
-        </p>
-
-        <div className="reading-custom-row">
-          <input
-            type="file"
-            accept=".txt,.pdf,.epub"
+      <div className="reading-start">
+        {/* A real drop target rather than the browser's own "Choose File"
+            control, which rendered as an unstyled grey button — the one piece of
+            the app that looked unfinished. The hidden input still does the
+            picking, so keyboard and screen-reader use are unchanged. */}
+        <section
+          className={`card reading-drop${dragging ? ' is-dragging' : ''}${uploading ? ' is-busy' : ''}`}
+          onDragOver={(event) => {
+            event.preventDefault()
+            setDragging(true)
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(event) => {
+            event.preventDefault()
+            setDragging(false)
+            const file = event.dataTransfer.files?.[0]
+            if (file && !uploading) void upload(file)
+          }}
+        >
+          <svg
+            className="reading-drop-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z M14 3v5h5 M12 18v-6 M9.5 14.5 12 12l2.5 2.5" />
+          </svg>
+          <h3 className="reading-drop-title">
+            {uploading ? 'Reading your file…' : 'Drop a File Here'}
+          </h3>
+          <p className="muted small">A .txt, .pdf or .epub</p>
+          <button
+            type="button"
+            className="btn"
             disabled={uploading}
+            onClick={() => fileInput.current?.click()}
+          >
+            Choose a File
+          </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept={ACCEPT}
+            hidden
             onChange={(event) => {
               const file = event.target.files?.[0]
               if (file) void upload(file)
@@ -60,21 +100,35 @@ export function ReadingPage() {
             }}
             aria-label="Upload a file to read"
           />
-          {uploading && <span className="muted small">Reading file&hellip;</span>}
-        </div>
-        {uploadError && <p className="error small">{uploadError}</p>}
+          {uploadError && <p className="error small">{uploadError}</p>}
+        </section>
 
-        <textarea
-          className="reading-paste"
-          value={pasted}
-          onChange={(event) => setPasted(event.target.value)}
-          placeholder="または、日本語をここに貼り付けてください"
-          aria-label="Paste Japanese text to read"
-        />
-        <button type="button" className="btn is-primary" onClick={openPasted} disabled={!pasted.trim()}>
-          Read This
-        </button>
-      </section>
+        <span className="reading-or" aria-hidden="true">
+          or
+        </span>
+
+        <section className="card reading-custom">
+          <h3 className="kicker">Paste Text</h3>
+          <textarea
+            className="reading-paste jp"
+            value={pasted}
+            onChange={(event) => setPasted(event.target.value)}
+            placeholder="日本語をここに貼り付けてください"
+            aria-label="Paste Japanese text to read"
+          />
+          <div className="reading-custom-actions">
+            <span className="muted small">Used for this session only, never saved.</span>
+            <button
+              type="button"
+              className="btn is-primary"
+              onClick={openPasted}
+              disabled={!pasted.trim()}
+            >
+              Read This
+            </button>
+          </div>
+        </section>
+      </div>
     </Page>
   )
 }

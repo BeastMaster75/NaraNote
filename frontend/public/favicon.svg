@@ -1,5 +1,17 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="17" fill="#c9506b"/>
-  <path d="M13 27 H51" stroke="#fbf1ec" stroke-width="8" stroke-linecap="round" fill="none"/>
-  <path d="M41 15 C41 32 40 42 27 50" stroke="#fbf1ec" stroke-width="8" stroke-linecap="round" fill="none"/>
+  <!-- The browser-tab cut of the NaraNote mark (components/Logo.tsx), drawn for
+       16-20px rather than scaled down to it:
+       - a cream rim, so the pink note keeps its edge on a pink or dark tab —
+         without it the note melted into a pink tab and only the strokes showed;
+       - no folded corner, which is sub-pixel at this size and only blurred it;
+       - heavier strokes, and ラ's two strokes spaced a full pixel apart so they
+         don't smear into one blob. -->
+  <path d="M12 1 H52 A11 11 0 0 1 63 12 V52 A11 11 0 0 1 52 63 H12 A11 11 0 0 1 1 52 V12 A11 11 0 0 1 12 1 Z" fill="#fbf1ec"/>
+  <path d="M13 5 H51 A8 8 0 0 1 59 13 V51 A8 8 0 0 1 51 59 H13 A8 8 0 0 1 5 51 V13 A8 8 0 0 1 13 5 Z" fill="#c9506b"/>
+  <g stroke="#fbf1ec" stroke-linecap="round" stroke-linejoin="round" fill="none">
+    <path d="M10.5 27 H35" stroke-width="9.5"/>
+    <path d="M29 13 C29 30 28 39 17 48" stroke-width="9.5"/>
+    <path d="M45 20.5 H54.5" stroke-width="7"/>
+    <path d="M43.5 33.5 H55.5 C55.5 40.5 52 45.5 44.5 48.5" stroke-width="7"/>
+  </g>
 </svg>

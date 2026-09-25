@@ -1,6 +1,22 @@
 @import './styles/tokens.css';
 @import './styles/brand.css';
 
+/* Local additions to the palette. Kept here rather than in tokens.css, which is
+   lifted wholesale from the design export and would lose anything added to it.
+ *
+ * Text fields were filled with --nn-sunk, the same pink as chips, disabled
+ * buttons and hover states, so a form read as one pink slab with nothing
+ * standing out. A near-white field with a hairline border reads as "type
+ * here" and leaves pink to mean something. */
+:root {
+  --nn-field: #fffdfc;
+  --nn-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+[data-theme='dark'] {
+  --nn-field: #1a1114;
+}
+
 *,
 *::before,
 *::after {
@@ -63,6 +79,118 @@ rt {
 
 ::selection {
   background: var(--nn-kaki-tint);
+}
+
+/* One focus treatment for every text field, whatever page styles it. :where()
+   keeps specificity at zero so a page's own border colour still applies when
+   the field isn't focused. */
+:where(input:not([type='checkbox'], [type='radio'], [type='file']), textarea, select) {
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+:where(input:not([type='checkbox'], [type='radio'], [type='file']), textarea, select):focus-visible {
+  outline: none;
+  border-color: var(--nn-kaki);
+  box-shadow: 0 0 0 3px var(--nn-kaki-tint);
+}
+
+::placeholder {
+  color: var(--nn-ink-3);
+  opacity: 1;
+}
+
+/* ── Browser defaults that read as unfinished ────────────────────────────
+   Each of these is the browser's own chrome showing through: correct, but
+   visibly not part of the design. */
+
+/* The diagonal resize grip in a textarea's corner. Every box here is sized by
+   its layout already, so the grip did nothing useful and looked like a stray
+   mark on the card. */
+textarea {
+  resize: none;
+}
+
+/* Chrome paints autofilled fields (the login form) pale blue. An inset shadow
+   the size of the field is the only way to cover it. */
+input:-webkit-autofill,
+input:-webkit-autofill:hover {
+  -webkit-text-fill-color: var(--nn-ink);
+  caret-color: var(--nn-kaki);
+  box-shadow: 0 0 0 100px var(--nn-field) inset;
+  transition: background-color 9999s;
+}
+
+input:-webkit-autofill:focus-visible {
+  box-shadow:
+    0 0 0 3px var(--nn-kaki-tint),
+    0 0 0 100px var(--nn-field) inset;
+}
+
+/* The date field's calendar icon, quieted to match the other field chrome. */
+::-webkit-calendar-picker-indicator {
+  opacity: 0.5;
+  cursor: pointer;
+}
+
+::-webkit-calendar-picker-indicator:hover {
+  opacity: 0.85;
+}
+
+/* A dropdown gets the same chevron everywhere instead of the platform's arrow.
+   :where() keeps this at zero specificity so each select's own rule sets its
+   padding (leave ~2rem on the right for the chevron). */
+:where(select) {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23998088' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 0.85rem;
+}
+
+/* Thin, warm scrollbars inside cards. The Windows default — grey, with arrow
+   buttons — sat inside the task list and deck list like a foreign object. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--nn-line) transparent;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────────
+   Small and quick: something revealed eases in rather than snapping, and
+   anything you can press answers the pointer. Nothing loops or moves on
+   its own. */
+
+@keyframes nn-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes nn-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* For content that appears in response to an action: an answer, a result. */
+.nn-reveal {
+  animation: nn-rise 0.28s var(--nn-ease) both;
+}
+
+/* Each page eases in when you navigate to it. */
+.page {
+  animation: nn-fade 0.22s ease both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ── Japanese text helpers ──────────────────────────────────────────────

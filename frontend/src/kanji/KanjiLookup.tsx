@@ -128,6 +128,61 @@ function pushRecent(literal: string): string[] {
   return next
 }
 
+type LibraryKanji = { literal: string; meanings: string[] }
+
+/**
+ * What /kanji shows before you pick anything: the characters you are already
+ * studying, one click from their page. A blank "Pick a kanji" left the whole
+ * page empty in the state people land on most.
+ */
+function YourKanji() {
+  const [entries, setEntries] = useState<LibraryKanji[] | null>(null)
+
+  useEffect(() => {
+    fetch('/api/library')
+      .then((response) => (response.ok ? (response.json() as Promise<LibraryKanji[]>) : []))
+      .then(setEntries)
+      .catch(() => setEntries([]))
+  }, [])
+
+  if (entries === null) return null
+
+  if (entries.length === 0) {
+    return (
+      <section className="your-kanji">
+        <h3 className="kicker">Start With One of These</h3>
+        <ul className="your-kanji-grid">
+          {EXAMPLES.map((literal) => (
+            <li key={literal}>
+              <Link to={`/kanji/${literal}`} className="your-kanji-tile">
+                <span className="your-kanji-glyph">{literal}</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </section>
+    )
+  }
+
+  return (
+    <section className="your-kanji">
+      <h3 className="kicker">
+        Your Kanji <span className="your-kanji-count">{entries.length}</span>
+      </h3>
+      <ul className="your-kanji-grid">
+        {entries.map((entry) => (
+          <li key={entry.literal}>
+            <Link to={`/kanji/${entry.literal}`} className="your-kanji-tile">
+              <span className="your-kanji-glyph">{entry.literal}</span>
+              <span className="your-kanji-meaning">{entry.meanings[0] ?? ''}</span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
 export function KanjiLookup() {
   const { literal: param } = useParams<{ literal: string }>()
   const navigate = useNavigate()
@@ -185,8 +240,10 @@ export function KanjiLookup() {
   }
 
   return (
-    <Page title="Kanji" subtitle="Readings, meanings and stroke order for any character.">
+    <Page title="Kanji" subtitle="Look up any character.">
       <section className="lookup">
+        {/* One row: the character box, your recent ones, and search by meaning.
+            On two rows they cost ~65px the detail card below needed. */}
         <div className="lookup-controls">
         <input
           className="lookup-input jp-lg"
@@ -222,15 +279,15 @@ export function KanjiLookup() {
               </Link>
             ))}
           </div>
-        </div>
 
-        <input
-          className="lookup-search"
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-          placeholder="Or search by meaning or reading — “water”, みず…"
-          aria-label="Search by meaning or reading"
-        />
+          <input
+            className="lookup-search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Or search by meaning or reading — “water”, みず…"
+            aria-label="Search by meaning or reading"
+          />
+        </div>
 
         {search.trim() ? (
           <SearchResults
@@ -243,7 +300,7 @@ export function KanjiLookup() {
         ) : literal ? (
           <KanjiPanel literal={literal} onFound={remember} />
         ) : (
-          <p className="muted">Pick a kanji, or type one.</p>
+          <YourKanji />
         )}
       </section>
     </Page>
@@ -474,8 +531,8 @@ function YoursPanel({ kanji }: { kanji: KanjiResponse }) {
       <Section title="Yours">
         <p className="muted small">
           {inLibrary
-            ? 'In your library, but you haven’t practised it or met it in a saved word yet.'
-            : 'Nothing yet. Add it to your library to practise writing it, or save a word containing it from Mine.'}
+            ? 'In your library. Not practised yet.'
+            : 'Nothing yet — add it to your library to practise it.'}
         </p>
       </Section>
     )
@@ -553,7 +610,6 @@ function YoursPanel({ kanji }: { kanji: KanjiResponse }) {
               </li>
             ))}
           </ul>
-          <p className="muted small">Others in your library built from the same components.</p>
         </Section>
       )}
     </>

@@ -120,12 +120,12 @@
   padding: 0.75rem 1rem;
   border: 1px solid var(--nn-line);
   border-radius: var(--nn-r-md);
-  background: var(--nn-sunk);
+  background: var(--nn-field);
   color: var(--nn-jp);
   font-family: var(--nn-font-jp);
   font-size: var(--nn-jp-sm);
   line-height: 1.7;
-  resize: vertical;
+  resize: none;
   box-sizing: border-box;
   transition: border-color 0.15s ease, outline-color 0.15s ease;
 }

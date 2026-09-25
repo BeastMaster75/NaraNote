@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, type CSSProperties } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
+import { useFitRows, useFitTiles } from '../components/useFitTiles'
 import { downloadFile } from '../lib/download'
 import './ReviewHub.css'
 
@@ -15,14 +16,76 @@ export type Deck = {
   unseen: number
 }
 
+/**
+ * The Reading deck: words made entirely of kanji you already hold, generated on
+ * the server (RecognitionWordService) as the collection grows. Its id is the
+ * deck id format from DeckRef — `words:` plus the source it is stored under.
+ */
+const WORDS_DECK_ID = 'words:Reading'
+
+/** Enough to fill either preview at any size; each clips to whole rows. */
+const PREVIEW_KANJI = 40
+/**
+ * The words preview doubles as the count when a JLPT level is picked — the
+ * deck's own due count doesn't know about the filter — so it fetches up to the
+ * session maximum, and shows "100+" past it.
+ */
+const PREVIEW_WORDS = 100
+
+type DueKanji = { literal: string }
+type DueWord = { id: number; term: string; reading: string | null; meaning: string }
+
+/** Due kanji fill their preview: big when few, down to list size when many. */
+const KANJI_TILES = { min: 50, max: 112, gap: 8 } // gap mirrors .track-kanji
+
+/** Height of one word row, in px. Mirrors .track-words (2.4rem). */
+const WORD_ROW = 38.4
+
+const PENCIL = 'M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16z'
+const CARDS = 'M8 6h12v11H8z M4 4h11v2H6v11H4z'
+
+function TrackIcon({ d }: { d: string }) {
+  return (
+    <span className="track-icon" aria-hidden="true">
+      <svg
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d={d} />
+      </svg>
+    </span>
+  )
+}
+
+/**
+ * Review is two things, side by side: writing your kanji by hand, and reading
+ * the words built from them. Each gets one card with what's ready now, a look
+ * at what that is, and one button to start.
+ *
+ * <p>It used to be a list of word decks — one per source typed while mining —
+ * with handwriting as a row among them. Words stopped being something you save
+ * (the collection is kanji), so those source decks no longer describe anything
+ * you do. Their words are still in the database and still reachable at
+ * /review/deck?id=…; they just aren't a destination here.
+ *
+ * <p>The two queues stay separate on purpose: different schedulers, different
+ * activities, and handwriting is the one thing Anki can't do.
+ */
 export function ReviewHub() {
   const navigate = useNavigate()
   const [decks, setDecks] = useState<Deck[] | null>(null)
   const [error, setError] = useState(false)
-  const [exporting, setExporting] = useState<string | null>(null)
-  const [exportError, setExportError] = useState<string | null>(null)
+  const [dueKanji, setDueKanji] = useState<DueKanji[]>([])
+  const [dueWords, setDueWords] = useState<DueWord[] | null>(null)
   const [jlptLevel, setJlptLevel] = useState<number | null>(null)
-  const [filteredDue, setFilteredDue] = useState<number | null>(null)
+  const [exporting, setExporting] = useState(false)
+  const [exportError, setExportError] = useState<string | null>(null)
+  const [kanjiRef, { size: tile }] = useFitTiles(dueKanji.length, KANJI_TILES)
+  const [wordsRef, wordRows] = useFitRows(dueWords?.length ?? 0, WORD_ROW)
 
   const load = useCallback(() => {
     setError(false)
@@ -33,53 +96,41 @@ export function ReviewHub() {
       })
       .then(setDecks)
       .catch(() => setError(true))
+    // Both "due" endpoints are read-only, so previewing them schedules nothing.
+    fetch(`/api/practice/due?limit=${PREVIEW_KANJI}`)
+      .then((response) => (response.ok ? (response.json() as Promise<DueKanji[]>) : []))
+      .then(setDueKanji)
+      .catch(() => setDueKanji([]))
   }, [])
 
   useEffect(load, [load])
 
-  // The "Review N due" button should reflect the filter, not the unfiltered
-  // total shown in the deck list below — that list is deck browsing, this is
-  // the count of what a session would actually load right now.
   useEffect(() => {
-    if (jlptLevel === null) {
-      setFilteredDue(null)
-      return
+    const params = new URLSearchParams({ deck: WORDS_DECK_ID, limit: String(PREVIEW_WORDS) })
+    if (jlptLevel !== null) params.set('jlptLevel', String(jlptLevel))
+    let cancelled = false
+    fetch(`/api/review/due?${params}`)
+      .then((response) => (response.ok ? (response.json() as Promise<DueWord[]>) : []))
+      .then((words) => !cancelled && setDueWords(words))
+      .catch(() => !cancelled && setDueWords([]))
+    return () => {
+      cancelled = true
     }
-    fetch(`/api/review/due/count?jlptLevel=${jlptLevel}`)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((data: { due: number } | null) => setFilteredDue(data?.due ?? 0))
-      .catch(() => setFilteredDue(0))
   }, [jlptLevel])
 
-  async function exportDeck(deck: Deck, format: 'anki' | 'csv') {
-    setExporting(deck.id + format)
+  async function exportWords() {
+    setExporting(true)
     setExportError(null)
     try {
       await downloadFile(
-        `/api/export/${format}?deck=${encodeURIComponent(deck.id)}`,
-        format === 'anki' ? 'naranote.apkg' : 'naranote-vocab.tsv',
+        `/api/export/anki?deck=${encodeURIComponent(WORDS_DECK_ID)}`,
+        'naranote.apkg',
       )
     } catch (cause) {
       setExportError(cause instanceof Error ? cause.message : 'Export failed')
     } finally {
-      setExporting(null)
+      setExporting(false)
     }
-  }
-
-  const wordDecks = decks?.filter((deck) => deck.kind === 'WORDS') ?? []
-  // Deliberately the total across every deck, not a per-deck sum the user has to
-  // add up: one queue is the point of a scheduler.
-  const wordsDue = jlptLevel === null
-    ? wordDecks.reduce((sum, deck) => sum + deck.due, 0)
-    : (filteredDue ?? 0)
-  const kanjiDeck = decks?.find((deck) => deck.kind === 'KANJI')
-
-  function sessionUrl(deckId?: string) {
-    const params = new URLSearchParams()
-    if (deckId) params.set('deck', deckId)
-    if (jlptLevel !== null) params.set('jlptLevel', String(jlptLevel))
-    const query = params.toString()
-    return query ? `/review/session?${query}` : '/review/session'
   }
 
   if (error) {
@@ -98,126 +149,172 @@ export function ReviewHub() {
     )
   }
 
-  if (decks.length === 0) {
-    return (
-      <Page title="Review" subtitle="Everything you are studying, in one place.">
-        <div className="focus">
-          <section className="card">
-            <h3 className="kicker">Nothing to Review Yet</h3>
-            <p className="muted">
-              Save words from <Link to="/mine">Mine</Link>, or add a character on the{' '}
-              <Link to="/kanji">kanji page</Link> to start practising handwriting. Decks
-              appear here on their own, grouped by where you found the words.
-            </p>
-          </section>
-        </div>
-      </Page>
-    )
+  const kanjiDeck = decks.find((deck) => deck.kind === 'KANJI')
+  const wordsDeck = decks.find((deck) => deck.id === WORDS_DECK_ID)
+
+  // Unfiltered, the deck's own count is exact. Filtered by level, only the
+  // fetched list knows — capped at the session maximum.
+  const wordsDue =
+    jlptLevel === null ? (wordsDeck?.due ?? 0) : Math.min(dueWords?.length ?? 0, PREVIEW_WORDS)
+  const wordsDueLabel =
+    jlptLevel !== null && (dueWords?.length ?? 0) >= PREVIEW_WORDS ? `${PREVIEW_WORDS}+` : wordsDue
+
+  function wordsSessionUrl() {
+    const params = new URLSearchParams({ deck: WORDS_DECK_ID })
+    if (jlptLevel !== null) params.set('jlptLevel', String(jlptLevel))
+    return `/review/session?${params}`
   }
 
   return (
-    <Page title="Review" subtitle="Everything you are studying, in one place.">
-      <div className="hub">
-        <section className="hub-start">
-          <div className="hub-start-copy">
-            <h3 className="kicker">Due Now</h3>
-            <p className="muted small">
-              A single queue spans every deck. Reviewing decks separately tends to leave
-              several decks marked &ldquo;due&rdquo; with nothing actually reviewed.
-            </p>
-            <KanjiFilterBar jlptLevel={jlptLevel} onJlptLevelChange={setJlptLevel} />
-          </div>
+    <Page title="Review" subtitle="Your kanji, by hand and in words.">
+      <div className="tracks">
+        <section className="card track">
+          <header className="track-head">
+            <TrackIcon d={PENCIL} />
+            <div>
+              <h3 className="track-title">Writing</h3>
+              <p className="muted small">Draw each kanji from memory.</p>
+            </div>
+          </header>
 
-          <div className="hub-start-actions">
-            <button
-              type="button"
-              className="btn is-primary hub-go"
-              disabled={wordsDue === 0}
-              onClick={() => navigate(sessionUrl())}
-            >
-              Review {wordsDue > 0 ? wordsDue : 'Words'}
-              {wordsDue > 0 && <span className="hub-go-unit">due</span>}
-            </button>
-
-            {kanjiDeck && (
-              <Link to="/write" className="btn hub-go">
-                Write {kanjiDeck.due > 0 ? kanjiDeck.due : ''}
-                {kanjiDeck.due > 0 && <span className="hub-go-unit">due</span>}
-              </Link>
-            )}
-          </div>
-        </section>
-
-        {exportError && <p className="error small">{exportError}</p>}
-
-        <ul className="decks">
-          {decks.map((deck) => (
-            <li key={deck.id} className={`deck deck-${deck.kind.toLowerCase()}`}>
-              <div className="deck-main">
-                <span className="deck-name">{deck.name}</span>
-                <span className="deck-counts">
-                  <span className="deck-count">
-                    <strong>{deck.total}</strong> {deck.kind === 'KANJI' ? 'kanji' : 'words'}
+          {kanjiDeck && kanjiDeck.total > 0 ? (
+            <>
+              <div className="track-stat">
+                <span className="track-count">{kanjiDeck.due}</span>
+                <span className="track-count-label">
+                  ready now
+                  <span className="track-count-detail">
+                    {kanjiDeck.unseen > 0 && `${kanjiDeck.unseen} new · `}
+                    {kanjiDeck.total} kanji in all
                   </span>
-                  {deck.due > 0 && (
-                    <span className="deck-count is-due">
-                      <strong>{deck.due}</strong> due
-                    </span>
-                  )}
-                  {deck.unseen > 0 && (
-                    <span className="deck-count is-unseen">
-                      <strong>{deck.unseen}</strong> never studied
-                    </span>
-                  )}
                 </span>
               </div>
 
-              <div className="deck-actions">
-                {deck.kind === 'KANJI' ? (
-                  <Link to="/write" className="btn">
-                    Practise
-                  </Link>
-                ) : (
-                  <>
-                    <button
-                      type="button"
-                      className="btn"
-                      disabled={deck.due === 0}
-                      onClick={() =>
-                        navigate(sessionUrl(deck.id))
-                      }
-                    >
-                      Review
-                    </button>
-                    <Link
-                      to={`/review/deck?id=${encodeURIComponent(deck.id)}`}
-                      className="btn"
-                    >
-                      Words
-                    </Link>
-                    <button
-                      type="button"
-                      className="btn"
-                      disabled={exporting !== null}
-                      onClick={() => exportDeck(deck, 'anki')}
-                      title="Export this deck as an Anki package"
-                    >
-                      {exporting === deck.id + 'anki' ? 'Building…' : 'Anki'}
-                    </button>
-                  </>
+              <ul
+                className="track-kanji"
+                aria-label="Kanji ready to write"
+                ref={kanjiRef}
+                style={{ '--tile': `${tile}px` } as CSSProperties}
+              >
+                {dueKanji.map((card) => (
+                  <li key={card.literal}>{card.literal}</li>
+                ))}
+                {dueKanji.length === 0 && (
+                  <li className="track-empty muted small">
+                    Nothing to write right now. Come back when something is due.
+                  </li>
                 )}
-              </div>
-            </li>
-          ))}
-        </ul>
+              </ul>
 
-        <p className="muted small hub-note">
-          Decks are generated automatically from the source you enter while mining, so
-          there&rsquo;s nothing to set up or maintain. Changing a word&rsquo;s source moves
-          it to the corresponding deck.{' '}
-          {kanjiDeck &&
-            'Handwriting practice is scheduled separately, since Anki cannot evaluate handwriting.'}
-        </p>
+              <footer className="track-actions">
+                <button
+                  type="button"
+                  className="btn is-primary track-go"
+                  disabled={kanjiDeck.due === 0}
+                  onClick={() => navigate('/write')}
+                >
+                  Start Writing
+                </button>
+                <Link to="/collection" className="btn">
+                  Your Kanji
+                </Link>
+              </footer>
+            </>
+          ) : (
+            <div className="track-blank">
+              <p className="muted">
+                Add a kanji to your collection and it will be waiting here to write.
+              </p>
+              <Link to="/kanji" className="btn is-primary">
+                Find a Kanji
+              </Link>
+            </div>
+          )}
+        </section>
+
+        <section className="card track">
+          <header className="track-head">
+            <TrackIcon d={CARDS} />
+            <div>
+              <h3 className="track-title">Words</h3>
+              <p className="muted small">Read words built from your kanji.</p>
+            </div>
+          </header>
+
+          {wordsDeck && wordsDeck.total > 0 ? (
+            <>
+              <div className="track-stat">
+                <span className="track-count">{wordsDueLabel}</span>
+                <span className="track-count-label">
+                  ready now
+                  <span className="track-count-detail">
+                    {jlptLevel === null
+                      ? `${wordsDeck.unseen > 0 ? `${wordsDeck.unseen} new · ` : ''}${wordsDeck.total} words in all`
+                      : `at N${jlptLevel}`}
+                  </span>
+                </span>
+              </div>
+
+              <KanjiFilterBar jlptLevel={jlptLevel} onJlptLevelChange={setJlptLevel} />
+
+              <ul
+                className="track-words"
+                aria-label="Words ready to review"
+                ref={wordsRef}
+                style={{ '--rows': wordRows } as CSSProperties}
+              >
+                {(dueWords ?? []).map((word) => (
+                  <li key={word.id} className="track-word">
+                    <span className="track-word-term">{word.term}</span>
+                    {word.reading && word.reading !== word.term && (
+                      <span className="track-word-reading">{word.reading}</span>
+                    )}
+                    <span className="track-word-meaning">{word.meaning}</span>
+                  </li>
+                ))}
+                {dueWords !== null && dueWords.length === 0 && (
+                  <li className="track-empty muted small">
+                    {jlptLevel === null
+                      ? 'Nothing to review right now.'
+                      : `Nothing due at N${jlptLevel}.`}
+                  </li>
+                )}
+              </ul>
+
+              {exportError && <p className="error small">{exportError}</p>}
+
+              <footer className="track-actions">
+                <button
+                  type="button"
+                  className="btn is-primary track-go"
+                  disabled={wordsDue === 0}
+                  onClick={() => navigate(wordsSessionUrl())}
+                >
+                  Start Review
+                </button>
+                <Link to={`/review/deck?id=${encodeURIComponent(WORDS_DECK_ID)}`} className="btn">
+                  Browse
+                </Link>
+                <button
+                  type="button"
+                  className="btn track-export"
+                  disabled={exporting}
+                  onClick={exportWords}
+                  title="Download these words as an Anki deck"
+                >
+                  {exporting ? 'Building…' : 'Export to Anki'}
+                </button>
+              </footer>
+            </>
+          ) : (
+            <div className="track-blank">
+              <p className="muted">
+                Words appear here as your collection grows — common words made only of
+                kanji you already have.
+              </p>
+            </div>
+          )}
+        </section>
       </div>
     </Page>
   )
