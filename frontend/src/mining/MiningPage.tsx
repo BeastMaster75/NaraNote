@@ -326,7 +326,10 @@ export function MiningPage() {
           )}
         </div>
 
-        <RecentlyCollected items={collected} />
+        {/* Landing state only. Once there is a passage it is the page: left in
+            place, this took its natural height and the passage's flex share
+            shrank to a single line on a 720px-tall screen. */}
+        {!result && <RecentlyCollected items={collected} />}
       </div>
     </Page>
   )

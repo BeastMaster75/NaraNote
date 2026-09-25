@@ -1,0 +1,160 @@
+.stroke-anim {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* The same square and guides as the drawing box on /write, so the reference
+   is visibly written in the space you write in. */
+.stroke-anim-stage {
+  position: relative;
+  border-radius: var(--nn-r-lg);
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line);
+  overflow: hidden;
+}
+
+.stroke-anim-stage::before,
+.stroke-anim-stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.stroke-anim-stage::before {
+  background:
+    linear-gradient(to right, transparent calc(50% - 0.5px), var(--nn-line-soft) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--nn-line-soft) 50%, transparent calc(50% + 0.5px));
+}
+
+.stroke-anim-stage::after {
+  background:
+    linear-gradient(135deg, transparent calc(50% - 0.5px), var(--nn-line-soft) 50%, transparent calc(50% + 0.5px)),
+    linear-gradient(45deg, transparent calc(50% - 0.5px), var(--nn-line-soft) 50%, transparent calc(50% + 0.5px));
+}
+
+.stroke-anim .stroke-anim-drawing {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.stroke-anim-ghost path,
+.stroke-anim-ink path {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Faint enough to read as "still to come", firm enough to show where. */
+.stroke-anim-ghost path {
+  stroke: var(--nn-line);
+}
+
+.stroke-anim-ink path {
+  stroke: currentColor;
+}
+
+.stroke-anim-ink path.is-writing {
+  stroke: var(--nn-kaki);
+}
+
+.stroke-anim-tip {
+  fill: var(--nn-kaki);
+  stroke: var(--nn-raised);
+  stroke-width: 1;
+}
+
+/* KanjiVG places each number right against its stroke's start; with bare text
+   the ink runs through the digits and the number reads as sitting behind it. A
+   halo in the card colour, painted under the fill, cuts it out of any stroke. */
+.stroke-anim-numbers text {
+  font-family: var(--nn-font-ui);
+  font-size: 8px;
+  font-weight: 700;
+  fill: var(--nn-kaki);
+  paint-order: stroke;
+  stroke: var(--nn-raised);
+  stroke-width: 2.4px;
+  stroke-linejoin: round;
+}
+
+.stroke-anim-numbers text.is-current {
+  fill: var(--nn-bengara);
+}
+
+.stroke-anim-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.stroke-anim-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: var(--nn-r-pill);
+  border: 1px solid var(--nn-line);
+  background: var(--nn-raised);
+  color: var(--nn-ink-2);
+  font-family: var(--nn-font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.stroke-anim-button:hover:not(:disabled) {
+  color: var(--nn-ink);
+  background: var(--nn-sunk);
+}
+
+.stroke-anim-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.stroke-anim-button.is-main {
+  width: 2.4rem;
+  height: 2.4rem;
+  border-color: var(--nn-kaki);
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+}
+
+.stroke-anim-button.is-main:hover:not(:disabled) {
+  background: var(--nn-bengara);
+  border-color: var(--nn-bengara);
+  color: var(--nn-on-accent);
+}
+
+.stroke-anim-button.is-speed {
+  width: auto;
+  min-width: 2.4rem;
+  padding: 0 0.5rem;
+  margin-left: auto;
+}
+
+.stroke-anim .stroke-anim-button svg {
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.stroke-anim-count {
+  margin-left: 0.3rem;
+  font-family: var(--nn-font-mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  color: var(--nn-ink-3);
+}

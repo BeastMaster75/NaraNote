@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react'
+import type { StrokeCheck, Verdict } from './strokeCheck'
 
 export type Point = { x: number; y: number }
 export type Stroke = Point[]
@@ -22,6 +23,110 @@ type WritingCanvasProps = {
    * labels would be noise.
    */
   showNumbers?: boolean
+  /**
+   * The marking, once revealed. Colours each stroke and its number by verdict,
+   * and lays the reference faintly underneath, fitted to wherever the drawing
+   * actually sits in the box.
+   */
+  check?: StrokeCheck | null
+}
+
+/** Token each verdict's number is drawn in. */
+const VERDICT_TOKEN: Record<Verdict, string> = {
+  correct: '--nn-matcha',
+  loose: '--nn-yamabuki',
+  order: '--nn-yamabuki',
+  reversed: '--nn-yamabuki',
+  off: '--nn-bengara',
+}
+
+type Placed = { x: number; y: number; leader: boolean }
+
+/**
+ * Where each stroke's number goes: beside its starting point, as close as it
+ * can get without covering ink or another number.
+ *
+ * <p>Tries a ring of spots around the start, then a wider ring, and scores each:
+ * covering ink costs most, touching an earlier badge nearly as much, and among
+ * the clear spots the one behind the stroke's starting direction wins — which
+ * is where KanjiVG puts its numbers too. A badge pushed out to the wider ring
+ * gets a leader line back to its start so it can't be misread.
+ */
+function placeBadges(pixels: Point[][], size: number, radius: number, inkHalf: number): Placed[] {
+  const segments: [Point, Point][] = []
+  for (const stroke of pixels) {
+    if (stroke.length === 1) segments.push([stroke[0], stroke[0]])
+    for (let k = 1; k < stroke.length; k++) segments.push([stroke[k - 1], stroke[k]])
+  }
+
+  const inkDistance = (x: number, y: number) => {
+    let best = Infinity
+    for (const [a, b] of segments) {
+      const vx = b.x - a.x
+      const vy = b.y - a.y
+      const lengthSquared = vx * vx + vy * vy
+      const t =
+        lengthSquared === 0
+          ? 0
+          : Math.max(0, Math.min(1, ((x - a.x) * vx + (y - a.y) * vy) / lengthSquared))
+      best = Math.min(best, Math.hypot(x - (a.x + vx * t), y - (a.y + vy * t)))
+    }
+    return best
+  }
+
+  const placed: Placed[] = []
+  const clearance = radius + inkHalf + 2
+  const rings = [clearance, clearance * 1.8]
+
+  for (const stroke of pixels) {
+    if (stroke.length === 0) {
+      placed.push({ x: -1, y: -1, leader: false })
+      continue
+    }
+    const start = stroke[0]
+    // The direction the stroke sets off in, read a badge-width along it so a
+    // wobble at the very first pixel doesn't decide it.
+    const ahead =
+      stroke.find((p) => Math.hypot(p.x - start.x, p.y - start.y) > radius) ??
+      stroke[stroke.length - 1]
+    const away = Math.hypot(ahead.x - start.x, ahead.y - start.y)
+    // A dot has no direction; prefer up and to the left.
+    const behind =
+      away < 1 ? Math.atan2(-1, -1) : Math.atan2(start.y - ahead.y, start.x - ahead.x)
+
+    let best: Placed | null = null
+    let bestCost = Infinity
+    rings.forEach((distance, ring) => {
+      for (let step = 0; step < 16; step++) {
+        const angle = behind + (step * Math.PI) / 8
+        const x = start.x + Math.cos(angle) * distance
+        const y = start.y + Math.sin(angle) * distance
+        if (x < radius + 1 || y < radius + 1 || x > size - radius - 1 || y > size - radius - 1) {
+          continue
+        }
+        const turn = Math.abs(Math.atan2(Math.sin(angle - behind), Math.cos(angle - behind)))
+        let cost = turn + ring * 2.5
+        cost += Math.max(0, radius + inkHalf - inkDistance(x, y)) * 4
+        for (const other of placed) {
+          const gap = Math.hypot(x - other.x, y - other.y)
+          cost += Math.max(0, radius * 2 + 2 - gap) * 3
+        }
+        if (cost < bestCost) {
+          bestCost = cost
+          best = { x, y, leader: ring > 0 }
+        }
+      }
+    })
+    // Every spot was off the canvas (a stroke started hard in a corner): sit on it.
+    placed.push(
+      best ?? {
+        x: Math.min(size - radius, Math.max(radius, start.x)),
+        y: Math.min(size - radius, Math.max(radius, start.y)),
+        leader: false,
+      },
+    )
+  }
+  return placed
 }
 
 /**
@@ -42,6 +147,7 @@ export function WritingCanvas({
   size,
   disabled,
   showNumbers,
+  check,
 }: WritingCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const drawingRef = useRef(false)
@@ -60,68 +166,112 @@ export function WritingCanvas({
     context.scale(ratio, ratio)
     context.clearRect(0, 0, size, size)
 
-    const ink = getComputedStyle(canvas).getPropertyValue('--nn-jp').trim()
-    context.strokeStyle = ink || '#141110'
-    context.lineWidth = Math.max(3, size * 0.028)
+    const styles = getComputedStyle(canvas)
+    const token = (name: string, fallback: string) =>
+      styles.getPropertyValue(name).trim() || fallback
+    const ink = token('--nn-jp', '#141110')
+    const inkWidth = Math.max(3, size * 0.028)
     context.lineCap = 'round'
     context.lineJoin = 'round'
 
-    for (const stroke of strokes) {
-      if (stroke.length === 0) continue
+    const trace = (stroke: Point[]) => {
       context.beginPath()
-      context.moveTo(stroke[0].x * size, stroke[0].y * size)
-      for (const point of stroke.slice(1)) {
-        context.lineTo(point.x * size, point.y * size)
-      }
+      context.moveTo(stroke[0].x, stroke[0].y)
+      for (const point of stroke.slice(1)) context.lineTo(point.x, point.y)
       // A single tap is a dot, not nothing.
-      if (stroke.length === 1) context.lineTo(stroke[0].x * size + 0.01, stroke[0].y * size)
+      if (stroke.length === 1) context.lineTo(stroke[0].x + 0.01, stroke[0].y)
       context.stroke()
     }
+    const toPixels = (stroke: Stroke) => stroke.map((p) => ({ x: p.x * size, y: p.y * size }))
+    const marked = showNumbers && check ? check : null
+
+    // The reference goes down first, under the ink and faint, fitted to wherever
+    // the drawing sits. A stroke nobody drew is dashed in the error colour so the
+    // gap shows where it belongs.
+    if (marked) {
+      const missing = new Set(marked.missing)
+      marked.guide.forEach((stroke, index) => {
+        if (stroke.length === 0) return
+        const isMissing = missing.has(index)
+        context.strokeStyle = isMissing
+          ? token('--nn-bengara', '#b8433a')
+          : token('--nn-line', '#e6c9c0')
+        context.lineWidth = inkWidth * (isMissing ? 0.55 : 0.9)
+        context.setLineDash(isMissing ? [inkWidth * 0.8, inkWidth * 1.2] : [])
+        trace(toPixels(stroke))
+      })
+      context.setLineDash([])
+    }
+
+    const pixels = strokes.map(toPixels)
+    const verdictOf = (index: number) => marked?.marks[index]?.verdict
+    const colourOf = (index: number) => {
+      const verdict = verdictOf(index)
+      return verdict ? token(VERDICT_TOKEN[verdict], ink) : token('--nn-kaki', '#c9506b')
+    }
+
+    // Correct strokes stay ink; only the ones with something to say are coloured.
+    context.lineWidth = inkWidth
+    pixels.forEach((stroke, index) => {
+      if (stroke.length === 0) return
+      const verdict = verdictOf(index)
+      context.strokeStyle = verdict && verdict !== 'correct' ? colourOf(index) : ink
+      trace(stroke)
+    })
 
     if (!showNumbers) return
 
-    const styles = getComputedStyle(canvas)
-    const accent = styles.getPropertyValue('--nn-kaki').trim() || '#c9506b'
-    const halo = styles.getPropertyValue('--nn-raised').trim() || '#fffaf8'
-    const fontSize = Math.max(11, size * 0.05)
+    // Numbers are their own pass after every stroke, so no stroke can ever be
+    // drawn over a number. Each is a solid badge rather than bare text: legible
+    // wherever it lands — on ink, on a guide line, or on the box's grid.
+    const radius = Math.max(9, size * 0.033)
+    const halo = token('--nn-raised', '#fffaf8')
+    const onAccent = token('--nn-on-accent', '#fff8f5')
+    const places = placeBadges(pixels, size, radius, inkWidth / 2)
 
-    context.font = `600 ${fontSize}px ui-monospace, Menlo, monospace`
+    const digits = strokes.length >= 10 ? 1.0 : 1.2
+    context.font = `700 ${Math.round(radius * digits)}px ui-monospace, Menlo, monospace`
     context.textAlign = 'center'
     context.textBaseline = 'middle'
-    context.lineJoin = 'round'
 
-    strokes.forEach((stroke, index) => {
+    pixels.forEach((stroke, index) => {
       if (stroke.length === 0) return
+      const { x, y, leader } = places[index]
+      const colour = colourOf(index)
       const start = stroke[0]
 
-      // Push the label back along the direction the stroke set off in, so it sits
-      // clear of the ink rather than on top of it.
-      const ahead = stroke[Math.min(stroke.length - 1, 3)]
-      let dx = start.x - ahead.x
-      let dy = start.y - ahead.y
-      const length = Math.hypot(dx, dy)
-      if (length < 0.001) {
-        // A dot has no direction; put the label up and to the left.
-        dx = -0.7
-        dy = -0.7
-      } else {
-        dx /= length
-        dy /= length
+      if (leader) {
+        const distance = Math.hypot(x - start.x, y - start.y)
+        context.strokeStyle = colour
+        context.lineWidth = 1.5
+        context.beginPath()
+        context.moveTo(start.x, start.y)
+        context.lineTo(
+          x - ((x - start.x) / distance) * radius,
+          y - ((y - start.y) / distance) * radius,
+        )
+        context.stroke()
       }
 
-      const offset = fontSize * 0.9
-      const margin = fontSize * 0.75
-      const x = Math.min(size - margin, Math.max(margin, start.x * size + dx * offset))
-      const y = Math.min(size - margin, Math.max(margin, start.y * size + dy * offset))
+      // Mark where the stroke began, so its direction reads without the diagram.
+      context.fillStyle = colour
+      context.beginPath()
+      context.arc(start.x, start.y, Math.max(2.5, inkWidth * 0.3), 0, Math.PI * 2)
+      context.fill()
 
-      // Halo first so the number stays readable where it overlaps a stroke.
-      context.lineWidth = Math.max(3, fontSize * 0.28)
-      context.strokeStyle = halo
-      context.strokeText(String(index + 1), x, y)
-      context.fillStyle = accent
-      context.fillText(String(index + 1), x, y)
+      context.beginPath()
+      context.arc(x, y, radius + 1.5, 0, Math.PI * 2)
+      context.fillStyle = halo
+      context.fill()
+      context.beginPath()
+      context.arc(x, y, radius, 0, Math.PI * 2)
+      context.fillStyle = colour
+      context.fill()
+      context.fillStyle = onAccent
+      // Nudged down a hair: 'middle' centres the em box, not the digits.
+      context.fillText(String(index + 1), x, y + radius * 0.08)
     })
-  }, [strokes, size, showNumbers])
+  }, [strokes, size, showNumbers, check])
 
   function pointFrom(event: React.PointerEvent<HTMLCanvasElement>): Point {
     const rect = event.currentTarget.getBoundingClientRect()

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { Page } from '../components/Page'
+import { StrokeAnimation } from '../components/StrokeAnimation'
 import './KanjiLookup.css'
 
 type Sense = { partOfSpeech: string[]; glosses: string[] }
@@ -449,12 +450,7 @@ function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
         <div className="kanji-strokes">
           <Section title="Stroke Order">
             {kanji.strokeOrderSvg ? (
-              // Trusted content: these SVGs come from our own import of KanjiVG,
-              // not from anything a user supplied.
-              <div
-                className="stroke-order"
-                dangerouslySetInnerHTML={{ __html: kanji.strokeOrderSvg }}
-              />
+              <StrokeAnimation svg={kanji.strokeOrderSvg} />
             ) : (
               <p className="muted small">No diagram for this character.</p>
             )}

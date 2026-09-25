@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { Page } from '../components/Page'
 import { useUser } from '../user/UserContext'
+import { StrokeAnimation } from '../components/StrokeAnimation'
 import { WritingCanvas, type Stroke } from './WritingCanvas'
+import { parseKanjiVg } from './kanjiVg'
+import { checkStrokes, type StrokeCheck, type Verdict } from './strokeCheck'
 import './PracticeSession.css'
 
 type DueCard = {
@@ -23,6 +26,85 @@ const RATINGS: { rating: Rating; label: string; hint: string }[] = [
   { rating: 'GOOD', label: 'Good', hint: 'Right, with effort' },
   { rating: 'EASY', label: 'Easy', hint: 'Straight off' },
 ]
+
+/**
+ * What the marking suggests you press. Only ever a suggestion: it can't know
+ * whether the character came straight to you (Easy) or after a long think, and
+ * you may well disagree with a stroke it flagged.
+ *
+ * <p>Every stroke right is Good. A few recognisable slips — order, direction,
+ * proportion — with nothing missing or unrecognised is Hard. Anything worse
+ * is Again.
+ */
+function suggestRating(check: StrokeCheck): Rating {
+  const slips = check.marks.filter((m) => m.verdict !== 'correct')
+  if (slips.length === 0 && check.missing.length === 0) return 'GOOD'
+  const allRecognised = check.missing.length === 0 && slips.every((m) => m.verdict !== 'off')
+  if (allRecognised && slips.length <= Math.max(2, Math.floor(check.expected / 4))) return 'HARD'
+  return 'AGAIN'
+}
+
+/** 1st, 2nd, 3rd, 4th … 11th, 12th, 13th … 21st. */
+function ordinal(n: number) {
+  const teen = n % 100 >= 11 && n % 100 <= 13
+  const suffix = teen ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'
+  return `${n}${suffix}`
+}
+
+/**
+ * One line per kind of slip, naming strokes by the numbers on the canvas —
+ * yours, in the order you drew them — except for missing strokes, which you
+ * didn't draw and so can only be named by the diagram's numbering.
+ */
+function Marking({ check }: { check: StrokeCheck }) {
+  const correct = check.marks.filter((m) => m.verdict === 'correct').length
+  const perfect = correct === check.expected && check.marks.length === check.expected
+  const yours = (verdict: Verdict) =>
+    check.marks.flatMap((m, i) => (m.verdict === verdict ? [{ drawn: i + 1, meant: m.matches }] : []))
+
+  const lines: { kind: Verdict; label: string; detail: string }[] = []
+  const order = yours('order')
+  if (order.length) {
+    lines.push({
+      kind: 'order',
+      label: 'Out of order',
+      detail: order.map(({ drawn, meant }) => `${drawn} should come ${ordinal(meant! + 1)}`).join(', '),
+    })
+  }
+  const pushSimple = (kind: Verdict, label: string) => {
+    const found = yours(kind)
+    if (found.length) lines.push({ kind, label, detail: found.map((f) => f.drawn).join(', ') })
+  }
+  pushSimple('reversed', 'Drawn backwards')
+  pushSimple('loose', 'Shape or length off')
+  pushSimple('off', 'Not part of this character')
+  if (check.missing.length) {
+    lines.push({
+      kind: 'off',
+      label: 'Missing',
+      detail: `diagram's ${check.missing.map((j) => j + 1).join(', ')} — dashed in the box`,
+    })
+  }
+
+  return (
+    <div className="marking">
+      <p className={`marking-head${perfect ? ' is-perfect' : ''}`}>
+        {perfect
+          ? `All ${check.expected} strokes right.`
+          : `${correct} of ${check.expected} strokes right.`}
+      </p>
+      {lines.length > 0 && (
+        <ul className="marking-issues">
+          {lines.map(({ kind, label, detail }) => (
+            <li key={label} className={`is-${kind}`}>
+              <strong>{label}</strong> {detail}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
 
 /** Everything the stage row has to fit, in px. Mirrors PracticeSession.css. */
 const MAX_CANVAS = 420
@@ -118,6 +200,17 @@ export function PracticeSession() {
   useEffect(load, [load])
 
   const card = queue?.[index]
+
+  const reference = useMemo(
+    () => (card?.strokeOrderSvg ? parseKanjiVg(card.strokeOrderSvg) : null),
+    [card],
+  )
+  // Drawing is locked once revealed, so this runs once per card.
+  const check = useMemo(
+    () => (revealed && reference?.length ? checkStrokes(strokes, reference) : null),
+    [revealed, reference, strokes],
+  )
+  const suggested = check ? suggestRating(check) : null
 
   async function rate(rating: Rating) {
     if (!card) return
@@ -226,6 +319,7 @@ export function PracticeSession() {
                   size={canvasSize}
                   disabled={revealed}
                   showNumbers={revealed}
+                  check={check}
                 />
               </div>
               <div className="canvas-actions">
@@ -257,20 +351,20 @@ export function PracticeSession() {
                 <div className="answer-body">
                   <span className="answer-glyph">{card!.literal}</span>
                   {card!.strokeOrderSvg ? (
-                    <div
-                      className="stroke-order"
-                      // Our own imported KanjiVG, not user content.
-                      dangerouslySetInnerHTML={{ __html: card!.strokeOrderSvg }}
-                    />
+                    <StrokeAnimation svg={card!.strokeOrderSvg} />
                   ) : (
                     <p className="muted small">No stroke diagram for this character.</p>
                   )}
                 </div>
-                <p className="muted small">
-                  You drew {strokes.length}; it has {card!.strokeCount ?? '—'}. Your strokes are
-                  numbered in the order you made them — compare them one by one against the
-                  diagram.
-                </p>
+                {check ? (
+                  <Marking check={check} />
+                ) : (
+                  <p className="muted small">
+                    You drew {strokes.length}; it has {card!.strokeCount ?? '—'}. Your strokes are
+                    numbered in the order you made them — compare them one by one against the
+                    diagram.
+                  </p>
+                )}
               </section>
             )}
           </div>
@@ -292,11 +386,16 @@ export function PracticeSession() {
               <button
                 key={rating}
                 type="button"
-                className={`btn rating rating-${rating.toLowerCase()}`}
+                className={`btn rating rating-${rating.toLowerCase()}${
+                  rating === suggested ? ' is-suggested' : ''
+                }`}
                 onClick={() => rate(rating)}
                 disabled={saving}
               >
-                <span className="rating-label">{label}</span>
+                <span className="rating-label">
+                  {label}
+                  {rating === suggested && <span className="rating-suggested">Suggested</span>}
+                </span>
                 <span className="rating-hint">{hint}</span>
               </button>
             ))}

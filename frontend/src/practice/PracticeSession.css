@@ -167,6 +167,55 @@
   color: var(--nn-jp);
 }
 
+.marking {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.marking-head {
+  margin: 0;
+  font-weight: 600;
+  color: var(--nn-ink);
+}
+
+.marking-head.is-perfect {
+  color: var(--nn-matcha);
+}
+
+.marking-issues {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 13px;
+  color: var(--nn-ink-2);
+}
+
+/* The dot is the same colour as the strokes and numbers it describes on the
+   canvas, so a line and its strokes can be matched at a glance. */
+.marking-issues li::before {
+  content: '';
+  display: inline-block;
+  width: 0.55rem;
+  height: 0.55rem;
+  margin-right: 0.45rem;
+  border-radius: 50%;
+  vertical-align: 0.05rem;
+  background: var(--nn-yamabuki);
+}
+
+.marking-issues li.is-off::before {
+  background: var(--nn-bengara);
+}
+
+.marking-issues strong {
+  font-weight: 600;
+  color: var(--nn-ink);
+}
+
 .ratings {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
@@ -185,6 +234,22 @@
 .rating-label {
   font-size: 14px;
   color: var(--nn-ink);
+}
+
+.rating.is-suggested {
+  border-color: var(--nn-kaki);
+  box-shadow: 0 0 0 1px var(--nn-kaki);
+}
+
+.rating-suggested {
+  margin-left: 0.5rem;
+  font-family: var(--nn-font-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  vertical-align: 0.1rem;
+  color: var(--nn-kaki);
 }
 
 .rating-hint {
