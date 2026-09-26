@@ -11,10 +11,9 @@
 
 <p align="center">
   <a href="#what-you-do-with-it">Features</a> ·
-  <a href="#getting-started">Getting Started</a> ·
-  <a href="#tech-stack">Tech Stack</a> ·
-  <a href="docs/development.md">Development</a> ·
-  <a href="docs/deployment.md">Deployment</a> ·
+  <a href="#how-its-built">How It's Built</a> ·
+  <a href="#project-structure">Project Structure</a> ·
+  <a href="#running-it-locally">Running It Locally</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
@@ -69,27 +68,7 @@ than typed in by you. You can add your own tasks too, and give them a day or a c
 email later, or sign in with Google. You can delete your account and everything in it from
 Settings at any time.
 
-## Getting Started
-
-The quickest way to run the whole thing locally is Docker:
-
-```bash
-git clone https://github.com/BeastMaster75/NaraNote.git
-cd NaraNote
-docker compose up
-```
-
-Then open <http://localhost:5173>. Emails the app sends (verification, password reset) are
-caught by Mailpit at <http://localhost:8025>.
-
-The dictionary, kanji and stroke-order data are third-party and aren't committed — the
-one-off download and import step, along with running the backend and frontend directly on your
-machine, is in **[docs/development.md](docs/development.md)**.
-
-Deploying to a server with HTTPS, email and nightly backups is covered in
-**[docs/deployment.md](docs/deployment.md)**.
-
-## Tech Stack
+## How It's Built
 
 | Layer        | Technology                                                                 |
 | ------------ | -------------------------------------------------------------------------- |
@@ -101,6 +80,22 @@ Deploying to a server with HTTPS, email and nightly backups is covered in
 | Speech       | Self-hosted [VOICEVOX](https://voicevox.hiroshiba.jp/) engine              |
 | Translation  | Google Gemini, using each user's own API key (encrypted at rest)           |
 | Delivery     | One Docker image behind Caddy (automatic HTTPS), GitHub Actions CI         |
+
+A few things worth a look if you're reading the source:
+
+- **The Anki export is written in plain Java.** `.apkg` files are generated directly with
+  SQLite, matched field by field against the reference Python implementation, and keep stable
+  card IDs so re-exporting updates cards instead of duplicating them.
+- **Handwriting is marked stroke by stroke** in the browser against KanjiVG's reference strokes:
+  each one is judged correct, out of order, drawn backwards, misshapen or wrong, wherever in the
+  box the character was drawn.
+- **Suggestions are never stored.** The "worth doing now" list is computed from your collection
+  on every request, so it can't go stale.
+- **One container in production.** The frontend is built into the backend jar and served by
+  Spring Boot, with Caddy in front for HTTPS. See [how it's deployed](docs/deployment.md).
+
+The reasoning behind these and other decisions is in
+[docs/development.md → Things worth knowing](docs/development.md#things-worth-knowing).
 
 ## Project Structure
 
@@ -115,6 +110,21 @@ NaraNote/
 ├── docker-compose.yml        Local development stack
 └── docker-compose.prod.yml   Production stack
 ```
+
+## Running It Locally
+
+```bash
+git clone https://github.com/BeastMaster75/NaraNote.git
+cd NaraNote
+docker compose up
+```
+
+Then open <http://localhost:5173>. Emails the app sends (verification, password reset) are
+caught by Mailpit at <http://localhost:8025>.
+
+The dictionary, kanji and stroke-order data are third-party and aren't committed. The one-off
+download and import step, and running the backend and frontend without Docker, are in
+**[docs/development.md](docs/development.md)**.
 
 ## Roadmap
 
