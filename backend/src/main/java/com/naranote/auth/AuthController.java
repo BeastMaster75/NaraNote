@@ -11,6 +11,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import java.util.List;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -355,7 +356,8 @@ public class AuthController {
      * (and the UI built on it) must not become a way to check which emails are registered.
      * An account without a password yet (the unclaimed seeded local user, see
      * ClaimLocalAccountRunner) has nothing to reset either, so it's treated the same as
-     * "no such account."
+     * "no such account." The exception is an account that signs in with Google: the same link
+     * is how it <em>sets</em> a first password (Settings → Set a Password), proven by the inbox.
      */
     @PostMapping("/forgot-password")
     public void forgotPassword(
@@ -364,11 +366,12 @@ public class AuthController {
         String email = normalize(request.email());
         List<Object[]> rows =
                 jdbc.query(
-                        "select id, password_hash from app_user where lower(email) = ?",
-                        (rs, row) -> new Object[] {rs.getLong("id"), rs.getString("password_hash")},
+                        "select id, (password_hash is not null or google_sub is not null) as can_reset"
+                                + " from app_user where lower(email) = ?",
+                        (rs, row) -> new Object[] {rs.getLong("id"), rs.getBoolean("can_reset")},
                         email);
 
-        if (rows.isEmpty() || rows.getFirst()[1] == null) {
+        if (rows.isEmpty() || !Boolean.TRUE.equals(rows.getFirst()[1])) {
             log.info("Password reset requested for unknown/unclaimed email: {}", email);
             return;
         }
@@ -376,6 +379,19 @@ public class AuthController {
         long userId = (long) rows.getFirst()[0];
         emailService.sendPasswordResetEmail(email, email, passwordResetService.issue(userId));
         log.info("Password reset email sent: user={}", userId);
+    }
+
+    /**
+     * Ends every session of this account except the one asking — for a phone left signed in
+     * somewhere, without logging yourself out here too. Answers how many were ended.
+     */
+    @PostMapping("/sessions/revoke-others")
+    public Map<String, Integer> revokeOtherSessions(
+            @CookieValue(name = COOKIE_NAME, required = false) String token) {
+        long userId = currentUser.id();
+        int ended = sessionService.revokeOthers(userId, token);
+        log.info("Signed out other devices: user={} sessions={}", userId, ended);
+        return Map.of("ended", ended);
     }
 
     /**

@@ -1,0 +1,155 @@
+/* The card floats in a portal on <body>, fixed to the viewport — inside the
+   passage it would be clipped by the passage's own scroll box. The wrapper
+   carries the shadow, since the note's clip-path (its folded corner) would cut
+   one off, the same arrangement as the notes on Home and Collection. */
+.kanji-hover {
+  position: fixed;
+  z-index: 50;
+  width: 16.5rem;
+  filter: drop-shadow(0 6px 16px rgba(40, 20, 28, 0.22));
+  animation: kanji-hover-in 0.14s var(--nn-ease);
+  transform-origin: 50% 100%;
+}
+
+.kanji-hover.is-below {
+  transform-origin: 50% 0;
+}
+
+[data-theme='dark'] .kanji-hover {
+  filter: drop-shadow(0 8px 20px rgba(0, 0, 0, 0.55));
+}
+
+@keyframes kanji-hover-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kanji-hover {
+    animation: none;
+  }
+}
+
+.kanji-hover-note {
+  --fold: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  padding: 0.85rem 1rem 1.1rem;
+}
+
+.kanji-hover-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.kanji-hover-glyph {
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
+  font-size: 46px;
+  line-height: 1;
+}
+
+.kanji-hover-facts {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  font-size: 12px;
+  color: color-mix(in srgb, var(--note-ink) 60%, var(--paper));
+}
+
+.kanji-hover-level {
+  padding: 0.05rem 0.45rem;
+  border-radius: 6px;
+  font-weight: 700;
+  color: var(--note-ink);
+  border: 1.5px solid var(--tone);
+}
+
+/* How it is read *here* — the one reading that matters in this sentence. */
+.kanji-hover-here {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-family: var(--nn-font-jp);
+}
+
+.kanji-hover-word {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.kanji-hover-reading {
+  font-size: 18px;
+  color: color-mix(in srgb, var(--tone) 75%, var(--note-ink));
+}
+
+.kanji-hover-meaning {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.kanji-hover-quiet {
+  margin: 0;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--note-ink) 55%, var(--paper));
+}
+
+.kanji-hover-readings {
+  margin: 0;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.1rem 0.5rem;
+  font-family: var(--nn-font-jp);
+  font-size: 18px;
+}
+
+.kanji-hover-readings dt {
+  color: color-mix(in srgb, var(--note-ink) 50%, var(--paper));
+}
+
+.kanji-hover-readings dd {
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.kanji-hover-foot {
+  margin-top: 0.2rem;
+}
+
+.kanji-hover-add {
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+  /* Ink on paper, inverted — white on the lighter tones (yamabuki) was too faint. */
+  color: var(--paper);
+  background: var(--note-ink);
+  border: 0;
+  border-radius: 10px;
+}
+
+.kanji-hover-add:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--note-ink) 82%, var(--tone));
+}
+
+.kanji-hover-add:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.kanji-hover-owned {
+  font-size: 13px;
+  font-weight: 700;
+  color: color-mix(in srgb, var(--tone) 80%, var(--note-ink));
+}

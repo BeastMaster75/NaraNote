@@ -73,25 +73,33 @@ function Row({
   )
 }
 
-function Group({ title, id, children }: { title: string; id?: string; children: ReactNode }) {
+function Group({
+  title,
+  id,
+  tone,
+  children,
+}: {
+  /** Optional: a group of one row that already names itself (Delete Account) goes without. */
+  title?: string
+  id?: string
+  /** 'danger' for the one group whose actions can't be undone. */
+  tone?: 'danger'
+  children: ReactNode
+}) {
   return (
-    <section className="card setting-group" id={id}>
-      <h3 className="kicker">{title}</h3>
+    <section className={`card setting-group${tone ? ` is-${tone}` : ''}`} id={id}>
+      {title && <h3 className="kicker">{title}</h3>}
       {children}
     </section>
   )
 }
 
-/**
- * Email + password, routed entirely through the same mailed-link flow the "Forgot
- * password?" screen uses (see UserContext.forgotPassword) rather than a current-password
- * form — one flow to secure and test instead of two, and it works from Settings exactly
- * the way it works from a locked-out login screen.
- */
-function AccountRows({ me }: { me: Me }) {
-  const { resendVerification, forgotPassword } = useUser()
-  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
-  const [resetState, setResetState] = useState<'idle' | 'sending' | 'sent'>('idle')
+type SendState = 'idle' | 'sending' | 'sent'
+
+/** The account's address — what it signs in with and where its links go. */
+function EmailRow({ me }: { me: Me }) {
+  const { resendVerification } = useUser()
+  const [resendState, setResendState] = useState<SendState>('idle')
 
   async function handleResend() {
     setResendState('sending')
@@ -99,53 +107,138 @@ function AccountRows({ me }: { me: Me }) {
     setResendState('sent')
   }
 
-  async function handleChangePassword() {
-    if (!me.email) return
-    setResetState('sending')
-    await forgotPassword(me.email)
-    setResetState('sent')
+  return (
+    <Row title="Email" hint={me.emailVerified ? me.email : `${me.email} — not verified yet`}>
+      {!me.emailVerified && (
+        <button type="button" className="btn" onClick={handleResend} disabled={resendState !== 'idle'}>
+          {resendState === 'idle' ? 'Resend Verification' : resendState === 'sending' ? 'Sending…' : 'Sent'}
+        </button>
+      )}
+    </Row>
+  )
+}
+
+/**
+ * How this account gets in: Google, a password, or both — and the sessions already in.
+ *
+ * <p>Connecting Google is a full-page trip (GoogleAuthController, {@code intent=link}) that
+ * comes back here with {@code ?google=linked} or a reason it didn't. Disconnecting needs a
+ * password to exist first, or the account would have no way in at all.
+ *
+ * <p>Passwords go through the same mailed link as "Forgot password?" — changing one and
+ * setting a first one alike — rather than a current-password form: one flow to secure, and
+ * the inbox is the proof. An account that has only ever used Google sets its first password
+ * that way.
+ */
+function SignInRows({ me }: { me: Me }) {
+  const { forgotPassword, disconnectGoogle, signOutOtherDevices } = useUser()
+  const site = useSite()
+  const [searchParams] = useSearchParams()
+  const googleResult = searchParams.get('google')
+  const [googleNote, setGoogleNote] = useState<string | null>(() =>
+    googleResult === 'linked' ? 'Connected.' : null,
+  )
+  const [googleError, setGoogleError] = useState<string | null>(() => googleProblem(googleResult))
+  const [disconnecting, setDisconnecting] = useState(false)
+  const [passwordState, setPasswordState] = useState<SendState>('idle')
+  const [devicesState, setDevicesState] = useState<'idle' | 'busy' | number>('idle')
+
+  async function handleDisconnect() {
+    setDisconnecting(true)
+    setGoogleNote(null)
+    const failure = await disconnectGoogle()
+    setDisconnecting(false)
+    setGoogleError(failure)
   }
+
+  async function handlePassword() {
+    if (!me.email) return
+    setPasswordState('sending')
+    await forgotPassword(me.email)
+    setPasswordState('sent')
+  }
+
+  async function handleDevices() {
+    setDevicesState('busy')
+    const ended = await signOutOtherDevices()
+    setDevicesState(ended ?? 'idle')
+  }
+
+  const showGoogle = me.googleLinked || site?.googleSignIn
 
   return (
     <>
-      <Row title="Email" hint={me.emailVerified ? me.email : `${me.email} — not verified yet`}>
-        {!me.emailVerified && (
-          <button
-            type="button"
-            className="btn"
-            onClick={handleResend}
-            disabled={resendState !== 'idle'}
-          >
-            {resendState === 'idle'
-              ? 'Resend Verification'
-              : resendState === 'sending'
-                ? 'Sending…'
-                : 'Sent'}
-          </button>
-        )}
-      </Row>
-      {/* An ordinary button: changing a password is occasional housekeeping, and
-          as the page's only solid-pink button it read as the main thing to do. An account
-          that only ever used Google has no password to change (and the reset flow skips
-          password-less accounts on purpose). */}
-      {!me.hasPassword ? (
-        <Row title="Sign-In" hint="With Google." />
-      ) : (
-      <Row title="Password" hint="We’ll email you a link.">
-        <button
-          type="button"
-          className="btn"
-          onClick={handleChangePassword}
-          disabled={resetState !== 'idle'}
+      {showGoogle && (
+        <Row
+          title="Google"
+          hint={
+            googleNote ??
+            (me.googleLinked
+              ? me.hasPassword
+                ? 'Connected — you can sign in with it.'
+                : 'Your way in, for now.'
+              : 'Sign in with Google as well.')
+          }
         >
-          {resetState === 'idle'
-            ? 'Send Reset Link'
-            : resetState === 'sending'
+          {me.googleLinked ? (
+            me.hasPassword ? (
+              <button type="button" className="btn" onClick={handleDisconnect} disabled={disconnecting}>
+                {disconnecting ? 'Disconnecting…' : 'Disconnect'}
+              </button>
+            ) : (
+              <span className="setting-status">
+                <GoogleMark />
+                Connected
+              </span>
+            )
+          ) : (
+            <a className="btn setting-google" href="/api/auth/google/start?intent=link">
+              <GoogleMark />
+              Connect
+            </a>
+          )}
+          {googleError && <p className="error small">{googleError}</p>}
+        </Row>
+      )}
+
+      <Row
+        title="Password"
+        hint={
+          me.hasPassword
+            ? 'We’ll email you a link to change it.'
+            : 'None yet. We’ll email you a link to set one.'
+        }
+      >
+        <button type="button" className="btn" onClick={handlePassword} disabled={passwordState !== 'idle'}>
+          {passwordState === 'idle'
+            ? me.hasPassword
+              ? 'Change Password'
+              : 'Set a Password'
+            : passwordState === 'sending'
               ? 'Sending…'
               : 'Check Your Email'}
         </button>
       </Row>
-      )}
+
+      <Row
+        title="Other Devices"
+        hint={
+          typeof devicesState === 'number'
+            ? devicesState === 0
+              ? 'You weren’t signed in anywhere else.'
+              : `Signed out of ${devicesState} other ${devicesState === 1 ? 'session' : 'sessions'}.`
+            : 'Sign out everywhere but here.'
+        }
+      >
+        <button
+          type="button"
+          className="btn"
+          onClick={handleDevices}
+          disabled={devicesState !== 'idle'}
+        >
+          {devicesState === 'busy' ? 'Signing Out…' : typeof devicesState === 'number' ? 'Done' : 'Sign Out Others'}
+        </button>
+      </Row>
     </>
   )
 }
@@ -215,7 +308,7 @@ function GuestSaveRows({ me }: { me: Me }) {
   }
 
   return (
-    <Row title="Save Your Collection" hint="It lives only in this browser until you do." stacked>
+    <Row title="Make an Account" hint="It lives only in this browser until you do." stacked>
       <div className="save-collection">
         {site?.googleSignIn && (
           <a className="btn save-google" href="/api/auth/google/start">
@@ -424,13 +517,15 @@ export function SettingsPage() {
     void save({ displayName: trimmed })
   }
 
-  // Two columns of grouped cards. One full-width card per setting made this the
-  // tallest page in the app — 1150px, against a 720px laptop screen.
+  // Two columns of grouped cards: everything about you on the left — who you are, how you
+  // sign in, and deleting it all, last and apart — and how the app behaves on the right.
+  // One full-width card per setting made this the tallest page in the app — 1150px,
+  // against a 720px laptop screen.
   return (
     <Page title="Settings" subtitle="Your account and how the app behaves.">
       <div className="settings">
         <div className="settings-column">
-          <Group title={me.guest ? 'Guest Notebook' : 'Account'} id="save">
+          <Group title={me.guest ? 'Guest Notebook' : 'Account'}>
             <Row title="Display Name">
               <input
                 key={me.displayName}
@@ -442,10 +537,25 @@ export function SettingsPage() {
                 aria-label="Display name"
               />
             </Row>
-            {me.guest ? <GuestSaveRows me={me} /> : <AccountRows me={me} />}
-            <DeleteRow me={me} />
+            {!me.guest && <EmailRow me={me} />}
           </Group>
 
+          {me.guest ? (
+            <Group title="Save Your Notebook" id="save">
+              <GuestSaveRows me={me} />
+            </Group>
+          ) : (
+            <Group title="Sign-In">
+              <SignInRows me={me} />
+            </Group>
+          )}
+
+          <Group tone="danger">
+            <DeleteRow me={me} />
+          </Group>
+        </div>
+
+        <div className="settings-column">
           <Group title="Appearance">
             <Row title="Theme" hint="System follows your device.">
               <div className="segmented" role="group" aria-label="Theme">
@@ -483,9 +593,7 @@ export function SettingsPage() {
               </div>
             </Row>
           </Group>
-        </div>
 
-        <div className="settings-column">
           <Group title="Study">
             {/* Caps the words the Reading deck auto-generates from your kanji;
                 words you save yourself while mining are never filtered. */}
@@ -518,9 +626,9 @@ export function SettingsPage() {
         </div>
 
         {/* Attribution is a licence condition; the rail's Credits link lands here.
-            One line under both columns — what each source provides is on hover. */}
-        <section className="card settings-credits" id="credits">
-          <h3 className="kicker">Data Credits</h3>
+            One line under both columns, not a card — what each source provides is on hover. */}
+        <section className="settings-credits" id="credits">
+          <h3 className="settings-credits-title">Data Credits</h3>
           <ul className="credits-list">
             {CREDITS.map((source) => (
               <li key={source.name} title={source.body}>

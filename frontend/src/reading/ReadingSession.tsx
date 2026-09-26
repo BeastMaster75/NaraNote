@@ -206,6 +206,7 @@ export function ReadingSession() {
             activeSentenceIndexes={phase === 'summary' ? undefined : activeSentenceIndexes}
             marks={marks}
             onSay={say}
+            hoverCard={{ source: handOff?.source ?? '', onAdded: loadLibrary }}
           />
         </section>
 

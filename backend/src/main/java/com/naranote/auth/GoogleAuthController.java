@@ -2,6 +2,7 @@ package com.naranote.auth;
 
 import com.naranote.auth.GoogleOAuthClient.GoogleIdentity;
 import com.naranote.auth.GoogleOAuthClient.GoogleSignInException;
+import com.naranote.user.CurrentUser;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.security.MessageDigest;
@@ -15,14 +16,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Sign in with Google: {@code /start} sends the browser to Google, {@code /callback} is where it
@@ -43,8 +47,15 @@ import org.springframework.web.bind.annotation.RestController;
  *   <li>Otherwise → a new account, already verified: Google has checked the address.
  * </ul>
  *
+ * <p>From Settings, a signed-in account can also <em>connect</em> Google ({@code /start?intent=link}):
+ * the Google account is attached to the account already signed in rather than signing in as it,
+ * and the answer comes back to Settings as {@code ?google=linked} (or {@code exists} when that
+ * Google account belongs to another notebook). {@code DELETE /api/auth/google} disconnects it
+ * again — only when the account has a password, so nobody locks themselves out.
+ *
  * <p>CSRF on the callback is stopped by {@code state}: a random value set in a short-lived cookie
- * before leaving, which must come back unchanged in the URL.
+ * before leaving, which must come back unchanged in the URL. The connect intent rides inside
+ * that same value, so it can't be added or stripped on the way back without failing the check.
  */
 @RestController
 @RequestMapping("/api/auth/google")
@@ -55,12 +66,14 @@ public class GoogleAuthController {
     static final String STATE_COOKIE = "naranote_oauth_state";
     private static final Duration STATE_MAX_AGE = Duration.ofMinutes(10);
     private static final String STATE_COOKIE_PATH = "/api/auth/google";
+    private static final String LINK_PREFIX = "link.";
 
     private final GoogleOAuthClient google;
     private final JdbcTemplate jdbc;
     private final SessionService sessionService;
     private final SessionCookie sessionCookie;
     private final LoginRateLimiter rateLimiter;
+    private final CurrentUser currentUser;
     private final boolean cookieSecure;
     private final String appBaseUrl;
     private final SecureRandom random = new SecureRandom();
@@ -71,6 +84,7 @@ public class GoogleAuthController {
             SessionService sessionService,
             SessionCookie sessionCookie,
             LoginRateLimiter rateLimiter,
+            CurrentUser currentUser,
             @Value("${naranote.cookie-secure:false}") boolean cookieSecure,
             @Value("${naranote.app-base-url}") String appBaseUrl) {
         this.google = google;
@@ -78,19 +92,22 @@ public class GoogleAuthController {
         this.sessionService = sessionService;
         this.sessionCookie = sessionCookie;
         this.rateLimiter = rateLimiter;
+        this.currentUser = currentUser;
         this.cookieSecure = cookieSecure;
         this.appBaseUrl = appBaseUrl.replaceAll("/+$", "");
     }
 
     @GetMapping("/start")
-    public void start(HttpServletResponse response) {
+    public void start(@RequestParam(required = false) String intent, HttpServletResponse response) {
         if (!google.enabled()) {
             redirect(response, "/welcome?google=disabled");
             return;
         }
         byte[] bytes = new byte[32];
         random.nextBytes(bytes);
-        String state = Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
+        String state =
+                ("link".equals(intent) ? LINK_PREFIX : "")
+                        + Base64.getUrlEncoder().withoutPadding().encodeToString(bytes);
 
         // Lax, not Strict: the callback is a top-level navigation arriving from Google's origin,
         // and a Strict cookie wouldn't be sent with it.
@@ -112,7 +129,14 @@ public class GoogleAuthController {
         stateCookie(response, "", Duration.ZERO);
         Optional<SessionService.Session> current = sessionService.lookup(sessionToken);
         Optional<SessionService.Session> guest = current.filter(SessionService.Session::guest);
-        String back = guest.isPresent() ? "/settings?google=" : "/welcome?google=";
+        // Connecting only means something to an account already signed in; with no session left
+        // (it expired on Google's screen) it falls back to an ordinary sign-in.
+        Optional<SessionService.Session> linkingAccount =
+                state != null && state.startsWith(LINK_PREFIX)
+                        ? current.filter(session -> !session.guest())
+                        : Optional.empty();
+        String back =
+                guest.isPresent() || linkingAccount.isPresent() ? "/settings?google=" : "/welcome?google=";
         if (error != null) {
             // Most often "access_denied": they backed out on Google's screen. Not a failure.
             redirect(response, back + "cancelled");
@@ -134,6 +158,11 @@ public class GoogleAuthController {
             return;
         }
 
+        if (linkingAccount.isPresent()) {
+            redirect(response, back + link(identity, linkingAccount.get().userId()));
+            return;
+        }
+
         Outcome outcome = signIn(identity, guest);
         if (outcome.userId() == null) {
             redirect(response, back + outcome.refusal());
@@ -144,6 +173,38 @@ public class GoogleAuthController {
         current.ifPresent(session -> sessionService.revoke(sessionToken));
         sessionCookie.set(response, sessionService.issue(outcome.userId()), SessionService.ACCOUNT_LIFETIME);
         redirect(response, "/");
+    }
+
+    /**
+     * Disconnects Google from the signed-in account. Refused while the account has no password:
+     * Google would be its only way in, and removing it would lock the account for good.
+     */
+    @DeleteMapping
+    @Transactional
+    public void unlink() {
+        long userId = currentUser.id();
+        List<String> hashes =
+                jdbc.query(
+                        "select password_hash from app_user where id = ?",
+                        (rs, row) -> rs.getString("password_hash"),
+                        userId);
+        if (hashes.isEmpty() || hashes.getFirst() == null) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Set a password before disconnecting Google");
+        }
+        jdbc.update("update app_user set google_sub = null where id = ?", userId);
+        log.info("Google disconnected: user={}", userId);
+    }
+
+    /** Attaches the Google account to {@code userId}: {@code linked}, or {@code exists} if it's someone else's. */
+    String link(GoogleIdentity identity, long userId) {
+        Optional<Long> owner = findOne("select id from app_user where google_sub = ?", identity.sub());
+        if (owner.isPresent() && owner.get() != userId) {
+            log.info("Google connect refused, linked to another account: user={}", userId);
+            return "exists";
+        }
+        jdbc.update("update app_user set google_sub = ? where id = ?", identity.sub(), userId);
+        log.info("Google connected: user={}", userId);
+        return "linked";
     }
 
     /** Either the account to sign in to, or why not ({@code exists}, {@code taken}). */

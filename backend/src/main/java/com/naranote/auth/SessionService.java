@@ -139,6 +139,14 @@ public class SessionService {
         jdbc.update("delete from app_session where user_id = ?", userId);
     }
 
+    /** Ends the user's other sessions, keeping {@code keepToken}'s. Returns how many ended. */
+    public int revokeOthers(long userId, String keepToken) {
+        return jdbc.update(
+                "delete from app_session where user_id = ? and token_hash <> ?",
+                userId,
+                keepToken == null ? "" : hash(keepToken));
+    }
+
     private static String hash(String rawToken) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

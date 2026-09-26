@@ -107,7 +107,7 @@
 
   --nn-ink: #f5e6ea;
   --nn-ink-2: #b99aa3;
-  --nn-ink-3: #977c85;
+  --nn-ink-3: #a88e97;      /* lifted from #977c85: 4.3:1 on raised tiles, just under AA */
   --nn-jp: #fbf1f0;
   --nn-jp-known: #93818a;
   --nn-on-accent: #1e1417;

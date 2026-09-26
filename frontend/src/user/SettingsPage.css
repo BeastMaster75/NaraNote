@@ -157,13 +157,21 @@
   min-width: 0;
 }
 
-.card.settings-credits {
+.settings-credits {
   grid-column: 1 / -1;
-  flex-direction: row;
+  display: flex;
   align-items: baseline;
   flex-wrap: wrap;
-  gap: 0.4rem 1.25rem;
-  padding-block: 0.8rem;
+  gap: 0.3rem 1.25rem;
+  padding: 0 0.25rem;
+}
+
+.settings-credits-title {
+  margin: 0;
+  font-family: var(--nn-font-ui);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--nn-ink-2);
 }
 
 .credits-list {
@@ -172,8 +180,8 @@
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.3rem 1.25rem;
-  font-size: 13px;
+  gap: 0.3rem 1rem;
+  font-size: 12.5px;
 }
 
 @media (max-width: 1000px) {
@@ -226,4 +234,33 @@
   .save-form {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+/* The group whose actions can't be undone: set apart by a warm red edge, not by
+   shouting — its button is already the tinted danger one. */
+.card.setting-group.is-danger {
+  border-color: var(--nn-bengara-tint);
+}
+
+.btn.setting-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.card.setting-group.is-danger .setting-title {
+  color: var(--nn-bengara);
+}
+
+/* A state rather than an action, in the control column: "Connected". */
+.setting-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--nn-r-control);
+  background: var(--nn-paper);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--nn-ink-2);
 }

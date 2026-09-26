@@ -32,7 +32,7 @@
   margin: 0;
   font-size: 14px;
   font-weight: 600;
-  color: var(--nn-ink-3);
+  color: var(--nn-ink-2);
 }
 
 .home-headline {
@@ -170,7 +170,7 @@
   align-self: flex-start;
   font-size: 12px;
   font-weight: 700;
-  color: var(--nn-fuji);
+  color: color-mix(in srgb, var(--nn-fuji) 60%, var(--nn-ink));
   background: var(--nn-fuji-tint);
   padding: 0.25rem 0.65rem;
   border-radius: 8px;
@@ -623,7 +623,7 @@
 .year-hint {
   margin: 0;
   font-size: 12px;
-  color: var(--nn-ink-3);
+  color: var(--nn-ink-2);
 }
 
 /* Weekday labels down the left, month labels along the top, cells filling the

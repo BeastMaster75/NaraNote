@@ -387,6 +387,13 @@
 }
 
 @media (max-width: 1100px) {
+  /* Stacked, the page scrolls, so nothing is squeezed to the window's height —
+     squeezed, the stroke animation spilled out over the tiles above it. */
+  .lookup,
+  .kanji {
+    flex: none;
+  }
+
   .kanji {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: none;
@@ -396,6 +403,11 @@
   .kanji-hero {
     flex-wrap: wrap;
     container-type: normal;
+  }
+
+  /* Its own line under the glyph rather than a sliver beside it. */
+  .kanji-summary {
+    flex: 1 1 14rem;
   }
 
   .kanji-glyph {
@@ -424,7 +436,7 @@
 .your-kanji-count {
   margin-left: 0.35rem;
   font-weight: 600;
-  color: var(--nn-ink-3);
+  color: var(--nn-ink-2);
 }
 
 /* A list that grows without limit scrolls inside itself; the page doesn't. */

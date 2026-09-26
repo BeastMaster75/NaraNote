@@ -58,6 +58,10 @@ services:
       NARANOTE_MAIL_HOST: mailpit
       NARANOTE_MAIL_PORT: "1025"
       NARANOTE_APP_BASE_URL: http://localhost:5173
+      # Optional, from a gitignored .env beside this file: Google sign-in stays off (button
+      # hidden) while either is empty. See .env.example.
+      NARANOTE_GOOGLE_CLIENT_ID: ${NARANOTE_GOOGLE_CLIENT_ID:-}
+      NARANOTE_GOOGLE_CLIENT_SECRET: ${NARANOTE_GOOGLE_CLIENT_SECRET:-}
     ports:
       - "8080:8080"
     volumes:

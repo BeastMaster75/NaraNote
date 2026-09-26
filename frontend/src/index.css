@@ -31,7 +31,9 @@
   --nn-field: #1a1114;
   --nn-inverse-bg: #f5e6ea;
   --nn-inverse-fg: #1e1417;
-  --nn-inverse-accent: #c9506b;
+  /* Deeper than the light theme's own accent: cream on #c9506b was 3.6:1, too
+     faint for a button label on the cream inverted tile. */
+  --nn-inverse-accent: #a83e58;
 }
 
 *,

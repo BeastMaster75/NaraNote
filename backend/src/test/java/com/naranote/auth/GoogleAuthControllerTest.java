@@ -1,7 +1,9 @@
 package com.naranote.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -9,6 +11,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.naranote.auth.GoogleOAuthClient.GoogleIdentity;
+import com.naranote.user.CurrentUser;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +40,7 @@ class GoogleAuthControllerTest {
     @Mock private JdbcTemplate jdbc;
     @Mock private SessionService sessionService;
     @Mock private LoginRateLimiter rateLimiter;
+    @Mock private CurrentUser currentUser;
 
     private GoogleAuthController controller;
 
@@ -44,14 +48,14 @@ class GoogleAuthControllerTest {
     void setUp() {
         controller =
                 new GoogleAuthController(
-                        google, jdbc, sessionService, new SessionCookie(false), rateLimiter, false,
+                        google, jdbc, sessionService, new SessionCookie(false), rateLimiter, currentUser, false,
                         "http://localhost:5173");
     }
 
     @Test
     void start_whenNotConfigured_goesBackToLogin() {
         MockHttpServletResponse response = new MockHttpServletResponse();
-        controller.start(response);
+        controller.start(null, response);
 
         assertThat(response.getHeader("Location")).isEqualTo("http://localhost:5173/welcome?google=disabled");
     }
@@ -62,7 +66,7 @@ class GoogleAuthControllerTest {
         when(google.authorizationUrl(anyString())).thenAnswer(a -> "https://google/?state=" + a.getArgument(0));
 
         MockHttpServletResponse response = new MockHttpServletResponse();
-        controller.start(response);
+        controller.start(null, response);
 
         String cookie = response.getHeader("Set-Cookie");
         String state = cookie.substring(cookie.indexOf('=') + 1, cookie.indexOf(';'));
@@ -185,6 +189,64 @@ class GoogleAuthControllerTest {
         found(BY_EMAIL, AYA.email(), 5L);
 
         assertThat(controller.signIn(AYA, Optional.of(guest(42L))).refusal()).isEqualTo("taken");
+    }
+
+    @Test
+    void start_withLinkIntent_carriesItInsideTheState() {
+        when(google.enabled()).thenReturn(true);
+        when(google.authorizationUrl(anyString())).thenAnswer(a -> "https://google/?state=" + a.getArgument(0));
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        controller.start("link", response);
+
+        assertThat(response.getHeader("Location")).startsWith("https://google/?state=link.");
+    }
+
+    @Test
+    void callback_linking_attachesGoogleToTheSignedInAccount_andKeepsItsSession() {
+        when(sessionService.lookup("account-token"))
+                .thenReturn(Optional.of(new SessionService.Session(5L, false, true, Instant.now())));
+        when(google.exchange("code")).thenReturn(AYA);
+        found(BY_SUB, AYA.sub());
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        controller.callback(
+                "code", "link.s", null, "link.s", "account-token", new MockHttpServletRequest(), response);
+
+        verify(jdbc).update("update app_user set google_sub = ? where id = ?", "sub-1", 5L);
+        assertThat(response.getHeader("Location")).isEqualTo("http://localhost:5173/settings?google=linked");
+        verify(sessionService, never()).issue(anyLong());
+        verify(sessionService, never()).revoke(any());
+    }
+
+    @Test
+    void link_googleAccountOwnedByAnotherNotebook_isRefused() {
+        found(BY_SUB, AYA.sub(), 9L);
+
+        assertThat(controller.link(AYA, 5L)).isEqualTo("exists");
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
+    }
+
+    @Test
+    void unlink_withoutAPassword_isRefused_soTheAccountIsNotLockedOut() {
+        when(currentUser.id()).thenReturn(5L);
+        when(jdbc.query(anyString(), any(RowMapper.class), eq(5L))).thenReturn(java.util.Collections.singletonList(null));
+
+        assertThatThrownBy(() -> controller.unlink())
+                .isInstanceOfSatisfying(
+                        org.springframework.web.server.ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode().value()).isEqualTo(409));
+        verify(jdbc, never()).update(anyString(), any(Object[].class));
+    }
+
+    @Test
+    void unlink_withAPassword_disconnectsGoogle() {
+        when(currentUser.id()).thenReturn(5L);
+        when(jdbc.query(anyString(), any(RowMapper.class), eq(5L))).thenReturn(List.of("hash"));
+
+        controller.unlink();
+
+        verify(jdbc).update("update app_user set google_sub = null where id = ?", 5L);
     }
 
     private static SessionService.Session guest(long id) {

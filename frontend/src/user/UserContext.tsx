@@ -22,6 +22,8 @@ export type Me = {
   pendingEmail: string | null
   /** False for guests and Google-only accounts: nothing to ask for before deleting. */
   hasPassword: boolean
+  /** Whether Google can sign in to this account. */
+  googleLinked: boolean
   theme: Theme
   furigana: boolean
   sessionSize: number
@@ -45,6 +47,7 @@ const DEFAULTS: Me = {
   guest: false,
   pendingEmail: null,
   hasPassword: false,
+  googleLinked: false,
   theme: 'system',
   furigana: true,
   sessionSize: 20,
@@ -72,6 +75,10 @@ type UserContextValue = {
   startGuest: (displayName: string, kanji: string[]) => Promise<string | null>
   /** A guest saving their collection to an email; nothing changes until the mailed link is clicked. */
   saveGuest: (email: string, password: string) => Promise<string | null>
+  /** Stops Google signing in to this account; refused while it has no password. */
+  disconnectGoogle: () => Promise<string | null>
+  /** Ends every other session of this account. Resolves to how many ended, or null on failure. */
+  signOutOtherDevices: () => Promise<number | null>
   /** Consumes a link's token; refreshes `me` so emailVerified flips on success. */
   verifyEmail: (token: string) => Promise<string | null>
   /** Re-sends the verification email to the signed-in account. */
@@ -97,6 +104,8 @@ const UserContext = createContext<UserContextValue>({
   logout: async () => undefined,
   startGuest: async () => 'Not ready yet.',
   saveGuest: async () => 'Not ready yet.',
+  disconnectGoogle: async () => 'Not ready yet.',
+  signOutOtherDevices: async () => null,
   verifyEmail: async () => 'Not ready yet.',
   resendVerification: async () => 'Not ready yet.',
   forgotPassword: async () => 'Not ready yet.',
@@ -257,6 +266,28 @@ export function UserProvider({ children }: { children: ReactNode }) {
     [checkSession],
   )
 
+  const disconnectGoogle = useCallback(async () => {
+    const response = await fetch('/api/auth/google', { method: 'DELETE' })
+    if (!response.ok) {
+      return response.status === 409
+        ? 'Set a password first, or you’d have no way to sign in.'
+        : 'Something went wrong.'
+    }
+    await checkSession()
+    return null
+  }, [checkSession])
+
+  const signOutOtherDevices = useCallback(async () => {
+    try {
+      const response = await fetch('/api/auth/sessions/revoke-others', { method: 'POST' })
+      if (!response.ok) return null
+      const body = (await response.json()) as { ended: number }
+      return body.ended
+    } catch {
+      return null
+    }
+  }, [])
+
   const verifyEmail = useCallback(
     async (token: string) => {
       const response = await fetch('/api/auth/verify', {
@@ -348,6 +379,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       logout,
       startGuest,
       saveGuest,
+      disconnectGoogle,
+      signOutOtherDevices,
       verifyEmail,
       resendVerification,
       forgotPassword,
@@ -363,6 +396,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       logout,
       startGuest,
       saveGuest,
+      disconnectGoogle,
+      signOutOtherDevices,
       verifyEmail,
       resendVerification,
       forgotPassword,

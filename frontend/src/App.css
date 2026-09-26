@@ -122,6 +122,15 @@
    restyling each child, so lists, buttons and Japanese inside all follow; the
    remapped values come from --nn-inverse-*, never from the tokens being
    redefined, so nothing refers to itself. */
+/* Pink-tinted tiles (Write, stroke order, the file drop): the tertiary grey sank
+   to ~3.7:1 on the tint, so meta text there uses the secondary grey. */
+.stat-write,
+.kanji-strokes,
+.track-writing,
+.reading-drop {
+  --nn-ink-3: var(--nn-ink-2);
+}
+
 .is-inverted {
   background: var(--nn-inverse-bg);
   border-color: transparent;

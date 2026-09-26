@@ -41,7 +41,8 @@ public class UserController {
      * <p>{@code guest} is a notebook with no account yet: {@code email} is null, and
      * {@code pendingEmail} is the address they're saving it to while that link is unclicked.
      * {@code hasPassword} is false for guests and for accounts that only sign in with Google —
-     * Settings asks for a password to delete only when there is one.
+     * Settings asks for a password to delete only when there is one. {@code googleLinked} is
+     * whether Google can sign in to this account.
      */
     public record Me(
             String displayName,
@@ -50,6 +51,7 @@ public class UserController {
             boolean guest,
             String pendingEmail,
             boolean hasPassword,
+            boolean googleLinked,
             String theme,
             boolean furigana,
             int sessionSize,
@@ -79,7 +81,8 @@ public class UserController {
     private static final String SELECT =
             """
             select display_name, email, email_verified, is_guest, pending_email,
-                   (password_hash is not null and not is_guest) as has_password, theme, furigana, session_size,
+                   (password_hash is not null and not is_guest) as has_password,
+                   google_sub is not null as google_linked, theme, furigana, session_size,
                    target_jlpt_level, gemini_api_key is not null as has_gemini_key
             from app_user where id = ?
             """;
@@ -158,6 +161,7 @@ public class UserController {
                                 rs.getBoolean("is_guest"),
                                 rs.getString("pending_email"),
                                 rs.getBoolean("has_password"),
+                                rs.getBoolean("google_linked"),
                                 rs.getString("theme"),
                                 rs.getBoolean("furigana"),
                                 rs.getInt("session_size"),

@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
@@ -166,7 +167,7 @@ class AuthControllerTest {
         // The seeded local user before ClaimLocalAccountRunner: a row exists but has no
         // password yet, so there's nothing a reset link could usefully change.
         when(jdbc.query(anyString(), any(RowMapper.class), eq(EMAIL)))
-                .thenReturn(List.<Object[]>of(new Object[] {1L, null}));
+                .thenReturn(List.<Object[]>of(new Object[] {1L, false}));
 
         controller.forgotPassword(new AuthController.ForgotPasswordRequest(EMAIL), request());
 
@@ -176,12 +177,34 @@ class AuthControllerTest {
     @Test
     void forgotPassword_knownAccount_sendsResetEmail() {
         when(jdbc.query(anyString(), any(RowMapper.class), eq(EMAIL)))
-                .thenReturn(List.<Object[]>of(new Object[] {1L, "some-hash"}));
+                .thenReturn(List.<Object[]>of(new Object[] {1L, true}));
         when(passwordResetService.issue(1L)).thenReturn("reset-token");
 
         controller.forgotPassword(new AuthController.ForgotPasswordRequest(EMAIL), request());
 
         verify(emailService).sendPasswordResetEmail(EMAIL, EMAIL, "reset-token");
+    }
+
+    @Test
+    void forgotPassword_googleOnlyAccount_sendsTheLink_soItCanSetAFirstPassword() {
+        // can_reset is true for an account with a password OR a Google link — the query decides;
+        // here it answers true for an account whose password_hash is null.
+        when(jdbc.query(contains("google_sub is not null"), any(RowMapper.class), eq(EMAIL)))
+                .thenReturn(List.<Object[]>of(new Object[] {3L, true}));
+        when(passwordResetService.issue(3L)).thenReturn("set-token");
+
+        controller.forgotPassword(new AuthController.ForgotPasswordRequest(EMAIL), request());
+
+        verify(emailService).sendPasswordResetEmail(EMAIL, EMAIL, "set-token");
+    }
+
+    @Test
+    void revokeOtherSessions_keepsTheCurrentOne() {
+        when(currentUser.id()).thenReturn(7L);
+        when(jdbc.update(eq("delete from app_session where user_id = ? and token_hash <> ?"), eq(7L), anyString()))
+                .thenReturn(2);
+
+        assertThat(controller.revokeOtherSessions("current-token")).containsEntry("ended", 2);
     }
 
     @Test
