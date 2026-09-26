@@ -38,7 +38,6 @@ body:
         - Home / tasks
         - Accounts / sign-in
         - Settings
-        - Self-hosting / deployment
         - Other
     validations:
       required: true

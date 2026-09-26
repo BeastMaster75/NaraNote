@@ -1,6 +1,9 @@
 # Deployment
 
-NaraNote ships as one Docker Compose stack, `docker-compose.prod.yml`:
+How NaraNote runs in production, and the runbook for operating it. It's published for
+transparency and as a reference for the setup; it isn't a supported self-hosting guide.
+
+The whole production setup is one Docker Compose stack, `docker-compose.prod.yml`:
 
 | Service    | What it does                                                                    |
 | ---------- | ------------------------------------------------------------------------------- |

@@ -2,8 +2,8 @@
 
 ## Supported versions
 
-NaraNote is deployed continuously from `main`. Security fixes are made there and are not
-backported to older commits.
+NaraNote is released from `main`. Security fixes are made there and are not backported to
+older commits.
 
 ## Reporting a vulnerability
 
@@ -25,8 +25,9 @@ credited in the advisory.
 
 ## Scope
 
-In scope: this repository's code and its documented production setup
+In scope: the NaraNote app and this repository's code, including its production configuration
 (`docker-compose.prod.yml`, `deploy/`).
 
-Out of scope: vulnerabilities in third-party services and images (report those upstream), and
-issues that need an already-compromised server or a user's unlocked device.
+Out of scope: copies of NaraNote run by anyone else, vulnerabilities in third-party services and
+images (report those upstream), and issues that need an already-compromised server or a user's
+unlocked device.
