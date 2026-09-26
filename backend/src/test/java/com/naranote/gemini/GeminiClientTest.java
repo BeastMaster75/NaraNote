@@ -41,6 +41,15 @@ class GeminiClientTest {
     }
 
     @Test
+    void overloadAndRateLimitsFallBackToAnotherModel_butABadKeyDoesNot() {
+        assertThat(GeminiClient.isWorthAnotherModel(503)).isTrue();
+        assertThat(GeminiClient.isWorthAnotherModel(429)).isTrue();
+        assertThat(GeminiClient.isWorthAnotherModel(400)).isFalse();
+        assertThat(GeminiClient.isKeyRejected(400, "{\"reason\":\"API_KEY_INVALID\"}")).isTrue();
+        assertThat(GeminiClient.MODELS).hasSizeGreaterThan(1).doesNotHaveDuplicates();
+    }
+
+    @Test
     void aRejectedKeySaysSo() {
         // Google answers a bad key with 400, not 401 — the reason is only in the body.
         String body = "{\"error\":{\"code\":400,\"details\":[{\"reason\":\"API_KEY_INVALID\"}]}}";

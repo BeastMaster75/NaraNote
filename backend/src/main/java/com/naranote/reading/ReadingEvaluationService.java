@@ -34,8 +34,6 @@ import tools.jackson.databind.ObjectMapper;
 public class ReadingEvaluationService {
 
     private static final Logger log = LoggerFactory.getLogger(ReadingEvaluationService.class);
-    private static final String MODEL = "gemini-3.6-flash";
-
     private static final String PROMPT =
             "Transcribe this recording of someone reading Japanese aloud. Write exactly the sounds "
                     + "they actually said, in hiragana only: no kanji, no katakana, no punctuation, "
@@ -119,7 +117,7 @@ public class ReadingEvaluationService {
                                 "responseMimeType", "application/json",
                                 "responseSchema", RESPONSE_SCHEMA));
 
-        String json = gemini.generate(MODEL, apiKey, requestBody, "Evaluation");
+        String json = gemini.generate(apiKey, requestBody, "Evaluation");
         try {
             String transcript = objectMapper.readValue(json, Transcription.class).transcript();
             return transcript == null ? "" : transcript.strip();

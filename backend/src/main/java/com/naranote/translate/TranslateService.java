@@ -21,8 +21,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 public class TranslateService {
 
-    private static final String MODEL = "gemini-3.6-flash";
-
     private static final String JA_TO_EN_PROMPT =
             "Translate the following Japanese text to natural English. Respond with only the "
                     + "translation, no notes or alternatives:\n\n";
@@ -54,7 +52,7 @@ public class TranslateService {
                         "contents",
                         List.of(Map.of("parts", List.of(Map.of("text", prompt)))));
 
-        return gemini.generate(MODEL, apiKey, requestBody, "Translation").strip();
+        return gemini.generate(apiKey, requestBody, "Translation").strip();
     }
 
     private String decryptedKey(long userId) {
