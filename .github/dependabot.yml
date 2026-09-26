@@ -1,0 +1,40 @@
+# Weekly dependency update pull requests, grouped per ecosystem so they arrive
+# as a handful of PRs rather than dozens. Each one runs through CI like any
+# other change.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+    groups:
+      frontend:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: maven
+    directory: /backend
+    schedule:
+      interval: weekly
+    groups:
+      backend:
+        patterns: ["*"]
+        update-types: [minor, patch]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # Base images only move within their major version (Node 24, Java 21);
+  # a runtime upgrade is a deliberate change, not a weekly bump.
+  - package-ecosystem: docker
+    directories: [/, /backend, /frontend]
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: "*"
+        update-types: [version-update:semver-major]
