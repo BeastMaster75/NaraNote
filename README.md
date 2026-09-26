@@ -1,4 +1,4 @@
-<img src="assets/banner.svg" alt="NaraNote — Collect the Japanese You Meet" width="100%">
+<img src=".github/assets/banner.svg" alt="NaraNote — Collect the Japanese You Meet" width="100%">
 
 <p align="center">
   <a href="https://github.com/BeastMaster75/NaraNote/actions/workflows/ci.yml"><img src="https://github.com/BeastMaster75/NaraNote/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI"></a>
@@ -14,7 +14,7 @@
   <a href="#how-its-built">How It's Built</a> ·
   <a href="#project-structure">Project Structure</a> ·
   <a href="#running-it-locally">Running It Locally</a> ·
-  <a href="CONTRIBUTING.md">Contributing</a>
+  <a href=".github/CONTRIBUTING.md">Contributing</a>
 </p>
 
 ---
@@ -104,6 +104,7 @@ NaraNote/
 ├── backend/          Spring Boot API — one package per feature (kanji, mining, review, export…)
 │   └── src/main/resources/db/migration/   Flyway migrations
 ├── frontend/         React single-page app — one folder per page
+├── .github/          CI, Dependabot, issue templates, contributing and security docs
 ├── deploy/           Caddyfile, backup and restore scripts for production
 ├── docs/             Development and deployment guides
 ├── Dockerfile        Production image: frontend built into the backend jar
@@ -135,8 +136,8 @@ Ideas and bug reports are welcome in [Issues](https://github.com/BeastMaster75/N
 
 ## Contributing
 
-Contributions are welcome. Please read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull
-request, and report security issues privately as described in [SECURITY.md](SECURITY.md).
+Contributions are welcome. Please read [CONTRIBUTING.md](.github/CONTRIBUTING.md) before opening a pull
+request, and report security issues privately as described in [SECURITY.md](.github/SECURITY.md).
 
 ## Acknowledgements
 

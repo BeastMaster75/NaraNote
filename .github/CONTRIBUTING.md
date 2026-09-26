@@ -13,7 +13,7 @@ welcome.
 ## Setting up
 
 Everything you need to run the app locally, including the one-off reference-data import, is in
-[docs/development.md](docs/development.md). The short version is `docker compose up` and
+[docs/development.md](../docs/development.md). The short version is `docker compose up` and
 <http://localhost:5173>.
 
 That guide's *Things worth knowing* section explains the decisions that aren't obvious from the

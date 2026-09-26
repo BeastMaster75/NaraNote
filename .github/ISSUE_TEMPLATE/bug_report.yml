@@ -6,7 +6,7 @@ body:
     attributes:
       value: |
         Thanks for taking the time to report this. For security issues, please don't open an
-        issue — follow [SECURITY.md](../blob/main/SECURITY.md) instead.
+        issue — follow [SECURITY.md](https://github.com/BeastMaster75/NaraNote/blob/main/.github/SECURITY.md) instead.
   - type: textarea
     id: what-happened
     attributes:

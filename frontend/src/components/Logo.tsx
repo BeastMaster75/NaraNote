@@ -19,7 +19,7 @@ type LogoProps = {
  * what separates "note" from a plain rounded tile. The fold sits below ラ so
  * the two never compete for the corner.
  *
- * Keep this in sync with the mark inside `assets/banner.svg`, which carries the
+ * Keep this in sync with the mark inside `.github/assets/banner.svg`, which carries the
  * same geometry with literal colours. `frontend/public/favicon.svg` is the one
  * deliberate exception: a separate cut drawn for 16px browser tabs (cream rim,
  * no fold, heavier strokes) — see the comment in that file.
