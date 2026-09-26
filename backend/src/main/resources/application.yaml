@@ -67,6 +67,12 @@ naranote:
   # Where the privacy page tells people to write (data requests, questions). Served publicly
   # by /api/site. Empty in dev; docker-compose.prod.yml requires it.
   contact-email: ${NARANOTE_CONTACT_EMAIL:}
+  # Sign in with Google (OAuth client of type "Web application" in the Google Cloud console).
+  # Off while either is empty — the welcome page hides the button. The console's authorised
+  # redirect URI must be exactly <app-base-url>/api/auth/google/callback.
+  google:
+    client-id: ${NARANOTE_GOOGLE_CLIENT_ID:}
+    client-secret: ${NARANOTE_GOOGLE_CLIENT_SECRET:}
   mail:
     # Envelope From — most SMTP providers reject a From address on a domain they don't
     # own, so this must match whatever NARANOTE_MAIL_* account is actually configured.

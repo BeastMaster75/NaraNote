@@ -17,13 +17,29 @@ public final class ReadingDtos {
      */
     public record ReadingAnalyzeRequest(@NotBlank @Size(max = 40000) String text) {}
 
-    /** @param type a short label for what kind of mismatch this was (e.g. "misread",
-     *     "skipped", "added") — free-form rather than an enum, since Gemini is the one
-     *     filling it in and the exact taxonomy isn't fixed yet. */
-    public record MisreadSpan(String expected, String heard, String type) {}
+    /**
+     * One word of the passage that wasn't heard as written.
+     *
+     * @param start offset into the expected text, so the client can underline the word in
+     *     place without re-tokenizing
+     * @param say the word in hiragana as it should sound — what to hand /api/tts
+     * @param heard the kana actually heard in its place, empty if skipped
+     * @param type "misread" or "skipped"
+     */
+    public record MisreadSpan(int start, int end, String expected, String say, String heard, String type) {}
 
-    /** @param matched whether the recording matched the expected text overall
-     *  @param feedback one short, specific sentence — never a bare score */
+    /**
+     * @param transcript what Gemini heard, in hiragana
+     * @param wordCount words that could be checked by ear — punctuation and numerals aren't
+     * @param feedback one short, specific sentence — never a bare score
+     */
     public record EvaluateResponse(
-            String transcript, boolean matched, List<MisreadSpan> misreads, String feedback) {}
+            String transcript,
+            boolean matched,
+            int wordCount,
+            List<MisreadSpan> misreads,
+            String feedback) {}
+
+    /** The only thing Gemini is asked for. */
+    public record Transcription(String transcript) {}
 }

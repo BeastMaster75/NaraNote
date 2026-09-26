@@ -10,6 +10,8 @@ export function RequireAuth() {
   const { status } = useUser()
 
   if (status === 'loading') return null
-  if (status === 'anonymous') return <Navigate to="/login" replace />
+  // The welcome page, not the login form: most people arriving signed out have no account,
+  // and the welcome page is where they can start one — or start as a guest.
+  if (status === 'anonymous') return <Navigate to="/welcome" replace />
   return <Outlet />
 }

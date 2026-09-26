@@ -26,6 +26,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.web.server.ResponseStatusException;
 
 import com.naranote.email.EmailService;
+import com.naranote.library.KanjiLibraryService;
 import com.naranote.user.CurrentUser;
 
 /**
@@ -47,6 +48,7 @@ class AuthControllerTest {
     @Mock private PasswordResetService passwordResetService;
     @Mock private EmailService emailService;
     @Mock private CurrentUser currentUser;
+    @Mock private KanjiLibraryService libraryService;
 
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
     private AuthController controller;
@@ -59,11 +61,12 @@ class AuthControllerTest {
                         passwordEncoder,
                         new SessionService(jdbc),
                         rateLimiter,
-                        false,
+                        new SessionCookie(false),
                         emailVerificationService,
                         passwordResetService,
                         emailService,
-                        currentUser);
+                        currentUser,
+                        libraryService);
     }
 
     @Test
@@ -131,7 +134,7 @@ class AuthControllerTest {
     void resendVerification_alreadyVerified_sendsNothing() {
         when(currentUser.id()).thenReturn(1L);
         when(jdbc.query(anyString(), any(RowMapper.class), eq(1L)))
-                .thenReturn(List.<Object[]>of(new Object[] {EMAIL, true}));
+                .thenReturn(java.util.Collections.singletonList(null));
 
         controller.resendVerification(request());
 
@@ -141,8 +144,7 @@ class AuthControllerTest {
     @Test
     void resendVerification_unverified_reissuesTokenAndSendsEmail() {
         when(currentUser.id()).thenReturn(1L);
-        when(jdbc.query(anyString(), any(RowMapper.class), eq(1L)))
-                .thenReturn(List.<Object[]>of(new Object[] {EMAIL, false}));
+        when(jdbc.query(anyString(), any(RowMapper.class), eq(1L))).thenReturn(List.of(EMAIL));
         when(emailVerificationService.issue(1L)).thenReturn("fresh-token");
 
         controller.resendVerification(request());
@@ -214,8 +216,7 @@ class AuthControllerTest {
     @Test
     void deleteAccount_wrongPassword_is403_andDeletesNothing() {
         when(currentUser.id()).thenReturn(7L);
-        when(jdbc.query(anyString(), any(RowMapper.class), eq(7L)))
-                .thenReturn(List.of(passwordEncoder.encode("correct-horse-battery")));
+        mockAccountRow(7L, false, passwordEncoder.encode("correct-horse-battery"));
 
         MockHttpServletResponse response = response();
         assertThatThrownBy(
@@ -236,8 +237,7 @@ class AuthControllerTest {
     @Test
     void deleteAccount_correctPassword_deletesTheUserRow_andClearsTheCookie() {
         when(currentUser.id()).thenReturn(7L);
-        when(jdbc.query(anyString(), any(RowMapper.class), eq(7L)))
-                .thenReturn(List.of(passwordEncoder.encode("correct-horse-battery")));
+        mockAccountRow(7L, false, passwordEncoder.encode("correct-horse-battery"));
 
         MockHttpServletResponse response = response();
         controller.deleteAccount(
@@ -261,6 +261,140 @@ class AuthControllerTest {
                 .isInstanceOf(ResponseStatusException.class);
 
         verify(jdbc, never()).query(anyString(), any(RowMapper.class), any());
+    }
+
+    @Test
+    void deleteAccount_accountWithoutPassword_is403() {
+        // Only a guest may skip the password; an account omitting it is refused.
+        when(currentUser.id()).thenReturn(7L);
+        mockAccountRow(7L, false, passwordEncoder.encode("correct-horse-battery"));
+
+        assertThatThrownBy(() -> controller.deleteAccount(null, request(), response()))
+                .isInstanceOfSatisfying(
+                        ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode().value()).isEqualTo(403));
+        verify(jdbc, never()).update("delete from app_user where id = ?", 7L);
+    }
+
+    @Test
+    void deleteAccount_googleOnlyAccount_hasNoPasswordToAskFor() {
+        when(currentUser.id()).thenReturn(7L);
+        mockAccountRow(7L, false, null);
+
+        controller.deleteAccount(null, request(), response());
+
+        verify(jdbc).update("delete from app_user where id = ?", 7L);
+    }
+
+    @Test
+    void deleteAccount_guest_needsNoPassword() {
+        when(currentUser.id()).thenReturn(7L);
+        mockAccountRow(7L, true, null);
+
+        MockHttpServletResponse response = response();
+        controller.deleteAccount(null, request(), response);
+
+        verify(jdbc).update("delete from app_user where id = ?", 7L);
+        assertThat(response.getHeader("Set-Cookie")).contains("Max-Age=0");
+    }
+
+    @Test
+    void guest_createsAGuestRow_bringsTheDemoKanji_andIssuesALongLivedCookie() {
+        when(jdbc.queryForObject(anyString(), eq(Long.class), eq("Fares"))).thenReturn(42L);
+
+        MockHttpServletRequest req = request();
+        MockHttpServletResponse response = response();
+        controller.guest(new AuthController.GuestRequest("  Fares ", List.of("古", "川")), null, req, response);
+
+        verify(jdbc)
+                .queryForObject(
+                        "insert into app_user (display_name, is_guest) values (?, true) returning id",
+                        Long.class,
+                        "Fares");
+        // The kanji are added as the new guest: the request is marked signed in first.
+        assertThat(req.getAttribute(CurrentUser.REQUEST_ATTRIBUTE)).isEqualTo(42L);
+        verify(libraryService).addBatch(List.of("古", "川"), "DEMO");
+        assertThat(response.getHeader("Set-Cookie"))
+                .contains("HttpOnly")
+                .contains("Max-Age=" + SessionService.GUEST_LIFETIME.toSeconds());
+    }
+
+    @Test
+    void guest_withNoDemoKanji_addsNothing() {
+        when(jdbc.queryForObject(anyString(), eq(Long.class), eq("Fares"))).thenReturn(42L);
+
+        controller.guest(new AuthController.GuestRequest("Fares", null), null, request(), response());
+
+        verify(libraryService, never()).addBatch(any(), any());
+    }
+
+    @Test
+    void guest_whileAlreadySignedIn_is409_soTheFirstNotebookIsNotStranded() {
+        when(jdbc.query(anyString(), any(RowMapper.class), anyString())).thenReturn(List.of(5L));
+
+        assertThatThrownBy(
+                        () ->
+                                controller.guest(
+                                        new AuthController.GuestRequest("Fares", null),
+                                        "live-token",
+                                        request(),
+                                        response()))
+                .isInstanceOfSatisfying(
+                        ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode().value()).isEqualTo(409));
+        verify(jdbc, never()).queryForObject(anyString(), eq(Long.class), any());
+    }
+
+    @Test
+    void upgrade_notAGuest_is409() {
+        when(currentUser.id()).thenReturn(7L);
+        when(jdbc.queryForObject("select is_guest from app_user where id = ?", Boolean.class, 7L))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> controller.upgrade(credentials("new-password-1"), request()))
+                .isInstanceOfSatisfying(
+                        ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode().value()).isEqualTo(409));
+        verify(emailService, never()).sendVerificationEmail(any(), any(), any());
+    }
+
+    @Test
+    void upgrade_toAnAlreadyRegisteredEmail_is409() {
+        when(currentUser.id()).thenReturn(7L);
+        when(jdbc.queryForObject("select is_guest from app_user where id = ?", Boolean.class, 7L))
+                .thenReturn(true);
+        when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq(EMAIL))).thenReturn(true);
+
+        assertThatThrownBy(() -> controller.upgrade(credentials("new-password-1"), request()))
+                .isInstanceOfSatisfying(
+                        ResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode().value()).isEqualTo(409));
+        verify(emailService, never()).sendVerificationEmail(any(), any(), any());
+    }
+
+    @Test
+    void upgrade_guest_parksTheAddressAsPending_andMailsTheLinkThere() {
+        when(currentUser.id()).thenReturn(7L);
+        when(jdbc.queryForObject("select is_guest from app_user where id = ?", Boolean.class, 7L))
+                .thenReturn(true);
+        when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq(EMAIL))).thenReturn(false);
+        when(emailVerificationService.issue(7L)).thenReturn("upgrade-token");
+
+        controller.upgrade(new AuthController.Credentials(" Person@Example.com ", "new-password-1"), request());
+
+        // Pending, not email: nothing is the account's until the link is clicked.
+        verify(jdbc)
+                .update(
+                        eq("update app_user set pending_email = ?, password_hash = ? where id = ?"),
+                        eq(EMAIL),
+                        anyString(),
+                        eq(7L));
+        verify(emailService).sendVerificationEmail(EMAIL, EMAIL, "upgrade-token");
+    }
+
+    private void mockAccountRow(long userId, boolean guest, String passwordHash) {
+        when(jdbc.query(anyString(), any(RowMapper.class), eq(userId)))
+                .thenReturn(List.<Object[]>of(new Object[] {guest, passwordHash}));
     }
 
     private void mockLookup(List<Object[]> rows) {

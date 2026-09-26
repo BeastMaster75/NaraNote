@@ -6,25 +6,22 @@
 
 .kanji-filter-chip {
   cursor: pointer;
-  font-family: var(--nn-font-mono);
-  font-size: 10px;
+  font-family: var(--nn-font-ui);
+  font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   padding: 0.3rem 0.7rem;
-  border-radius: var(--nn-r-pill);
-  border: 1px solid var(--nn-line);
-  background: var(--nn-raised);
-  color: var(--nn-ink-3);
+  border-radius: var(--nn-r-chip);
+  border: 1.5px solid transparent;
+  background: var(--nn-sunk);
+  color: var(--nn-ink-2);
 }
 
 .kanji-filter-chip:hover {
   color: var(--nn-ink);
-  border-color: var(--nn-kaki);
 }
 
+/* Selected is inverted ink, the same as every chip — not a pink outline. */
 .kanji-filter-chip.is-on {
-  background: var(--nn-sunk);
-  border-color: var(--nn-kaki);
-  color: var(--nn-ink);
+  background: var(--nn-ink);
+  color: var(--nn-paper);
 }

@@ -1,6 +1,9 @@
-import { useState, type ReactNode } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
+import { useLocation, useNavigate, useSearchParams } from 'react-router'
+import { GoogleMark } from '../components/GoogleMark'
 import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
+import { googleProblem, useSite } from '../lib/site'
 import { useUser, type Me, type Theme } from './UserContext'
 import './SettingsPage.css'
 
@@ -97,6 +100,7 @@ function AccountRows({ me }: { me: Me }) {
   }
 
   async function handleChangePassword() {
+    if (!me.email) return
     setResetState('sending')
     await forgotPassword(me.email)
     setResetState('sent')
@@ -121,7 +125,12 @@ function AccountRows({ me }: { me: Me }) {
         )}
       </Row>
       {/* An ordinary button: changing a password is occasional housekeeping, and
-          as the page's only solid-pink button it read as the main thing to do. */}
+          as the page's only solid-pink button it read as the main thing to do. An account
+          that only ever used Google has no password to change (and the reset flow skips
+          password-less accounts on purpose). */}
+      {!me.hasPassword ? (
+        <Row title="Sign-In" hint="With Google." />
+      ) : (
       <Row title="Password" hint="We’ll email you a link.">
         <button
           type="button"
@@ -136,7 +145,195 @@ function AccountRows({ me }: { me: Me }) {
               : 'Check Your Email'}
         </button>
       </Row>
+      )}
     </>
+  )
+}
+
+/**
+ * Where a guest turns their notebook into an account — the rail's "Save" link and the save
+ * prompts land here (#save). With Google it's one click; with an email, nothing changes
+ * until the link mailed there is clicked, and the guest keeps using the app meanwhile.
+ */
+function GuestSaveRows({ me }: { me: Me }) {
+  const { saveGuest, resendVerification } = useUser()
+  const site = useSite()
+  const location = useLocation()
+  const [searchParams] = useSearchParams()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [error, setError] = useState<string | null>(() => googleProblem(searchParams.get('google')))
+  const [busy, setBusy] = useState(false)
+  const [changing, setChanging] = useState(false)
+  const [resendState, setResendState] = useState<'idle' | 'sending' | 'sent'>('idle')
+
+  async function submit(event: FormEvent) {
+    event.preventDefault()
+    setBusy(true)
+    setError(null)
+    const failure = await saveGuest(email.trim(), password)
+    setBusy(false)
+    if (failure) {
+      setError(failure)
+      return
+    }
+    setPassword('')
+    setChanging(false)
+    setResendState('idle')
+  }
+
+  async function resend() {
+    setResendState('sending')
+    const failure = await resendVerification()
+    setResendState(failure ? 'idle' : 'sent')
+    setError(failure)
+  }
+
+  if (me.pendingEmail && !changing) {
+    return (
+      <Row
+        title="Check Your Inbox"
+        stacked
+        hint={
+          <>
+            Open the link sent to <strong>{me.pendingEmail}</strong> to finish saving your
+            collection.
+          </>
+        }
+      >
+        <div className="setting-key">
+          <button type="button" className="btn" onClick={resend} disabled={resendState !== 'idle'}>
+            {resendState === 'idle' ? 'Resend Email' : resendState === 'sending' ? 'Sending…' : 'Sent'}
+          </button>
+          <button type="button" className="btn" onClick={() => setChanging(true)}>
+            Use Another Email
+          </button>
+        </div>
+        {error && <p className="error small">{error}</p>}
+      </Row>
+    )
+  }
+
+  return (
+    <Row title="Save Your Collection" hint="It lives only in this browser until you do." stacked>
+      <div className="save-collection">
+        {site?.googleSignIn && (
+          <a className="btn save-google" href="/api/auth/google/start">
+            <GoogleMark />
+            Save with Google
+          </a>
+        )}
+        <form className="save-form" onSubmit={submit}>
+          <input
+            type="email"
+            className="setting-input"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            placeholder="Email"
+            autoComplete="email"
+            autoFocus={location.hash === '#save'}
+            aria-label="Email"
+            required
+          />
+          <input
+            type="password"
+            className="setting-input"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Password, 8+ characters"
+            autoComplete="new-password"
+            minLength={8}
+            aria-label="Password"
+            required
+          />
+          <button type="submit" className="btn is-primary" disabled={busy}>
+            {busy ? 'Saving…' : 'Save'}
+          </button>
+        </form>
+        {error && <p className="error small">{error}</p>}
+      </div>
+    </Row>
+  )
+}
+
+/**
+ * Deletes everything, after a confirmation that matches what the account has: its password
+ * when there is one, otherwise typing "delete" — guests and Google-only accounts have no
+ * password to ask for (see AuthController.deleteAccount).
+ */
+function DeleteRow({ me }: { me: Me }) {
+  const { deleteAccount } = useUser()
+  const navigate = useNavigate()
+  const [open, setOpen] = useState(false)
+  const [value, setValue] = useState('')
+  const [error, setError] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const what = me.guest ? 'Notebook' : 'Account'
+
+  async function confirm(event: FormEvent) {
+    event.preventDefault()
+    if (!me.hasPassword && value.trim().toLowerCase() !== 'delete') {
+      setError('Type delete to confirm.')
+      return
+    }
+    setBusy(true)
+    setError(null)
+    const failure = await deleteAccount(me.hasPassword ? value : undefined)
+    setBusy(false)
+    if (failure) {
+      setError(failure)
+      return
+    }
+    navigate('/welcome', { replace: true })
+  }
+
+  if (!open) {
+    return (
+      <Row title={`Delete ${what}`} hint="Everything in it, for good.">
+        <button type="button" className="btn is-danger" onClick={() => setOpen(true)}>
+          Delete…
+        </button>
+      </Row>
+    )
+  }
+
+  return (
+    <Row
+      title={`Delete ${what}`}
+      stacked
+      hint={me.hasPassword ? 'Enter your password to confirm.' : 'Type delete to confirm.'}
+    >
+      <form className="setting-key" onSubmit={confirm}>
+        <input
+          type={me.hasPassword ? 'password' : 'text'}
+          className="setting-input"
+          value={value}
+          onChange={(event) => {
+            setValue(event.target.value)
+            setError(null)
+          }}
+          placeholder={me.hasPassword ? 'Password' : 'delete'}
+          autoComplete={me.hasPassword ? 'current-password' : 'off'}
+          autoFocus
+          aria-label={me.hasPassword ? 'Password' : 'Type delete to confirm'}
+        />
+        <button type="submit" className="btn is-danger" disabled={busy || !value}>
+          {busy ? 'Deleting…' : 'Delete'}
+        </button>
+        <button
+          type="button"
+          className="btn"
+          onClick={() => {
+            setOpen(false)
+            setValue('')
+            setError(null)
+          }}
+        >
+          Cancel
+        </button>
+      </form>
+      {error && <p className="error small">{error}</p>}
+    </Row>
   )
 }
 
@@ -233,7 +430,7 @@ export function SettingsPage() {
     <Page title="Settings" subtitle="Your account and how the app behaves.">
       <div className="settings">
         <div className="settings-column">
-          <Group title="Account">
+          <Group title={me.guest ? 'Guest Notebook' : 'Account'} id="save">
             <Row title="Display Name">
               <input
                 key={me.displayName}
@@ -245,7 +442,8 @@ export function SettingsPage() {
                 aria-label="Display name"
               />
             </Row>
-            <AccountRows me={me} />
+            {me.guest ? <GuestSaveRows me={me} /> : <AccountRows me={me} />}
+            <DeleteRow me={me} />
           </Group>
 
           <Group title="Appearance">

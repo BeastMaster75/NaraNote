@@ -1,0 +1,536 @@
+/* ── Welcome: the front door, in Home's bento language ─────────────────────
+   Fills the viewport and never scrolls on a desktop screen: two rows of tiles
+   share the height, and each tile's content is sized to fit what it gets. */
+
+.welcome {
+  min-height: 100vh;
+  min-height: 100dvh;
+  height: 100dvh;
+  max-width: 1600px;
+  margin-inline: auto;
+  padding: clamp(1rem, 2.2vw, 1.75rem);
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  animation: nn-fade 0.22s ease both;
+}
+
+.welcome-bento {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(min(21rem, 100%), 0.95fr);
+  grid-template-rows: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'hero hero auth'
+    'demo demo write';
+}
+
+.wtile {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(1.1rem, 2vw, 1.6rem);
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-tile);
+}
+
+/* ── Hero ─────────────────────────────────────────────────────────────── */
+
+.welcome-hero {
+  grid-area: hero;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+
+/* Copy on the left, a cluster of notes on the right — as many notes as the tile has
+   room for beside the headline, never overlapping it. */
+.welcome-hero {
+  container-type: inline-size;
+}
+
+.welcome-hero-body {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 2rem;
+}
+
+.welcome-hero-copy {
+  min-width: 0;
+}
+
+.welcome-hero-notes {
+  flex: none;
+  margin: 0 0.5rem 0.5rem 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(2, auto);
+  gap: 1rem 1.2rem;
+}
+
+.welcome-hero-note {
+  --fold: 16px;
+  width: clamp(7.5rem, min(10vw, 16vh), 11.5rem);
+  aspect-ratio: 4 / 3;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  transform: rotate(var(--tilt, 0deg));
+}
+
+.welcome-hero-note:nth-child(3) {
+  grid-column: 1 / -1;
+  justify-self: center;
+}
+
+.welcome-hero-term {
+  font-size: clamp(20px, 1rem + 0.6vw, 26px);
+  font-weight: 700;
+}
+
+.welcome-hero-glyph {
+  font-size: clamp(34px, 1.6rem + 1.2vw, 46px);
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.welcome-brand-name {
+  font-size: 1.3rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--nn-ink);
+}
+
+.welcome-headline {
+  margin: 0;
+  font-family: var(--nn-font-ui);
+  font-weight: 800;
+  /* Grows with height as well as width, so a tall screen's tile is filled, not padded. */
+  font-size: clamp(2.3rem, min(1rem + 3.6vw, 8vh), 5.4rem);
+  letter-spacing: -0.035em;
+  line-height: 1.04;
+  color: var(--nn-ink);
+}
+
+/* Home's hand-drawn pink stroke under one word, drawn in on arrival. */
+.welcome-mark {
+  position: relative;
+  white-space: nowrap;
+}
+
+.welcome-mark svg {
+  position: absolute;
+  left: -2%;
+  bottom: -0.12em;
+  width: 104%;
+  height: 0.28em;
+  overflow: visible;
+}
+
+.welcome-mark path {
+  fill: none;
+  stroke: var(--nn-kaki);
+  stroke-width: 5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: welcome-draw 0.7s 0.25s var(--nn-ease) forwards;
+}
+
+@keyframes welcome-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.welcome-sub {
+  margin: 0.9rem 0 0;
+  max-width: 40ch;
+  font-size: clamp(14px, 0.8rem + 0.35vw, 17px);
+  color: var(--nn-ink-2);
+}
+
+/* ── The way in: the inverted ink tile ─────────────────────────────────── */
+
+.welcome-auth {
+  grid-area: auth;
+  justify-content: flex-end;
+  background: var(--nn-ink);
+  border-color: var(--nn-ink);
+  color: var(--nn-paper);
+}
+
+.welcome-ghost {
+  position: absolute;
+  right: -0.08em;
+  top: -0.22em;
+  font-size: clamp(8rem, 13vw, 13rem);
+  font-weight: 700;
+  line-height: 1;
+  color: color-mix(in srgb, var(--nn-paper) 8%, var(--nn-ink));
+  pointer-events: none;
+  user-select: none;
+}
+
+.welcome-auth-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.welcome-auth-title {
+  margin: 0 0 0.3rem;
+  font-family: var(--nn-font-ui);
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--nn-paper);
+}
+
+.welcome-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  height: 2.9rem;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: var(--nn-r-control);
+  font-family: var(--nn-font-ui);
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.welcome-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.welcome-btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.welcome-btn.is-google {
+  background: var(--nn-paper);
+  color: var(--nn-ink);
+}
+
+.welcome-btn.is-google:hover {
+  color: var(--nn-ink);
+  background: color-mix(in srgb, var(--nn-paper) 88%, var(--nn-ink));
+}
+
+.welcome-btn.is-guest {
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+}
+
+.welcome-btn.is-guest:hover:not(:disabled) {
+  background: var(--nn-bengara);
+}
+
+.welcome-input {
+  height: 2.9rem;
+  padding: 0 0.95rem;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--nn-paper);
+  caret-color: var(--nn-kaki);
+  background: color-mix(in srgb, var(--nn-paper) 9%, var(--nn-ink));
+  border: 1.5px solid color-mix(in srgb, var(--nn-paper) 22%, var(--nn-ink));
+  border-radius: var(--nn-r-control);
+}
+
+.welcome-input::placeholder {
+  color: color-mix(in srgb, var(--nn-paper) 45%, var(--nn-ink));
+}
+
+.welcome-input:focus-visible {
+  outline: 2px solid var(--nn-kaki);
+  outline-offset: 1px;
+}
+
+.welcome-error {
+  margin: 0;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--nn-kaki) 55%, var(--nn-paper));
+}
+
+.welcome-auth-foot {
+  margin: 0.2rem 0 0;
+  font-size: 13px;
+  text-align: center;
+  color: color-mix(in srgb, var(--nn-paper) 65%, var(--nn-ink));
+}
+
+.welcome-auth-foot a,
+.welcome-link {
+  color: var(--nn-paper);
+  font-weight: 700;
+}
+
+.welcome-link {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ── The demo ─────────────────────────────────────────────────────────── */
+
+.welcome-demo {
+  grid-area: demo;
+  gap: 0.4rem;
+}
+
+.welcome-tile-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.welcome-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nn-ink-3);
+  font-variant-numeric: tabular-nums;
+}
+
+.welcome-sentence {
+  margin: 0;
+  font-size: clamp(22px, min(1rem + 1.1vw, 4.4vh), 40px);
+  font-weight: 500;
+  line-height: var(--nn-jp-lh);
+  color: var(--nn-jp);
+}
+
+.welcome-sentence rt {
+  font-size: var(--nn-ruby);
+  font-weight: 500;
+  color: var(--nn-ink-2);
+}
+
+.welcome-k {
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  font: inherit;
+  color: var(--nn-jp);
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.15s ease;
+}
+
+.welcome-k:hover {
+  background: var(--nn-kaki-tint);
+}
+
+/* Collected: it recedes, like a kanji already in your library does on Mine. */
+.welcome-k.is-collected {
+  color: var(--nn-jp-known);
+  cursor: default;
+}
+
+.welcome-k.is-collected:hover {
+  background: none;
+}
+
+/* The space the notes land in, marked out from the start rather than left looking
+   unused before anything's tapped. */
+.welcome-wall {
+  flex: 1;
+  min-height: 0;
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: flex-start;
+  align-items: center;
+  gap: 0.8rem;
+  padding: 0.9rem 1rem;
+  border: 1.5px dashed var(--nn-line);
+  border-radius: 16px;
+  background: var(--nn-paper);
+  overflow: hidden;
+}
+
+.welcome-note {
+  --fold: 12px;
+  width: 3.4rem;
+  height: 3.4rem;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--tilt, 0deg));
+  animation: welcome-pop 0.3s var(--nn-ease) both;
+}
+
+.welcome-note .jp {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+@keyframes welcome-pop {
+  from {
+    opacity: 0;
+    transform: scale(0.4) rotate(0deg);
+  }
+}
+
+.welcome-wall.is-empty {
+  justify-content: center;
+  align-content: center;
+}
+
+.welcome-wall-hint {
+  font-size: 13px;
+  color: var(--nn-ink-2);
+}
+
+/* ── Handwriting ──────────────────────────────────────────────────────── */
+
+.welcome-write {
+  grid-area: write;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.welcome-write .tile-title {
+  align-self: flex-start;
+}
+
+.welcome-cell {
+  flex: 1;
+  min-height: 0;
+  max-height: 18rem;
+  aspect-ratio: 1;
+  background: var(--nn-paper);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: 14px;
+}
+
+.welcome-cell-guide {
+  stroke: var(--nn-line);
+  stroke-width: 0.8;
+  stroke-dasharray: 3 3;
+}
+
+.welcome-stroke {
+  fill: none;
+  stroke: var(--nn-jp);
+  stroke-width: 6;
+  stroke-linecap: round;
+}
+
+.welcome-stroke.is-live {
+  stroke: var(--nn-kaki);
+  stroke-dasharray: 1;
+  animation: welcome-stroke 2.6s ease-in-out infinite;
+}
+
+@keyframes welcome-stroke {
+  0%,
+  15% {
+    stroke-dashoffset: 1;
+  }
+  60%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.welcome-caption {
+  margin: 0;
+  font-size: 13px;
+  color: var(--nn-ink-2);
+}
+
+.welcome-foot {
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 1rem;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--nn-ink-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .welcome-mark path,
+  .welcome-stroke.is-live,
+  .welcome-note {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+@container (max-width: 62rem) {
+  .welcome-hero-notes {
+    grid-template-columns: auto;
+  }
+
+  .welcome-hero-note:nth-child(n + 2) {
+    display: none;
+  }
+}
+
+@container (max-width: 44rem) {
+  .welcome-hero-notes {
+    display: none;
+  }
+}
+
+/* Stacked: the page scrolls instead of squeezing four tiles into a phone. */
+@media (max-width: 900px) {
+  .welcome {
+    height: auto;
+  }
+
+  .welcome-bento {
+    flex: none;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'hero'
+      'auth'
+      'demo'
+      'write';
+  }
+
+  .welcome-ghost {
+    font-size: 8rem;
+  }
+
+  .welcome-wall {
+    min-height: 4.5rem;
+  }
+}

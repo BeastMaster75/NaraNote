@@ -37,11 +37,19 @@ public class UserController {
      * on, and what settles the account/session gate {@link com.naranote.auth.SessionInterceptor}
      * enforces server-side — the two must agree, since this is the only place the frontend
      * gets to ask.
+     *
+     * <p>{@code guest} is a notebook with no account yet: {@code email} is null, and
+     * {@code pendingEmail} is the address they're saving it to while that link is unclicked.
+     * {@code hasPassword} is false for guests and for accounts that only sign in with Google —
+     * Settings asks for a password to delete only when there is one.
      */
     public record Me(
             String displayName,
             String email,
             boolean emailVerified,
+            boolean guest,
+            String pendingEmail,
+            boolean hasPassword,
             String theme,
             boolean furigana,
             int sessionSize,
@@ -70,7 +78,8 @@ public class UserController {
 
     private static final String SELECT =
             """
-            select display_name, email, email_verified, theme, furigana, session_size,
+            select display_name, email, email_verified, is_guest, pending_email,
+                   (password_hash is not null and not is_guest) as has_password, theme, furigana, session_size,
                    target_jlpt_level, gemini_api_key is not null as has_gemini_key
             from app_user where id = ?
             """;
@@ -146,6 +155,9 @@ public class UserController {
                                 rs.getString("display_name"),
                                 rs.getString("email"),
                                 rs.getBoolean("email_verified"),
+                                rs.getBoolean("is_guest"),
+                                rs.getString("pending_email"),
+                                rs.getBoolean("has_password"),
                                 rs.getString("theme"),
                                 rs.getBoolean("furigana"),
                                 rs.getInt("session_size"),

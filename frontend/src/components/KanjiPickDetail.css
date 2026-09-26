@@ -35,7 +35,9 @@
 
 .pick-meaning {
   margin: 0;
-  font-family: var(--nn-font-display);
+  font-family: var(--nn-font-ui);
+  font-weight: 800;
+  letter-spacing: -0.015em;
   font-size: 1.25rem;
   line-height: 1.25;
   color: var(--nn-ink);

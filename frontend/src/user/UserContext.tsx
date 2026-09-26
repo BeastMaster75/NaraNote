@@ -12,9 +12,16 @@ export type Theme = 'system' | 'light' | 'dark'
 
 export type Me = {
   displayName: string
-  email: string
+  /** Null for a guest — they have no account yet, only this browser's session. */
+  email: string | null
   /** Gates RequireVerified on the frontend; SessionInterceptor enforces the same thing server-side. */
   emailVerified: boolean
+  /** A notebook with no account: only this browser's session reaches it. */
+  guest: boolean
+  /** Where a guest is saving their collection, until they click the link mailed there. */
+  pendingEmail: string | null
+  /** False for guests and Google-only accounts: nothing to ask for before deleting. */
+  hasPassword: boolean
   theme: Theme
   furigana: boolean
   sessionSize: number
@@ -33,8 +40,11 @@ export type Me = {
  */
 const DEFAULTS: Me = {
   displayName: 'local',
-  email: '',
+  email: null,
   emailVerified: true,
+  guest: false,
+  pendingEmail: null,
+  hasPassword: false,
   theme: 'system',
   furigana: true,
   sessionSize: 20,
@@ -55,6 +65,13 @@ type UserContextValue = {
   login: (email: string, password: string) => Promise<string | null>
   register: (email: string, password: string) => Promise<string | null>
   logout: () => Promise<void>
+  /**
+   * "Continue as Guest": a notebook with just a name, opening with whatever kanji were
+   * collected in the welcome page's demo.
+   */
+  startGuest: (displayName: string, kanji: string[]) => Promise<string | null>
+  /** A guest saving their collection to an email; nothing changes until the mailed link is clicked. */
+  saveGuest: (email: string, password: string) => Promise<string | null>
   /** Consumes a link's token; refreshes `me` so emailVerified flips on success. */
   verifyEmail: (token: string) => Promise<string | null>
   /** Re-sends the verification email to the signed-in account. */
@@ -63,10 +80,11 @@ type UserContextValue = {
   forgotPassword: (email: string) => Promise<string | null>
   resetPassword: (token: string, newPassword: string) => Promise<string | null>
   /**
-   * Deletes the account and everything in it, confirmed with the password. On success the
-   * server has already cleared the session cookie, and status flips to anonymous.
+   * Deletes the account and everything in it, confirmed with the password when the account
+   * has one (guests and Google-only accounts don't). On success the server has already cleared
+   * the session cookie, and status flips to anonymous.
    */
-  deleteAccount: (password: string) => Promise<string | null>
+  deleteAccount: (password?: string) => Promise<string | null>
 }
 
 const UserContext = createContext<UserContextValue>({
@@ -77,6 +95,8 @@ const UserContext = createContext<UserContextValue>({
   login: async () => 'Not ready yet.',
   register: async () => 'Not ready yet.',
   logout: async () => undefined,
+  startGuest: async () => 'Not ready yet.',
+  saveGuest: async () => 'Not ready yet.',
   verifyEmail: async () => 'Not ready yet.',
   resendVerification: async () => 'Not ready yet.',
   forgotPassword: async () => 'Not ready yet.',
@@ -197,6 +217,46 @@ export function UserProvider({ children }: { children: ReactNode }) {
     setStatus('anonymous')
   }, [])
 
+  const startGuest = useCallback(
+    async (displayName: string, kanji: string[]) => {
+      const response = await fetch('/api/auth/guest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ displayName, kanji }),
+      })
+      if (!response.ok) {
+        if (response.status === 429) return 'Too many attempts. Try again in a few minutes.'
+        if (response.status === 400) return 'Enter a name up to 80 characters.'
+        // 409: this browser already has a session — go and use it.
+        if (response.status !== 409) return 'Something went wrong.'
+      }
+      await checkSession()
+      return null
+    },
+    [checkSession],
+  )
+
+  const saveGuest = useCallback(
+    async (email: string, password: string) => {
+      const response = await fetch('/api/auth/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      if (!response.ok) {
+        if (response.status === 409) return 'That email already has an account.'
+        if (response.status === 429) return 'Too many attempts. Try again in a few minutes.'
+        if (response.status === 400) {
+          return 'Check your email and use a password of at least 8 characters.'
+        }
+        return 'Something went wrong.'
+      }
+      await checkSession()
+      return null
+    },
+    [checkSession],
+  )
+
   const verifyEmail = useCallback(
     async (token: string) => {
       const response = await fetch('/api/auth/verify', {
@@ -205,9 +265,13 @@ export function UserProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify({ token }),
       })
       if (!response.ok) {
-        return response.status === 400
-          ? 'That verification link is invalid or has expired.'
-          : 'Something went wrong.'
+        if (response.status === 400) return 'That verification link is invalid or has expired.'
+        // A guest's address was registered by someone else before they clicked — see
+        // EmailVerificationService. Their notebook is untouched.
+        if (response.status === 409) {
+          return 'That email got an account in the meantime. Your collection is safe — save it to another address.'
+        }
+        return 'Something went wrong.'
       }
       await checkSession()
       return null
@@ -256,11 +320,11 @@ export function UserProvider({ children }: { children: ReactNode }) {
     return null
   }, [])
 
-  const deleteAccount = useCallback(async (password: string) => {
+  const deleteAccount = useCallback(async (password?: string) => {
     const response = await fetch('/api/auth/account', {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ password }),
+      body: JSON.stringify({ password: password || null }),
     })
     if (!response.ok) {
       // 403 is a wrong password on a session that's still fine — see AuthController.
@@ -282,6 +346,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      startGuest,
+      saveGuest,
       verifyEmail,
       resendVerification,
       forgotPassword,
@@ -295,6 +361,8 @@ export function UserProvider({ children }: { children: ReactNode }) {
       login,
       register,
       logout,
+      startGuest,
+      saveGuest,
       verifyEmail,
       resendVerification,
       forgotPassword,

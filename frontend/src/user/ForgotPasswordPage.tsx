@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
-import { Page } from '../components/Page'
+import { AuthShell } from '../components/AuthShell'
 import { useUser } from './UserContext'
 import './AuthPage.css'
 
@@ -27,48 +27,46 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <Page title="Forgot Password">
-      <div className="focus">
-        {sent ? (
-          <div className="card auth-form">
-            <p>
-              If an account exists for <strong>{email}</strong>, we&rsquo;ve sent a link to
-              reset its password. The link is good for 1 hour.
-            </p>
-            <p className="muted small">
-              <Link to="/login">Back to Log In</Link>
-            </p>
-          </div>
-        ) : (
-          <form className="card auth-form" onSubmit={submit}>
-            <p className="muted small">
-              Enter the email on your account and we&rsquo;ll send a link to reset your
-              password.
-            </p>
-            <label className="auth-field">
-              <span>Email</span>
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                autoComplete="email"
-                autoFocus
-                required
-              />
-            </label>
+    <AuthShell title="Forgot Password">
+      {sent ? (
+        <div className="card auth-form">
+          <p>
+            If an account exists for <strong>{email}</strong>, we&rsquo;ve sent a link to
+            reset its password. The link is good for 1 hour.
+          </p>
+          <p className="muted small">
+            <Link to="/login">Back to Log In</Link>
+          </p>
+        </div>
+      ) : (
+        <form className="card auth-form" onSubmit={submit}>
+          <p className="muted small">
+            Enter the email on your account and we&rsquo;ll send a link to reset your
+            password.
+          </p>
+          <label className="auth-field">
+            <span>Email</span>
+            <input
+              type="email"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              autoComplete="email"
+              autoFocus
+              required
+            />
+          </label>
 
-            {error && <p className="error small">{error}</p>}
+          {error && <p className="error small">{error}</p>}
 
-            <button type="submit" className="btn is-primary" disabled={busy}>
-              {busy ? 'Sending…' : 'Send Reset Link'}
-            </button>
+          <button type="submit" className="btn is-primary" disabled={busy}>
+            {busy ? 'Sending…' : 'Send Reset Link'}
+          </button>
 
-            <p className="muted small">
-              <Link to="/login">Back to Log In</Link>
-            </p>
-          </form>
-        )}
-      </div>
-    </Page>
+          <p className="muted small">
+            <Link to="/login">Back to Log In</Link>
+          </p>
+        </form>
+      )}
+    </AuthShell>
   )
 }

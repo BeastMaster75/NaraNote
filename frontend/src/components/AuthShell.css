@@ -1,0 +1,144 @@
+/* Two halves: the brand, in the logo's own pink whichever the theme (brand.css
+   colours never recolour), and the form on the page ground. */
+.auth-shell {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.auth-brand {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: clamp(1.75rem, 4vw, 3.5rem);
+  background: var(--nn-brand-pink);
+  color: var(--nn-brand-cream);
+}
+
+.auth-brand-top {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.auth-brand-name {
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.auth-motto {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  max-width: 11ch;
+  font-size: clamp(2.6rem, 1.6rem + 3vw, 5rem);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  line-height: 1.02;
+}
+
+/* The same hand-drawn stroke as the Home headline, in cream. */
+.auth-motto-mark {
+  background: linear-gradient(
+      transparent 78%,
+      color-mix(in srgb, var(--nn-brand-cream) 45%, transparent) 78%,
+      color-mix(in srgb, var(--nn-brand-cream) 45%, transparent) 92%,
+      transparent 92%
+    );
+}
+
+.auth-notes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  gap: 1.1rem;
+  flex-wrap: wrap;
+}
+
+.auth-note {
+  --fold: 18px;
+  width: 9.5rem;
+  height: 7rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  transform: rotate(var(--tilt, 0deg));
+}
+
+.auth-note-term {
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
+  font-size: 24px;
+}
+
+.auth-note-glyph {
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
+  font-size: 42px;
+  line-height: 1.1;
+}
+
+/* Notes are dimmed on the dark theme to sit on a dark page; here they sit on
+   the brand pink, which never darkens, so they stay at full brightness. */
+[data-theme='dark'] .auth-note {
+  filter: none;
+}
+
+.auth-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+}
+
+.auth-panel {
+  width: 100%;
+  max-width: 24rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  animation: nn-fade 0.22s ease both;
+}
+
+.auth-title {
+  font-size: 2.2rem;
+  color: var(--nn-ink);
+}
+
+/* The form sits straight on the page — the card around it was the thing that
+   made this screen look like every other one. */
+.auth-shell .card.auth-form {
+  max-width: none;
+  padding: 0;
+  background: none;
+  border: 0;
+  border-radius: 0;
+}
+
+@media (max-width: 800px) {
+  .auth-shell {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto 1fr;
+  }
+
+  .auth-brand {
+    gap: 1rem;
+  }
+
+  .auth-motto {
+    max-width: none;
+    font-size: 2rem;
+  }
+
+  .auth-notes {
+    display: none;
+  }
+}

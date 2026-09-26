@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { Link, Navigate, useNavigate, useSearchParams } from 'react-router'
-import { Page } from '../components/Page'
+import { AuthShell } from '../components/AuthShell'
 import { useUser } from './UserContext'
 import './AuthPage.css'
 
@@ -39,45 +39,43 @@ export function ResetPasswordPage() {
   }
 
   return (
-    <Page title="Reset Password">
-      <div className="focus">
-        <form className="card auth-form" onSubmit={submit}>
-          <label className="auth-field">
-            <span>New Password</span>
-            <input
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              autoComplete="new-password"
-              minLength={8}
-              autoFocus
-              required
-            />
-            <span className="muted small">At least 8 characters.</span>
-          </label>
-          <label className="auth-field">
-            <span>Confirm Password</span>
-            <input
-              type="password"
-              value={confirm}
-              onChange={(event) => setConfirm(event.target.value)}
-              autoComplete="new-password"
-              minLength={8}
-              required
-            />
-          </label>
+    <AuthShell title="Reset Password">
+      <form className="card auth-form" onSubmit={submit}>
+        <label className="auth-field">
+          <span>New Password</span>
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            autoFocus
+            required
+          />
+          <span className="muted small">At least 8 characters.</span>
+        </label>
+        <label className="auth-field">
+          <span>Confirm Password</span>
+          <input
+            type="password"
+            value={confirm}
+            onChange={(event) => setConfirm(event.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+        </label>
 
-          {error && <p className="error small">{error}</p>}
+        {error && <p className="error small">{error}</p>}
 
-          <button type="submit" className="btn is-primary" disabled={busy}>
-            {busy ? 'Resetting…' : 'Reset Password'}
-          </button>
+        <button type="submit" className="btn is-primary" disabled={busy}>
+          {busy ? 'Resetting…' : 'Reset Password'}
+        </button>
 
-          <p className="muted small">
-            <Link to="/login">Back to Log In</Link>
-          </p>
-        </form>
-      </div>
-    </Page>
+        <p className="muted small">
+          <Link to="/login">Back to Log In</Link>
+        </p>
+      </form>
+    </AuthShell>
   )
 }

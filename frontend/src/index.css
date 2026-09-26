@@ -1,5 +1,6 @@
 @import './styles/tokens.css';
 @import './styles/brand.css';
+@import './styles/sticky.css';
 
 /* Local additions to the palette. Kept here rather than in tokens.css, which is
    lifted wholesale from the design export and would lose anything added to it.
@@ -11,10 +12,26 @@
 :root {
   --nn-field: #fffdfc;
   --nn-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* One radius per kind of thing, instead of a pill on everything: tiles are
+     soft, controls are soft squares, chips are small, and pills are kept for
+     tags that really are tags. */
+  --nn-r-tile: 24px;
+  --nn-r-control: 12px;
+  --nn-r-chip: 8px;
+
+  /* The inverted tile — dark on the light theme, cream on the dark one. The
+     accent swaps too: the deep nadeshiko is too dim on near-black. */
+  --nn-inverse-bg: #2b1f22;
+  --nn-inverse-fg: #fbf1ec;
+  --nn-inverse-accent: #f08ca3;
 }
 
 [data-theme='dark'] {
   --nn-field: #1a1114;
+  --nn-inverse-bg: #f5e6ea;
+  --nn-inverse-fg: #1e1417;
+  --nn-inverse-accent: #c9506b;
 }
 
 *,
@@ -34,12 +51,16 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Headings are the UI face at heavy weight, not the Caprasimo display face:
+   a novelty serif on every heading read as a template theme. Caprasimo now
+   belongs to nothing but the brand. */
 h1,
 h2,
 h3,
 h4 {
-  font-family: var(--nn-font-display);
-  font-weight: 400;
+  font-family: var(--nn-font-ui);
+  font-weight: 800;
+  letter-spacing: -0.02em;
   line-height: 1.12;
   margin: 0;
 }
@@ -219,6 +240,20 @@ input:-webkit-autofill:focus-visible {
 /* For any Japanese carrying furigana. */
 .jp-ruby {
   line-height: var(--nn-jp-lh);
+}
+
+/* The word you saved, marked in its sentence with a highlighter stroke across
+   the lower half — the way you'd mark a book. Colour stays the text's own. */
+.nn-marker {
+  color: inherit;
+  font-weight: 700;
+  background: linear-gradient(
+    transparent 55%,
+    color-mix(in srgb, var(--nn-yamabuki) 50%, transparent) 55%,
+    color-mix(in srgb, var(--nn-yamabuki) 50%, transparent) 92%,
+    transparent 92%
+  );
+  padding: 0 0.1em;
 }
 
 /* The single sanctioned exception to full-contrast Japanese: words the user

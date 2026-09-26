@@ -7,6 +7,16 @@ export type PassageToken = {
 }
 export type PassageSentence = { tokens: PassageToken[] }
 
+/** A word read back wrong, underlined in place. Keyed `sentence:token` in {@link PassageProps.marks}. */
+export type PassageMark = {
+  type: 'misread' | 'skipped'
+  heard: string
+  /** What to play when asked how it should sound — null on every token of a word but its
+   *  last, so a word split across tokens gets one button, not one per piece. */
+  say: string | null
+  word: string
+}
+
 /** Ruby over kana is noise — only annotate a word that actually contains kanji. */
 export function hasKanji(text: string) {
   return /[㐀-鿿]/.test(text)
@@ -29,6 +39,9 @@ type PassageProps = {
   /** Sentence indexes to keep at full contrast; every other sentence dims. Omit
    *  (Mining does) to leave every sentence at full contrast. */
   activeSentenceIndexes?: Set<number>
+  /** Read's check result. Omitted everywhere else. */
+  marks?: Map<string, PassageMark>
+  onSay?: (text: string) => void
 }
 
 /**
@@ -43,6 +56,8 @@ export function Passage({
   selected,
   onKanjiTap,
   activeSentenceIndexes,
+  marks,
+  onSay,
 }: PassageProps) {
   return (
     <div className="sentences">
@@ -80,13 +95,42 @@ export function Passage({
                 ),
               )
 
-              return furigana && token.reading && hasKanji(token.surface) ? (
-                <ruby key={tokenIndex}>
-                  {chars}
-                  <rt>{token.reading}</rt>
-                </ruby>
-              ) : (
-                <span key={tokenIndex}>{chars}</span>
+              const word =
+                furigana && token.reading && hasKanji(token.surface) ? (
+                  <ruby key={tokenIndex}>
+                    {chars}
+                    <rt>{token.reading}</rt>
+                  </ruby>
+                ) : (
+                  <span key={tokenIndex}>{chars}</span>
+                )
+
+              const mark = marks?.get(`${index}:${tokenIndex}`)
+              if (!mark) return word
+
+              // A separate button rather than making the word itself clickable: the kanji
+              // inside it are already buttons, and one tap can't mean both "look this up"
+              // and "say it".
+              return (
+                <span
+                  key={tokenIndex}
+                  className={`tok-mark is-${mark.type}`}
+                  title={mark.type === 'skipped' ? 'Skipped' : `Heard ${mark.heard}`}
+                >
+                  {word}
+                  {mark.say && (
+                    <button
+                      type="button"
+                      className="tok-say"
+                      onClick={() => onSay?.(mark.say!)}
+                      aria-label={`Hear ${mark.word} said correctly`}
+                    >
+                      <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M11 5 6 9H2v6h4l5 4z M15.5 8.5a5 5 0 0 1 0 7" />
+                      </svg>
+                    </button>
+                  )}
+                </span>
               )
             })}
           </p>

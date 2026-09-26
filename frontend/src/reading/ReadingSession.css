@@ -17,11 +17,23 @@
   flex-direction: column;
 }
 
+/* The passage is what you are reading aloud, so it takes most of the row; the
+   control beside it is a column, not an equal half. */
 .reading-detail,
 .reading-control {
-  flex: 1;
+  flex: 0 1 clamp(20rem, 36%, 32rem);
   min-width: 0;
   align-self: stretch;
+}
+
+/* Mine caps the passage at a reading measure; here the control column is the
+   other half, and a cap left a strip of empty page between the two. */
+.reading-passage .sentences {
+  max-width: none;
+}
+
+.reading-passage .sentence {
+  font-size: clamp(var(--nn-jp-body), 0.9rem + 0.6vw, 26px);
 }
 
 .reading-control {
@@ -42,10 +54,114 @@
 }
 
 .reading-record {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.6rem;
-  align-items: flex-start;
+  align-items: center;
+  justify-content: center;
+  gap: 0.9rem;
+  text-align: center;
+}
+
+/* ── The record tile: inverted, like "Ready to Review" on Home ─────────── */
+
+.card.reading-control.is-recording-panel {
+  padding: 1.5rem;
+}
+
+.reading-part {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.reading-part-number {
+  font-size: clamp(3.5rem, 10vh, 6rem);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.reading-part-of {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--nn-ink-2);
+}
+
+.reading-record-hint {
+  margin: 0;
+  max-width: 26ch;
+  font-size: 15px;
+  color: var(--nn-ink-2);
+}
+
+.reading-mic {
+  margin-top: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.7rem;
+  padding: 0;
+  cursor: pointer;
+  border: 0;
+  background: none;
+  color: var(--nn-ink);
+  font: inherit;
+}
+
+.reading-mic-icon {
+  box-sizing: content-box;
+  width: 2.2rem;
+  height: 2.2rem;
+  padding: 1.6rem;
+  border-radius: 50%;
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--nn-kaki) 45%, transparent);
+  transition: transform 0.15s var(--nn-ease);
+}
+
+.reading-mic:hover .reading-mic-icon {
+  transform: scale(1.05);
+}
+
+.reading-mic:active .reading-mic-icon {
+  transform: scale(0.96);
+}
+
+/* The stop square, drawn rather than an icon: a square inside the circle. */
+.reading-mic-icon.is-stop {
+  display: block;
+  background:
+    linear-gradient(var(--nn-on-accent), var(--nn-on-accent)) center / 1.3rem 1.3rem no-repeat,
+    var(--nn-kaki);
+}
+
+/* Recording: a slow ring breathing out from the button, so it is obvious
+   the microphone is live without any text having to say so. */
+.reading-mic.is-live .reading-mic-icon {
+  animation: reading-live 1.4s ease-out infinite;
+}
+
+@keyframes reading-live {
+  from {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--nn-kaki) 55%, transparent);
+  }
+  to {
+    box-shadow: 0 0 0 1.4rem color-mix(in srgb, var(--nn-kaki) 0%, transparent);
+  }
+}
+
+.reading-mic-label {
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .reading-loading {
@@ -82,13 +198,10 @@
 
 .reading-verdict {
   align-self: flex-start;
-  font-family: var(--nn-font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 12.5px;
+  font-weight: 700;
   padding: 0.2rem 0.6rem;
-  border-radius: var(--nn-r-pill);
+  border-radius: var(--nn-r-chip);
   background: var(--nn-kaki-tint);
   color: var(--nn-ink-3);
 }
@@ -108,19 +221,82 @@
   line-height: 1.85;
 }
 
+/* One row per word: play, the word as written, how it should sound, what was
+   heard. A grid so the four line up down the list instead of ragging. */
 .reading-misreads {
   list-style: none;
   margin: 0;
-  padding: 0.6rem 0.75rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  padding: 0.5rem 0.75rem;
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  align-items: center;
+  gap: 0.35rem 0.8rem;
   background: var(--nn-sunk);
   border-radius: var(--nn-r-md);
 }
 
+.reading-misread {
+  display: contents;
+}
+
+.reading-misread-word {
+  font-size: 18px;
+  color: var(--nn-jp);
+}
+
+.reading-misread-says {
+  color: var(--nn-ink-2);
+}
+
+.reading-misread-heard .jp {
+  color: var(--nn-bengara);
+}
+
+.reading-say {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.9rem;
+  height: 1.9rem;
+  padding: 0;
+  cursor: pointer;
+  color: var(--nn-kaki);
+  background: var(--nn-raised);
+  border: 1px solid var(--nn-line);
+  border-radius: 50%;
+}
+
+.reading-say:hover,
+.reading-say:focus-visible {
+  border-color: var(--nn-kaki);
+  background: var(--nn-kaki-tint);
+}
+
+.reading-say svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .reading-feedback {
   margin: 0;
+}
+
+.reading-heard summary {
+  cursor: pointer;
+}
+
+.reading-heard .reading-transcript {
+  margin-top: 0.4rem;
+}
+
+.reading-result-actions {
+  display: flex;
+  gap: 0.6rem;
 }
 
 .reading-summary {

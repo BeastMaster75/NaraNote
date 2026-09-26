@@ -38,11 +38,13 @@ public class KanjiLibraryController {
         return ResponseEntity.noContent().build();
     }
 
-    /** @param source where these characters came from; must be BATCH or READING if given —
-     *  MANUAL is reserved for the single-character add above. Defaults to BATCH. */
+    /** @param source where these characters came from; must be BATCH, READING or DEMO if given —
+     *  MANUAL is reserved for the single-character add above. Defaults to BATCH. DEMO is the
+     *  welcome page's demo, carried into a notebook started with Google (a guest's arrives
+     *  with {@code /api/auth/guest} instead). */
     public record BatchRequest(@NotEmpty List<String> literals, String source) {}
 
-    private static final List<String> ALLOWED_BATCH_SOURCES = List.of("BATCH", "READING");
+    private static final List<String> ALLOWED_BATCH_SOURCES = List.of("BATCH", "READING", "DEMO");
 
     /** Add many characters at once. Idempotent: duplicates and already-saved are counted, not rejected. */
     @PutMapping("/batch")

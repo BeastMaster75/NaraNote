@@ -39,10 +39,12 @@
 
 .review-meaning {
   margin: 0.4rem 0 0;
-  font-family: var(--nn-font-display);
-  font-size: 1.5rem;
+  font-family: var(--nn-font-ui);
+  font-size: 1.6rem;
   line-height: 1.3;
   color: var(--nn-ink);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* The sentence it was mined from. Shown on the answer rather than the prompt —
@@ -73,11 +75,12 @@
 }
 
 kbd {
-  font-family: var(--nn-font-mono);
-  font-size: 10px;
+  font-family: var(--nn-font-ui);
+  font-size: 11px;
   padding: 1px 5px;
-  border-radius: 4px;
+  border-radius: 5px;
   background: var(--nn-sunk);
   border: 1px solid var(--nn-line);
   color: var(--nn-ink-3);
+  font-weight: 700;
 }

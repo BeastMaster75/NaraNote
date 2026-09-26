@@ -168,7 +168,7 @@ export function ReviewHub() {
   return (
     <Page title="Review" subtitle="Your kanji, by hand and in words.">
       <div className="tracks">
-        <section className="card track">
+        <section className="card track track-writing">
           <header className="track-head">
             <TrackIcon d={PENCIL} />
             <div>
@@ -232,7 +232,7 @@ export function ReviewHub() {
           )}
         </section>
 
-        <section className="card track">
+        <section className="card track track-words-tile is-inverted">
           <header className="track-head">
             <TrackIcon d={CARDS} />
             <div>

@@ -6,7 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Set;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
@@ -23,7 +22,12 @@ import org.springframework.web.servlet.HandlerInterceptor;
  * <p>Phase 3 adds a second, narrower gate on top: a resolved-but-unverified session is let
  * through only to the handful of paths an unverified account still needs (checking who it
  * is, verifying, resending the email, logging out, resetting a forgotten password) — anything
- * else answers 403 rather than reaching the controller.
+ * else answers 403 rather than reaching the controller. A guest has no address to verify and is
+ * never gated; neither is a guest waiting on the link to save their collection, since the address
+ * stays pending rather than becoming the account's until it's clicked.
+ *
+ * <p>It also keeps sessions sliding: a session in use is renewed at most once a day, and the
+ * cookie re-sent with it (see {@link SessionService}).
  */
 @Component
 public class SessionInterceptor implements HandlerInterceptor {
@@ -36,6 +40,9 @@ public class SessionInterceptor implements HandlerInterceptor {
             Set.of(
                     "/api/auth/register",
                     "/api/auth/login",
+                    "/api/auth/guest",
+                    "/api/auth/google/start",
+                    "/api/auth/google/callback",
                     "/api/auth/logout",
                     "/api/auth/verify",
                     "/api/auth/forgot-password",
@@ -56,21 +63,24 @@ public class SessionInterceptor implements HandlerInterceptor {
                     "/api/auth/forgot-password",
                     "/api/auth/reset-password",
                     "/api/auth/account",
+                    "/api/auth/google/start",
+                    "/api/auth/google/callback",
                     "/api/site");
 
     private final SessionService sessionService;
-    private final JdbcTemplate jdbc;
+    private final SessionCookie sessionCookie;
 
-    public SessionInterceptor(SessionService sessionService, JdbcTemplate jdbc) {
+    public SessionInterceptor(SessionService sessionService, SessionCookie sessionCookie) {
         this.sessionService = sessionService;
-        this.jdbc = jdbc;
+        this.sessionCookie = sessionCookie;
     }
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler)
             throws IOException {
-        Long userId = resolve(request);
-        if (userId == null) {
+        String token = sessionToken(request);
+        SessionService.Session session = sessionService.lookup(token).orElse(null);
+        if (session == null) {
             if (PUBLIC_PATHS.contains(request.getRequestURI())) {
                 return true;
             }
@@ -78,18 +88,15 @@ public class SessionInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        request.setAttribute(CurrentUser.REQUEST_ATTRIBUTE, userId);
-        if (!VERIFICATION_EXEMPT_PATHS.contains(request.getRequestURI()) && !isEmailVerified(userId)) {
+        request.setAttribute(CurrentUser.REQUEST_ATTRIBUTE, session.userId());
+        if (!VERIFICATION_EXEMPT_PATHS.contains(request.getRequestURI()) && !session.verified()) {
             reject(response, HttpServletResponse.SC_FORBIDDEN, "Email not verified");
             return false;
         }
+        if (sessionService.renewIfDue(token, session)) {
+            sessionCookie.set(response, token, session.lifetime());
+        }
         return true;
-    }
-
-    private boolean isEmailVerified(long userId) {
-        Boolean verified =
-                jdbc.queryForObject("select email_verified from app_user where id = ?", Boolean.class, userId);
-        return Boolean.TRUE.equals(verified);
     }
 
     private static void reject(HttpServletResponse response, int status, String message) throws IOException {
@@ -98,14 +105,14 @@ public class SessionInterceptor implements HandlerInterceptor {
         response.getWriter().write("{\"error\":\"%s\"}".formatted(message));
     }
 
-    private Long resolve(HttpServletRequest request) {
+    private static String sessionToken(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
             return null;
         }
         for (Cookie cookie : cookies) {
-            if (AuthController.COOKIE_NAME.equals(cookie.getName())) {
-                return sessionService.resolve(cookie.getValue()).orElse(null);
+            if (SessionCookie.NAME.equals(cookie.getName())) {
+                return cookie.getValue();
             }
         }
         return null;

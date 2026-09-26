@@ -82,9 +82,9 @@
   font-size: 13.5px;
   color: var(--nn-ink);
   caret-color: var(--nn-kaki);
-  background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  background: var(--nn-paper);
+  border: 1.5px solid transparent;
+  border-radius: var(--nn-r-control);
 }
 
 .segmented {
@@ -92,9 +92,8 @@
   width: 100%;
   padding: 3px;
   gap: 3px;
-  border-radius: var(--nn-r-pill);
+  border-radius: var(--nn-r-control);
   background: var(--nn-paper);
-  border: 1px solid var(--nn-line);
 }
 
 .segment {
@@ -107,7 +106,7 @@
   color: var(--nn-ink-2);
   background: transparent;
   border: 0;
-  border-radius: var(--nn-r-pill);
+  border-radius: 9px;
   transition:
     background-color 0.15s ease,
     color 0.15s ease;
@@ -118,8 +117,8 @@
 }
 
 .segment.is-on {
-  background: var(--nn-kaki);
-  color: var(--nn-on-accent);
+  background: var(--nn-ink);
+  color: var(--nn-paper);
 }
 
 .setting-range {
@@ -137,12 +136,14 @@
 }
 
 .setting-value {
-  font-family: var(--nn-font-display);
+  font-family: var(--nn-font-ui);
   font-size: 1.25rem;
   line-height: 1;
   min-width: 2.2ch;
   text-align: right;
   color: var(--nn-ink);
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
 }
 
 .setting-key {
@@ -190,5 +191,39 @@
 
   .setting-control {
     justify-content: flex-start;
+  }
+}
+
+/* A control with an error under it (delete, a guest's pending save): stack them. */
+.setting-control:has(> .error) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.4rem;
+}
+
+/* A guest saving their notebook: Google in one click, or email and password in one row. */
+.save-collection {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.btn.save-google {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.save-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  gap: 0.5rem;
+}
+
+@media (max-width: 640px) {
+  .save-form {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

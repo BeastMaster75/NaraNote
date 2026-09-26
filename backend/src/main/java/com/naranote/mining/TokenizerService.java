@@ -11,6 +11,7 @@ import org.apache.lucene.analysis.ja.tokenattributes.BaseFormAttribute;
 import org.apache.lucene.analysis.ja.tokenattributes.PartOfSpeechAttribute;
 import org.apache.lucene.analysis.ja.tokenattributes.ReadingAttribute;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
+import org.apache.lucene.analysis.tokenattributes.OffsetAttribute;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,7 +38,12 @@ public class TokenizerService {
             /** Hiragana, converted from Kuromoji's katakana output. */
             String reading,
             String partOfSpeech,
-            boolean content) {}
+            boolean content,
+            /** Hiragana as spoken rather than as spelled — particle は is わ, 言う is ゆー,
+             *  long vowels come out as ー. What a read-aloud check compares against. */
+            String pronunciation,
+            /** Offset of the surface in the text that was tokenized. */
+            int start) {}
 
     public List<Token> tokenize(String text) {
         List<Token> tokens = new ArrayList<>();
@@ -51,6 +57,7 @@ public class TokenizerService {
             BaseFormAttribute baseForm = tokenizer.addAttribute(BaseFormAttribute.class);
             ReadingAttribute reading = tokenizer.addAttribute(ReadingAttribute.class);
             PartOfSpeechAttribute pos = tokenizer.addAttribute(PartOfSpeechAttribute.class);
+            OffsetAttribute offset = tokenizer.addAttribute(OffsetAttribute.class);
 
             tokenizer.setReader(new StringReader(text));
             tokenizer.reset();
@@ -64,7 +71,9 @@ public class TokenizerService {
                                 base == null ? form : base,
                                 toHiragana(reading.getReading()),
                                 partOfSpeech,
-                                isContent(partOfSpeech, form)));
+                                isContent(partOfSpeech, form),
+                                toHiragana(reading.getPronunciation()),
+                                offset.startOffset()));
             }
             tokenizer.end();
         } catch (IOException e) {

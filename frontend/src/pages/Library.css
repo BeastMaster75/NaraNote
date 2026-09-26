@@ -19,9 +19,9 @@
   min-width: 10rem;
   padding: 0.45rem 0.8rem;
   color: var(--nn-ink);
-  background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-control);
   caret-color: var(--nn-kaki);
 }
 
@@ -32,8 +32,8 @@
   font-size: 13px;
   cursor: pointer;
   background-color: var(--nn-raised);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-control);
   color: var(--nn-ink-2);
 }
 
@@ -45,66 +45,107 @@
   margin-top: 1.25rem;
 }
 
+/* The wall itself. Padding because every note is tilted: without it the
+   corners of the outer notes would poke past the scroll box and be clipped. */
 .library-grid {
   list-style: none;
   margin: 0;
-  padding: 0;
+  padding: 8px 10px 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(16rem, 100%), 1fr));
-  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fill, minmax(min(10.5rem, 100%), 1fr));
+  gap: 22px 18px;
   align-content: start;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
 }
 
+/* The li carries the tilt and the shadow — the paper's clip-path (the folded
+   corner) would cut a shadow off. Same as the notes on Home. Hover only
+   straightens it: a lift would be clipped at the top of the scroll box. */
 .library-cell {
   position: relative;
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 0.25s var(--nn-ease);
+  filter: drop-shadow(0 2px 0 rgba(90, 40, 55, 0.14));
 }
 
+.library-cell:hover,
+.library-cell:focus-within {
+  transform: rotate(0deg);
+}
+
+[data-theme='dark'] .library-cell {
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
+}
+
+/* The note (.sticky, styles/sticky.css). */
 .library-card {
+  --fold: 18px;
+  height: 100%;
+  min-height: 11rem;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 1rem;
-  padding: 0.9rem 2.2rem 0.9rem 1.1rem;
-  text-decoration: none;
-  color: inherit;
-  background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-md);
+  justify-content: center;
+  gap: 0.2rem;
+  padding: 0.9rem 0.9rem 1.1rem;
+  text-align: center;
 }
 
 .library-card:hover {
-  border-color: var(--nn-kaki);
-  color: inherit;
+  --fold: 26px;
 }
 
-/* Serif for the studied character, matching the kanji page — this is the
-   character as an object of study, not UI text. */
 .library-glyph {
-  font-family: var(--nn-font-jp-serif);
-  font-size: var(--nn-jp-xl);
-  line-height: 1;
-  color: var(--nn-jp);
-}
-
-.library-meta {
-  display: flex;
-  flex-direction: column;
-  gap: 0.15rem;
-  min-width: 0;
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
+  font-size: 52px;
+  line-height: 1.15;
+  margin-bottom: 0.25rem;
 }
 
 .library-meaning {
-  font-size: 13.5px;
-  color: var(--nn-ink);
+  font-size: 13px;
+}
+
+.library-readings {
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.library-readings {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.library-facts {
+  margin-top: 0.15rem;
+  font-size: 11.5px;
+  color: color-mix(in srgb, var(--note-ink) 55%, var(--paper));
+}
+
+/* The theme's grey × is cream on the dark theme — invisible on light paper. */
+.library-cell .row-delete {
+  top: 0.45rem;
+  right: 0.55rem;
+  color: color-mix(in srgb, var(--note-ink, #1d1315) 55%, transparent);
+}
+
+.library-cell .row-delete:hover {
+  color: var(--nn-bengara);
+}
+
+/* Phones: two notes a row rather than one poster-sized note. */
+@media (max-width: 600px) {
+  .library-grid {
+    grid-template-columns: repeat(auto-fill, minmax(min(8.5rem, 100%), 1fr));
+    gap: 18px 14px;
+  }
+
+  .library-card {
+    min-height: 9.5rem;
+    padding: 0.75rem 0.6rem 0.95rem;
+  }
+
+  .library-glyph {
+    font-size: 44px;
+  }
 }

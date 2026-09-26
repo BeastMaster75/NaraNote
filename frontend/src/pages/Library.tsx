@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router'
 import { BatchAddModal } from './BatchAddModal'
 import { KanjiFilterBar } from '../components/KanjiFilterBar'
 import { Page } from '../components/Page'
 import './Library.css'
+import { stickyClass, stickyTilt } from '../components/sticky'
 
 type KanjiEntry = {
   literal: string
@@ -40,6 +41,18 @@ function sortValue(entry: KanjiEntry, key: SortKey): number | null {
     default:
       return null
   }
+}
+
+/**
+ * One on and one kun reading, as said rather than as KANJIDIC marks them up —
+ * ひか.る is ひかる and -ぞ.い is ぞい on a note. Every reading, with the
+ * okurigana boundary, is one click away on the kanji's own page.
+ */
+function noteReadings(entry: KanjiEntry) {
+  return [entry.onReadings[0], entry.kunReadings[0]]
+    .filter(Boolean)
+    .map((reading) => reading.replace(/\./g, '').replace(/^-|-$/g, ''))
+    .join('・')
 }
 
 /**
@@ -182,23 +195,35 @@ export function Library() {
           )}
 
           <ul className="library-grid">
-            {filteredKanji?.map((entry) => (
-              <li key={entry.literal} className="library-cell">
+            {filteredKanji?.map((entry, index) => (
+              <li
+                key={entry.literal}
+                className="library-cell"
+                style={{ '--tilt': stickyTilt(index) } as CSSProperties}
+              >
                 {/* Into your own sentences, not the dictionary entry: from the
                     collection the interesting question is where you met it. The
                     full entry is one link away on that page. */}
-                <Link to={`/collection/${entry.literal}`} className="library-card">
-                  <span className="library-glyph">{entry.literal}</span>
-                  <span className="library-meta">
-                    <span className="library-meaning">
-                      {entry.meanings.slice(0, 3).join(', ') || '—'}
-                    </span>
-                    <span className="library-readings jp-sm">
-                      {[...entry.onReadings, ...entry.kunReadings].slice(0, 3).join('・') || '—'}
-                    </span>
-                    <span className="muted small">
-                      {entry.strokeCount ? `${entry.strokeCount} strokes` : ''}
-                    </span>
+                <Link
+                  to={`/collection/${entry.literal}`}
+                  className={`library-card ${stickyClass(index)}`}
+                >
+                  <span className="library-glyph jp" lang="ja">
+                    {entry.literal}
+                  </span>
+                  <span className="sticky-caption library-meaning">
+                    {entry.meanings.slice(0, 3).join(', ') || '—'}
+                  </span>
+                  <span className="library-readings jp-sm" lang="ja">
+                    {noteReadings(entry) || '—'}
+                  </span>
+                  <span className="library-facts">
+                    {[
+                      entry.jlptLevel && `N${entry.jlptLevel}`,
+                      entry.strokeCount && `${entry.strokeCount} strokes`,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')}
                   </span>
                 </Link>
                 <button

@@ -5,6 +5,7 @@ import { Page } from '../components/Page'
 import { hasKanji, Passage, sentenceText } from '../components/Passage'
 import { useUser } from '../user/UserContext'
 import './MiningPage.css'
+import { stickyClass } from '../components/sticky'
 
 type Sense = { partOfSpeech: string[]; glosses: string[] }
 type Entry = {
@@ -192,7 +193,7 @@ export function MiningPage() {
             it never swaps the whole page shape out from under the two panes
             below, which stay put throughout. */}
         {!result ? (
-          <section className="card mining-bar">
+          <section className="mining-bar">
             <input
               className="mining-source"
               value={source}
@@ -223,7 +224,7 @@ export function MiningPage() {
             </div>
           </section>
         ) : (
-          <section className="card mining-bar">
+          <section className="mining-bar">
             <div className="mining-stats">
               <div className="stat-bar" aria-hidden="true">
                 <span className="stat-known" style={{ width: `${coverage ?? 0}%` }} />
@@ -366,12 +367,19 @@ function TranslationPanel({
 }) {
   if (!hasKey) {
     return (
-      <section className="word-detail card mining-translation-panel">
-        <header className="word-head">
-          <span className="kicker">Translation</span>
-        </header>
+      <section className="word-detail card mining-translation-panel is-idle">
+        {/* Without a key this pane has one job left — showing a tapped kanji —
+            so it says that, rather than being a box with one line in a corner. */}
+        <span className="mining-idle-glyph" aria-hidden="true">
+          字
+        </span>
+        <h3 className="tile-title">Tap Any Kanji</h3>
+        <p className="muted">
+          Analyse a passage, then tap a kanji in it to see it here and add it to your
+          collection.
+        </p>
         <p className="muted small">
-          Add a Gemini API key in <Link to="/settings">Settings</Link> to translate.
+          To translate as well, add a Gemini API key in <Link to="/settings">Settings</Link>.
         </p>
       </section>
     )
@@ -433,14 +441,14 @@ function RecentlyCollected({ items }: { items: Collected[] | null }) {
     <section className="mining-recent">
       <h3 className="kicker">Recently Collected</h3>
       <ol className="mining-collected-list">
-        {items.slice(0, RECENT_LIMIT).map((item) => (
+        {items.slice(0, RECENT_LIMIT).map((item, index) => (
           <li key={item.literal}>
             <Link
               to={`/collection/${encodeURIComponent(item.literal)}`}
-              className="card mining-collected-card"
+              className={`mining-collected-card ${stickyClass(index)}`}
             >
               <span className="mining-collected-glyph">{item.literal}</span>
-              <span className="mining-collected-meaning small">
+              <span className="sticky-caption">
                 {item.meanings.slice(0, 2).join(', ') || '—'}
               </span>
             </Link>

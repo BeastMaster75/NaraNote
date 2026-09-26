@@ -14,17 +14,18 @@
   gap: 0.35rem;
   font-size: 13px;
   color: var(--nn-ink-2);
+  font-weight: 600;
 }
 
 .auth-field input {
-  padding: 0.6rem 0.9rem;
+  padding: 0.7rem 0.95rem;
   font: inherit;
   font-size: 14px;
   color: var(--nn-ink);
   caret-color: var(--nn-kaki);
-  background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-md);
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-control);
 }
 
 .auth-field input:focus-visible {
@@ -43,4 +44,29 @@
   color: var(--nn-kaki);
   text-decoration: underline;
   cursor: pointer;
+}
+
+.btn.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding-block: 0.7rem;
+  font-size: 14px;
+  color: var(--nn-ink);
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+}
+
+.auth-or {
+  margin: 0;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--nn-ink-3);
+}
+
+/* A link styled as the form's button (the Log In after confirming an email) centres its
+   label like a real button does. */
+.auth-form > a.btn {
+  text-align: center;
 }

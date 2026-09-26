@@ -33,14 +33,15 @@
 }
 
 .page-head h2 {
-  font-size: 1.75rem;
+  font-size: 1.9rem;
   color: var(--nn-ink);
 }
 
 .page-subtitle {
   margin: 0;
-  font-size: 13.5px;
-  color: var(--nn-ink-2);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--nn-ink-3);
 }
 
 .page-actions {

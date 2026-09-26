@@ -2,7 +2,14 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router'
 import { KanjiPickDetail } from '../components/KanjiPickDetail'
 import { Page } from '../components/Page'
-import { hasKanji, Passage, sentenceText, type PassageSentence } from '../components/Passage'
+import {
+  hasKanji,
+  Passage,
+  sentenceText,
+  type PassageMark,
+  type PassageSentence,
+} from '../components/Passage'
+import { ttsUrl } from '../components/tts'
 import { useUser } from '../user/UserContext'
 import { chunkSentences } from './chunking'
 import { EvaluationResult, type EvaluateResponse } from './EvaluationResult'
@@ -79,12 +86,46 @@ export function ReadingSession() {
   }, [handOff])
 
   const chunks = useMemo(() => (result ? chunkSentences(result.sentences) : []), [result])
-  const activeChunk = chunks[chunkIndex] ?? []
+  const activeChunk = useMemo(() => chunks[chunkIndex] ?? [], [chunks, chunkIndex])
   const activeSentenceIndexes = useMemo(() => new Set(activeChunk), [activeChunk])
   const expectedText = useMemo(
     () => (result ? activeChunk.map((i) => sentenceText(result.sentences[i])).join('') : ''),
     [result, activeChunk],
   )
+
+  // The check answers in offsets into expectedText; walking the chunk's tokens in
+  // the same order that text was built from turns each back into the tokens it
+  // covers. Offsets, not the server's own tokenization, so the two tokenizing a
+  // sentence slightly differently can't put an underline on the wrong word.
+  const marks = useMemo(() => {
+    const map = new Map<string, PassageMark>()
+    if (!result || phase !== 'result' || !evaluation) return map
+    let offset = 0
+    for (const sentenceIndex of activeChunk) {
+      result.sentences[sentenceIndex].tokens.forEach((token, tokenIndex) => {
+        const from = offset
+        const to = offset + token.surface.length
+        offset = to
+        const misread = evaluation.misreads.find((m) => m.start < to && m.end > from)
+        if (!misread) return
+        map.set(`${sentenceIndex}:${tokenIndex}`, {
+          type: misread.type,
+          heard: misread.heard,
+          say: to >= misread.end ? misread.say : null,
+          word: misread.expected,
+        })
+      })
+    }
+    return map
+  }, [result, phase, evaluation, activeChunk])
+
+  const voice = useRef<HTMLAudioElement | null>(null)
+  const say = useCallback((text: string) => {
+    voice.current?.pause()
+    voice.current = new Audio(ttsUrl(text))
+    voice.current.play().catch(() => {})
+  }, [])
+  useEffect(() => () => voice.current?.pause(), [])
 
   // Every kanji across the whole passage, not just the current chunk — the
   // summary at the end offers all of them, since the point is "what did you
@@ -116,6 +157,11 @@ export function ReadingSession() {
       setEvalError(error instanceof Error ? error.message : 'Evaluation failed.')
       setPhase('record')
     }
+  }
+
+  function retryChunk() {
+    setEvaluation(null)
+    setPhase('record')
   }
 
   function nextChunk() {
@@ -158,6 +204,8 @@ export function ReadingSession() {
             selected={kanjiPick}
             onKanjiTap={(literal, sentence) => setKanjiPick({ literal, sentence })}
             activeSentenceIndexes={phase === 'summary' ? undefined : activeSentenceIndexes}
+            marks={marks}
+            onSay={say}
           />
         </section>
 
@@ -174,7 +222,9 @@ export function ReadingSession() {
             />
           </aside>
         ) : (
-          <aside className="reading-control card">
+          <aside
+            className={`reading-control card${phase === 'summary' || phase === 'evaluating' || (phase === 'result' && evaluation) ? '' : ' is-inverted is-recording-panel'}`}
+          >
             {phase === 'summary' ? (
               <ReadingSummary kanji={passageKanji} library={library} onDone={() => navigate('/read')} />
             ) : phase === 'evaluating' ? (
@@ -183,22 +233,45 @@ export function ReadingSession() {
                 <p className="muted">Listening back and checking it against the text&hellip;</p>
               </div>
             ) : phase === 'result' && evaluation ? (
-              <EvaluationResult result={evaluation} onNext={nextChunk} isLast={chunkIndex + 1 >= chunks.length} />
+              <EvaluationResult
+                result={evaluation}
+                onNext={nextChunk}
+                onRetry={retryChunk}
+                onSay={say}
+                isLast={chunkIndex + 1 >= chunks.length}
+              />
             ) : (
               <div className="reading-record">
-                <h3 className="kicker">
-                  Chunk {chunkIndex + 1} of {chunks.length}
-                </h3>
-                <p className="muted small">Read the highlighted text aloud, then stop to check it.</p>
+                <p className="reading-part">
+                  <span className="reading-part-number">{chunkIndex + 1}</span>
+                  <span className="reading-part-of">of {chunks.length}</span>
+                </p>
+                <p className="reading-record-hint">
+                  Read the highlighted text aloud, then stop to check it.
+                </p>
                 {evalError && <p className="error small">{evalError}</p>}
                 {recorder.error && <p className="error small">{recorder.error}</p>}
+                {/* One big round button, the way a recorder looks — the one thing
+                    to do on this screen shouldn't be a small pill in a corner. */}
                 {recorder.state === 'recording' ? (
-                  <button type="button" className="btn is-primary" onClick={stopAndEvaluate}>
-                    Stop &amp; Check
+                  <button
+                    type="button"
+                    className="reading-mic is-live"
+                    onClick={stopAndEvaluate}
+                  >
+                    <span className="reading-mic-icon is-stop" aria-hidden="true" />
+                    <span className="reading-mic-label">Stop &amp; Check</span>
                   </button>
                 ) : (
-                  <button type="button" className="btn is-primary" onClick={recorder.start}>
-                    Record
+                  <button type="button" className="reading-mic" onClick={recorder.start}>
+                    <svg
+                      className="reading-mic-icon"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3z M19 11a7 7 0 0 1-14 0 M12 18v3" />
+                    </svg>
+                    <span className="reading-mic-label">Record</span>
                   </button>
                 )}
               </div>

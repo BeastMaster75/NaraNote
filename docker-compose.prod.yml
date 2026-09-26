@@ -101,6 +101,9 @@ services:
       NARANOTE_MAIL_SMTP_AUTH: "true"
       NARANOTE_MAIL_SMTP_STARTTLS: "true"
       NARANOTE_MAIL_FROM: ${NARANOTE_MAIL_FROM:?set NARANOTE_MAIL_FROM in .env}
+      # Optional: Google sign-in stays off while these are empty.
+      NARANOTE_GOOGLE_CLIENT_ID: ${NARANOTE_GOOGLE_CLIENT_ID:-}
+      NARANOTE_GOOGLE_CLIENT_SECRET: ${NARANOTE_GOOGLE_CLIENT_SECRET:-}
     # No published port: the only way in is through Caddy. Reference data for
     # the one-off import commands is read from ./data (docs/deployment.md).
     volumes:

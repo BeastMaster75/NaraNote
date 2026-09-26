@@ -75,7 +75,7 @@ export function useFitRows(count: number, rowHeight: number) {
 }
 
 /** The element's layout size, kept current. See useFitTiles for the rules. */
-function useBox() {
+export function useBox() {
   const [node, setNode] = useState<HTMLElement | null>(null)
   const [box, setBox] = useState<{ width: number; height: number } | null>(null)
 

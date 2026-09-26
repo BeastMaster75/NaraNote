@@ -1,0 +1,49 @@
+.save-prompt {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 20;
+  width: min(22rem, calc(100vw - 2.5rem));
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.1rem 1.2rem 1.15rem;
+  background: var(--nn-ink);
+  color: var(--nn-paper);
+  border-radius: var(--nn-r-tile);
+  box-shadow: var(--nn-shadow-lift);
+  animation: nn-rise 0.28s var(--nn-ease) both;
+}
+
+.save-prompt-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+.save-prompt-body {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--nn-paper) 72%, var(--nn-ink));
+}
+
+.save-prompt-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+/* The page's .btn is drawn for a light ground; on the ink card the plain one needs
+   the card's own colours. */
+.save-prompt .btn:not(.is-primary) {
+  color: var(--nn-paper);
+  background: color-mix(in srgb, var(--nn-paper) 10%, var(--nn-ink));
+  border-color: transparent;
+}
+
+.save-prompt .btn:not(.is-primary):hover:not(:disabled) {
+  color: var(--nn-paper);
+  background: color-mix(in srgb, var(--nn-paper) 18%, var(--nn-ink));
+}

@@ -1,0 +1,80 @@
+/* ── Sticky notes ─────────────────────────────────────────────────────────
+   The logo's sticky note, as the look of anything you have collected: square
+   corners, the bottom-right one folded, a tone from the spring palette.
+
+   Paper stays light in both themes, with dark ink — on the dark theme the
+   tints turned into murky tiles, so notes keep their daytime colours (a touch
+   dimmed), like real notes on a dark desk. The values are the light theme's
+   -tint swatches on purpose, not the tokens, which flip with the theme.
+
+   Put .sticky and a .tone-* on the same element. */
+
+.sticky {
+  --paper: #f6dee3;
+  --tone: #c9506b;
+  --note-ink: #1d1315;
+  /* .jp paints Japanese in the theme's ink, which is cream on dark. */
+  --nn-jp: var(--note-ink);
+  --fold: 16px;
+  position: relative;
+  background: var(--paper);
+  border-radius: 4px;
+  clip-path: polygon(
+    0 0,
+    100% 0,
+    100% calc(100% - var(--fold)),
+    calc(100% - var(--fold)) 100%,
+    0 100%
+  );
+  color: var(--note-ink);
+  text-decoration: none;
+}
+
+.sticky::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: var(--fold);
+  height: var(--fold);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--tone) 38%, var(--paper)) 50%,
+    transparent 50%
+  );
+  border-top-left-radius: 3px;
+}
+
+a.sticky:hover {
+  color: var(--note-ink);
+}
+
+.sticky.tone-moegi {
+  --paper: #e3e8d6;
+  --tone: #6e8351;
+}
+
+.sticky.tone-yamabuki {
+  --paper: #f3e6c8;
+  --tone: #c08a2e;
+}
+
+.sticky.tone-fuji {
+  --paper: #e9e2f0;
+  --tone: #8b76a8;
+}
+
+[data-theme='dark'] .sticky {
+  filter: brightness(0.9);
+}
+
+/* A note's Latin line — a meaning under the word — in its own tone's ink. */
+.sticky-caption {
+  max-width: 100%;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: color-mix(in srgb, var(--tone) 72%, var(--note-ink));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

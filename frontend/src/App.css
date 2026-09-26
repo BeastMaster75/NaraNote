@@ -33,10 +33,9 @@
   flex-direction: column;
   gap: 0.5rem;
   padding: 1.25rem 1.4rem;
-  border-radius: var(--nn-r-lg);
+  border-radius: var(--nn-r-tile);
   background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  box-shadow: var(--nn-shadow);
+  border: 1.5px solid var(--nn-line-soft);
 }
 
 /* Focused single-task screens: reviewing a word, writing a character.
@@ -61,14 +60,84 @@
   max-width: 68rem;
 }
 
-.kicker {
-  font-family: var(--nn-font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--nn-ink-3);
+/* A section's heading. It used to be the tiny spaced-out uppercase mono label
+   every generated UI puts above every box; it is now a plain bold heading. */
+.kicker,
+.tile-title {
+  font-family: var(--nn-font-ui);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--nn-ink);
   margin: 0;
+}
+
+/* A field's name beside or above its value — "Strokes", "On". Quiet, but a
+   word, not a code. */
+.field-label {
+  font-family: var(--nn-font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--nn-ink-3);
+}
+
+/* Numbers that are the point of their box. */
+.big-number {
+  font-family: var(--nn-font-ui);
+  font-weight: 800;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+/* A filter or choice chip: small soft square, never uppercase mono. */
+.chip-button {
+  cursor: pointer;
+  font-family: var(--nn-font-ui);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--nn-r-chip);
+  border: 1.5px solid transparent;
+  background: var(--nn-sunk);
+  color: var(--nn-ink-2);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.chip-button:hover {
+  color: var(--nn-ink);
+}
+
+.chip-button.is-on {
+  background: var(--nn-ink);
+  color: var(--nn-paper);
+}
+
+/* A tile in inverted colours — the one that should be seen first, like
+   "Ready to Review" on Home. It remaps the palette inside itself rather than
+   restyling each child, so lists, buttons and Japanese inside all follow; the
+   remapped values come from --nn-inverse-*, never from the tokens being
+   redefined, so nothing refers to itself. */
+.is-inverted {
+  background: var(--nn-inverse-bg);
+  border-color: transparent;
+  color: var(--nn-inverse-fg);
+  --nn-ink: var(--nn-inverse-fg);
+  --nn-jp: var(--nn-inverse-fg);
+  --nn-ink-2: color-mix(in srgb, var(--nn-inverse-fg) 72%, var(--nn-inverse-bg));
+  --nn-ink-3: color-mix(in srgb, var(--nn-inverse-fg) 55%, var(--nn-inverse-bg));
+  --nn-line: color-mix(in srgb, var(--nn-inverse-fg) 24%, var(--nn-inverse-bg));
+  --nn-line-soft: color-mix(in srgb, var(--nn-inverse-fg) 13%, var(--nn-inverse-bg));
+  --nn-paper: color-mix(in srgb, var(--nn-inverse-fg) 8%, var(--nn-inverse-bg));
+  --nn-sunk: color-mix(in srgb, var(--nn-inverse-fg) 12%, var(--nn-inverse-bg));
+  --nn-raised: color-mix(in srgb, var(--nn-inverse-fg) 5%, var(--nn-inverse-bg));
+  --nn-kaki: var(--nn-inverse-accent);
+  --nn-bengara: color-mix(in srgb, var(--nn-inverse-accent) 80%, var(--nn-inverse-fg));
+  --nn-on-accent: var(--nn-inverse-bg);
 }
 
 .muted {
@@ -118,8 +187,8 @@
   font-weight: 600;
   color: var(--nn-ink-2);
   padding: 0.55rem 1.1rem;
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  border: 1.5px solid var(--nn-line);
+  border-radius: var(--nn-r-control);
   background: transparent;
 }
 
@@ -154,6 +223,19 @@
 .btn.is-primary:hover:not(:disabled) {
   background: var(--nn-bengara);
   border-color: var(--nn-bengara);
+  color: var(--nn-on-accent);
+}
+
+/* Destroys something. Tinted rather than solid, so it never outshouts the page's one
+   primary action — it's there to be found, not to be pressed. */
+.btn.is-danger {
+  background: var(--nn-bengara-tint);
+  border-color: transparent;
+  color: var(--nn-bengara);
+}
+
+.btn.is-danger:hover:not(:disabled) {
+  background: var(--nn-bengara);
   color: var(--nn-on-accent);
 }
 

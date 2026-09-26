@@ -35,17 +35,15 @@
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  font-family: var(--nn-font-mono);
-  letter-spacing: 0.08em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .tag-new {
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 700;
   padding: 0.15rem 0.5rem;
-  border-radius: var(--nn-r-pill);
+  border-radius: var(--nn-r-chip);
   background: var(--nn-kaki-tint);
   color: var(--nn-bengara);
 }
@@ -73,10 +71,12 @@
 
 .prompt-meaning {
   margin: 0;
-  font-family: var(--nn-font-display);
-  font-size: 1.6rem;
+  font-family: var(--nn-font-ui);
+  font-size: clamp(1.6rem, 1.2rem + 1vw, 2.2rem);
   line-height: 1.2;
   color: var(--nn-ink);
+  font-weight: 800;
+  letter-spacing: -0.02em;
 }
 
 /* Meaning alone is ambiguous — 本 and 書 both answer "book" — so the readings
@@ -89,11 +89,8 @@
 }
 
 .prompt-readings dt {
-  font-family: var(--nn-font-mono);
-  font-size: 9.5px;
+  font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
   color: var(--nn-ink-3);
 }
 
@@ -110,9 +107,9 @@
 
 .canvas-wrap {
   position: relative;
-  border-radius: var(--nn-r-lg);
+  border-radius: var(--nn-r-tile);
   background: var(--nn-raised);
-  border: 1px solid var(--nn-line);
+  border: 1.5px solid var(--nn-line-soft);
   overflow: hidden;
 }
 
@@ -125,16 +122,20 @@
   pointer-events: none;
 }
 
+/* Hard stops a full pixel either side of centre: the old half-pixel ramps fell
+   between device pixels at some canvas sizes, and the horizontal guide and one
+   diagonal simply didn't draw. */
 .canvas-wrap::before {
   background:
-    linear-gradient(to right, transparent calc(50% - 0.5px), var(--nn-line) 50%, transparent calc(50% + 0.5px)),
-    linear-gradient(to bottom, transparent calc(50% - 0.5px), var(--nn-line) 50%, transparent calc(50% + 0.5px));
+    linear-gradient(to right, transparent calc(50% - 1px), var(--nn-line) calc(50% - 1px), var(--nn-line) calc(50% + 1px), transparent calc(50% + 1px)),
+    linear-gradient(to bottom, transparent calc(50% - 1px), var(--nn-line) calc(50% - 1px), var(--nn-line) calc(50% + 1px), transparent calc(50% + 1px));
+  opacity: 0.8;
 }
 
 .canvas-wrap::after {
   background:
-    linear-gradient(135deg, transparent calc(50% - 0.5px), var(--nn-line-soft) 50%, transparent calc(50% + 0.5px)),
-    linear-gradient(45deg, transparent calc(50% - 0.5px), var(--nn-line-soft) 50%, transparent calc(50% + 0.5px));
+    linear-gradient(135deg, transparent calc(50% - 0.75px), var(--nn-line-soft) calc(50% - 0.75px), var(--nn-line-soft) calc(50% + 0.75px), transparent calc(50% + 0.75px)),
+    linear-gradient(45deg, transparent calc(50% - 0.75px), var(--nn-line-soft) calc(50% - 0.75px), var(--nn-line-soft) calc(50% + 0.75px), transparent calc(50% + 0.75px));
 }
 
 .writing-canvas {
@@ -288,11 +289,8 @@
 
 .rating-suggested {
   margin-left: 0.5rem;
-  font-family: var(--nn-font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 11.5px;
+  font-weight: 700;
   vertical-align: 0.1rem;
   color: var(--nn-kaki);
 }

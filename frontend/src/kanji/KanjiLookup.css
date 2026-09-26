@@ -20,8 +20,8 @@
   text-align: center;
   color: var(--nn-jp);
   background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-control);
   caret-color: var(--nn-kaki);
 }
 
@@ -39,8 +39,8 @@
   text-decoration: none;
   padding: 0.3rem 0.7rem;
   background: var(--nn-raised);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-chip);
   line-height: 1.2;
 }
 
@@ -75,8 +75,8 @@
   padding: 0.5rem 0.9rem;
   color: var(--nn-ink);
   background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-control);
   caret-color: var(--nn-kaki);
 }
 
@@ -101,8 +101,8 @@
   cursor: pointer;
   padding: 0.5rem 0.9rem;
   background: var(--nn-raised);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-md);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-control);
   color: var(--nn-jp);
 }
 
@@ -128,93 +128,103 @@
   background: var(--nn-sunk);
 }
 
-/* Takes the rest of the page's height; the body inside takes the rest of this. */
+/* ── The detail: a bento ────────────────────────────────────────────────
+   The hero takes whatever height the tiles below leave it, and its glyph grows
+   to fill it: a character with little data gets a huge glyph instead of two
+   mostly-empty tiles. The tiles below are as tall as their content but never
+   more than about half the page, and scroll inside past that (日 has pages of
+   words). Stroke order runs the full height on the right. */
 .kanji {
   flex: 1 1 auto;
   min-height: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr) minmax(min(19rem, 100%), 0.85fr);
+  grid-template-rows: minmax(10rem, 1fr) fit-content(48%);
+  grid-template-areas:
+    'hero hero strokes'
+    'text yours strokes';
+}
+
+.kanji-tile {
+  min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.1rem;
-  padding: 1.2rem 1.5rem;
-  border-radius: var(--nn-r-lg);
+  gap: 1rem;
+  padding: 1.15rem 1.35rem 1.25rem;
   background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  box-shadow: var(--nn-shadow);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-tile);
 }
 
 .kanji-hero {
-  display: flex;
+  grid-area: hero;
+  flex-direction: row;
   align-items: center;
-  gap: 1.75rem;
-  flex-wrap: wrap;
+  gap: clamp(1.5rem, 3vw, 3rem);
+  padding: 1rem 1.6rem;
+  container-type: size;
 }
 
 .kanji-glyph {
-  font-family: var(--nn-font-jp-serif);
-  font-size: 92px;
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
+  font-size: min(78cqh, 17rem);
   line-height: 1;
   color: var(--nn-jp);
 }
 
+.kanji-summary {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+
+.kanji-meanings {
+  margin: 0;
+  font-size: clamp(1.35rem, 1rem + 0.9vw, 2.2rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--nn-ink);
+}
+
 .kanji-facts {
   display: flex;
-  gap: 1.75rem;
+  gap: 2.25rem;
   margin: 0;
   flex-wrap: wrap;
 }
 
-.fact dt {
-  font-family: var(--nn-font-mono);
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--nn-ink-3);
+/* The number first, its name under it (the markup keeps dt before dd). */
+.fact {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.2rem;
 }
 
 .fact dd {
-  margin: 0.25rem 0 0;
-  font-family: var(--nn-font-display);
-  font-size: 22px;
-  line-height: 1.1;
+  margin: 0;
+  font-size: clamp(1.5rem, 1.1rem + 0.8vw, 2.2rem);
   color: var(--nn-ink);
 }
 
-/* Whatever height the page has left, the same for every kanji regardless of
-   how much data it has, so the card doesn't resize per character. It used to be
-   a fixed 28rem, which was the right size on exactly one screen height and made
-   the page scroll on every laptop. stretch makes all three columns reach it. */
-.kanji-body {
-  flex: 1 1 0;
-  min-height: 16rem;
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-  align-items: stretch;
+.kanji-hero .library-toggle {
+  align-self: flex-start;
 }
 
-/* Sections flow into columns as the page widens rather than one stretching to
-   1200px — a list of readings gains nothing from being that wide. */
 .kanji-text {
-  flex: 1 1 20rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
-  align-content: start;
-  gap: 1.1rem 2rem;
-  min-height: 0;
+  grid-area: text;
   overflow-y: auto;
 }
 
 .kanji-section {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-}
-
-.kanji-meanings {
-  margin: 0;
-  font-size: 16px;
-  color: var(--nn-ink);
+  gap: 0.45rem;
 }
 
 .readings {
@@ -229,19 +239,20 @@
 /* Readings are Japanese, so they inherit the full-contrast .jp-sm colour and
    never the softened Latin text colours around them. */
 .reading {
-  padding: 0.2rem 0.65rem;
-  background: var(--nn-sunk);
-  border-radius: var(--nn-r-sm);
+  padding: 0.2rem 0.7rem;
+  background: var(--nn-paper);
+  border-radius: var(--nn-r-chip);
 }
 
 .radical {
   display: inline-flex;
   align-items: center;
   text-decoration: none;
-  padding: 0.2rem 0.65rem;
-  background: var(--nn-sunk);
-  border: 1px solid transparent;
-  border-radius: var(--nn-r-sm);
+  padding: 0.2rem 0.7rem;
+  background: var(--nn-paper);
+  border: 1.5px solid transparent;
+  border-radius: var(--nn-r-chip);
+  transition: border-color 0.15s ease;
 }
 
 .radical:hover {
@@ -249,31 +260,16 @@
   color: var(--nn-jp);
 }
 
-/* The personal half of the page: your words, your attempts, your other kanji.
-   min-height: 0 + overflow-y: auto is a safety net for a kanji with more
-   Practice/Shares content than 日 (today's largest) — .your-words already
-   caps itself, but the sections around it aren't individually capped. */
+/* The personal half of the page: your words, your attempts, your other kanji. */
 .kanji-yours {
-  flex: 1 1 18rem;
-  min-width: 0;
-  min-height: 0;
+  grid-area: yours;
   overflow-y: auto;
-  display: flex;
-  flex-direction: column;
-  gap: 1.1rem;
-  padding-left: 1.5rem;
-  border-left: 1px solid var(--nn-line-soft);
 }
 
-/* The divider is a column separator. Once the columns stack it has nothing to
-   separate, and reads as a stray line and an unexplained indent. */
-@media (max-width: 900px) {
-  .kanji-yours {
-    padding-left: 0;
-    border-left: 0;
-    padding-top: 1.1rem;
-    border-top: 1px solid var(--nn-line-soft);
-  }
+.kanji-yours-empty {
+  margin: auto 0;
+  max-width: 30ch;
+  font-size: 15px;
 }
 
 .practice-tally {
@@ -283,16 +279,16 @@
 }
 
 .tally {
-  font-size: 12px;
-  padding: 0.25rem 0.6rem;
-  border-radius: var(--nn-r-pill);
-  background: var(--nn-sunk);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--nn-r-chip);
+  background: var(--nn-paper);
   color: var(--nn-ink-2);
 }
 
 .tally strong {
-  font-family: var(--nn-font-display);
-  font-weight: 400;
+  font-weight: 800;
   font-size: 14px;
   color: var(--nn-ink);
 }
@@ -319,55 +315,63 @@
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  /* Unbounded before the Reading deck existed, this list was always short
-     enough not to matter. A common kanji can now have a full page of words —
-     capped and scrolled on its own so Practice/Shares Parts With beside it
-     stay put rather than the whole "Yours" column scrolling as one block. */
-  max-height: min(15rem, 30vh);
-  overflow-y: auto;
 }
 
 .your-words li {
   display: flex;
   flex-direction: column;
-  gap: 0.15rem;
-  padding: 0.5rem 0.7rem;
-  border-radius: var(--nn-r-md);
+  gap: 0.2rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 16px;
   background: var(--nn-paper);
-  border: 1px solid var(--nn-line-soft);
+}
+
+.your-word-head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.7rem;
+  flex-wrap: wrap;
 }
 
 .your-word {
   color: var(--nn-jp);
+  font-weight: 700;
 }
 
 .your-word-meaning {
-  font-size: 12.5px;
+  font-size: 13px;
   color: var(--nn-ink-2);
 }
 
 /* The sentence you met it in — the thing that makes the word stick. */
 .your-word-sentence {
-  margin-top: 0.2rem;
   color: var(--nn-jp);
-  opacity: 0.8;
-  line-height: 1.7;
+  line-height: 1.8;
 }
 
 .shared-count {
-  margin-left: 0.35rem;
-  font-family: var(--nn-font-mono);
-  font-size: 9.5px;
+  margin-left: 0.3rem;
+  font-size: 11.5px;
+  font-weight: 700;
   color: var(--nn-kaki);
 }
 
-/* A size container, so the animation below can fit its height as well as its
-   width: the square is as big as the column allows, less the kicker above and
-   the controls below it. */
+/* Sakura, like the Write tile on Home: this is the tile about writing it. The
+   stage is a size container, so the animation fits its height as well as its
+   width. */
 .kanji-strokes {
-  flex: 0 0 300px;
-  container-type: size;
+  grid-area: strokes;
+  background: var(--nn-kaki-tint);
+  border-color: transparent;
+}
+
+.kanji-strokes-stage {
+  flex: 1;
   min-height: 0;
+  container-type: size;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* KanjiVG ships a fixed 109x109 box; let it scale, and let the strokes take the
@@ -379,17 +383,26 @@
 }
 
 .kanji-strokes .stroke-order {
-  width: min(100cqw, 100cqh - 4.5rem);
+  width: min(100cqw, 100cqh - 3.5rem);
 }
 
-@media (min-width: 1200px) {
-  .kanji-strokes {
-    flex-basis: 320px;
+@media (max-width: 1100px) {
+  .kanji {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas: 'hero' 'strokes' 'text' 'yours';
   }
-}
 
-@media (max-width: 900px) {
-  .kanji-strokes {
+  .kanji-hero {
+    flex-wrap: wrap;
+    container-type: normal;
+  }
+
+  .kanji-glyph {
+    font-size: 7rem;
+  }
+
+  .kanji-strokes-stage {
     container-type: normal;
   }
 
@@ -409,8 +422,9 @@
 }
 
 .your-kanji-count {
-  margin-left: 0.4rem;
-  color: var(--nn-kaki);
+  margin-left: 0.35rem;
+  font-weight: 600;
+  color: var(--nn-ink-3);
 }
 
 /* A list that grows without limit scrolls inside itself; the page doesn't. */
@@ -432,38 +446,32 @@
   flex-direction: column;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.85rem 0.5rem 0.7rem;
-  border-radius: var(--nn-r-md);
-  background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  box-shadow: var(--nn-shadow);
-  text-decoration: none;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
+  padding: 0.85rem 0.5rem 0.9rem;
 }
 
-/* Colour only, no lift or big shadow: the grid scrolls, so it clips at its
-   edges and a raised tile in the first row or column would be cut off. */
+/* The corner peels a little further back. No lift: the grid scrolls, so it
+   clips at its edges and a raised note in the first row would be cut off. */
 .your-kanji-tile:hover {
+  --fold: 26px;
+}
+
+/* The examples on an empty account aren't yours yet: plain tiles, not notes. */
+.your-kanji-tile:not(.sticky) {
+  border-radius: 18px;
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+}
+
+.your-kanji-tile:not(.sticky):hover {
   border-color: var(--nn-kaki);
-  background: var(--nn-kaki-tint);
 }
 
 .your-kanji-glyph {
-  font-family: var(--nn-font-jp-serif);
-  font-size: 40px;
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
+  font-size: 42px;
   line-height: 1;
   color: var(--nn-jp);
-}
-
-.your-kanji-meaning {
-  max-width: 100%;
-  font-size: 12px;
-  color: var(--nn-ink-2);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .stroke-order svg {

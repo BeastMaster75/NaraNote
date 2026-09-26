@@ -11,9 +11,11 @@ import java.util.Base64;
 import java.util.HexFormat;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 /**
  * Issues and consumes the opaque tokens mailed to a new account to prove it owns the address
@@ -59,7 +61,8 @@ public class EmailVerificationService {
      * Marks the owning account verified and burns the token so the link can't be replayed.
      * Empty when the token is missing, unknown, or expired.
      */
-    @Transactional
+    // The conflict thrown by promotePendingEmail must not undo the cleanup it just did.
+    @Transactional(noRollbackFor = ResponseStatusException.class)
     public Optional<Long> consume(String rawToken) {
         if (rawToken == null || rawToken.isBlank()) {
             return Optional.empty();
@@ -75,9 +78,48 @@ public class EmailVerificationService {
         }
 
         long userId = found.getFirst();
+        promotePendingEmail(userId);
         jdbc.update("update app_user set email_verified = true where id = ?", userId);
         jdbc.update("delete from email_verification_token where user_id = ?", userId);
         return Optional.of(userId);
+    }
+
+    /**
+     * For a guest saving their collection (see {@code AuthController.upgrade}), the click is what
+     * turns the guest into an account: the pending address becomes the account's email. Someone
+     * else may have registered that address since the link was sent — then the save is abandoned
+     * rather than failing on the unique index, and the guest stays a guest with their collection
+     * intact.
+     */
+    private void promotePendingEmail(long userId) {
+        List<String> pending =
+                jdbc.query(
+                        "select pending_email from app_user where id = ? and pending_email is not null",
+                        (rs, row) -> rs.getString("pending_email"),
+                        userId);
+        if (pending.isEmpty()) {
+            return;
+        }
+        String email = pending.getFirst();
+        Boolean taken =
+                jdbc.queryForObject(
+                        "select exists(select 1 from app_user where lower(email) = lower(?) and id <> ?)",
+                        Boolean.class,
+                        email,
+                        userId);
+        if (Boolean.TRUE.equals(taken)) {
+            jdbc.update(
+                    "update app_user set pending_email = null, password_hash = null where id = ?", userId);
+            jdbc.update("delete from email_verification_token where user_id = ?", userId);
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email already registered");
+        }
+        jdbc.update(
+                """
+                update app_user
+                   set email = pending_email, pending_email = null, is_guest = false
+                 where id = ?
+                """,
+                userId);
     }
 
     private static String hash(String rawToken) {

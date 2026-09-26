@@ -1,71 +1,47 @@
-/* Two ways in, side by side and filling the page: a file, or a paste. A
-   half-width card with the rest of the page empty made the start of a session
-   look like an afterthought. */
+/* A bento that fills the page, like Home and the kanji page: the paste box
+   leads on the left, the file drop (sakura) and a ready-made passage
+   (inverted) share the column on the right. */
 .reading-start {
   flex: 1 1 auto;
   min-height: 0;
-  max-height: 34rem;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1.4fr);
-  align-items: stretch;
-  gap: 1.25rem;
+  gap: 1rem;
+  grid-template-columns: minmax(0, 1.45fr) minmax(min(20rem, 100%), 1fr);
+  grid-template-rows: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-areas:
+    'paste drop'
+    'paste sample';
 }
 
-.card.reading-drop {
-  align-items: center;
-  justify-content: center;
-  gap: 0.6rem;
-  text-align: center;
-  border: 2px dashed var(--nn-line);
-  box-shadow: none;
-  transition:
-    border-color 0.15s ease,
-    background-color 0.15s ease;
-}
-
-.card.reading-drop.is-dragging {
-  border-color: var(--nn-kaki);
-  background: var(--nn-kaki-tint);
-}
-
-.reading-drop.is-busy {
-  opacity: 0.7;
-}
-
-.reading-drop-icon {
-  width: 2.6rem;
-  height: 2.6rem;
-  color: var(--nn-kaki);
-}
-
-.reading-drop-title {
-  font-size: 1.3rem;
-  color: var(--nn-ink);
-}
-
-.reading-or {
-  align-self: center;
-  font-family: var(--nn-font-mono);
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--nn-ink-3);
-}
-
-.card.reading-custom {
-  gap: 0.75rem;
+.reading-tile {
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1.2rem 1.4rem 1.3rem;
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-tile);
+}
+
+/* ── Paste ─────────────────────────────────────────────────────────────── */
+
+.reading-custom {
+  grid-area: paste;
 }
 
 .reading-paste {
   flex: 1 1 auto;
-  min-height: 8rem;
+  min-height: 6rem;
   width: 100%;
-  padding: 0.8rem 0.95rem;
-  line-height: 1.8;
-  background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-md);
+  padding: 1rem 1.1rem;
+  line-height: 1.9;
+  background: var(--nn-paper);
+  border: 1.5px solid transparent;
+  border-radius: 16px;
   caret-color: var(--nn-kaki);
   resize: none;
 }
@@ -78,9 +54,96 @@
   flex-wrap: wrap;
 }
 
-@media (max-width: 800px) {
+/* ── File drop ─────────────────────────────────────────────────────────── */
+
+/* Sakura like the Write tile on Home. Dropping onto it is the point, so the
+   whole tile is the target and answers a file dragged over it. */
+.reading-drop {
+  grid-area: drop;
+  justify-content: flex-end;
+  background: var(--nn-kaki-tint);
+  border: 2px dashed transparent;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.reading-drop.is-dragging {
+  border-color: var(--nn-kaki);
+  background: color-mix(in srgb, var(--nn-kaki) 18%, var(--nn-kaki-tint));
+}
+
+.reading-drop.is-busy {
+  opacity: 0.7;
+}
+
+.reading-ghost {
+  position: absolute;
+  right: -0.06em;
+  top: -0.14em;
+  font-family: var(--nn-font-jp);
+  font-weight: 900;
+  font-size: clamp(7rem, 22vh, 13rem);
+  line-height: 1;
+  color: color-mix(in srgb, var(--nn-kaki) 14%, var(--nn-kaki-tint));
+  pointer-events: none;
+}
+
+.reading-drop > :not(.reading-ghost) {
+  position: relative;
+}
+
+.reading-drop-formats {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 14px;
+  color: var(--nn-ink-2);
+}
+
+.reading-drop-button {
+  align-self: flex-start;
+  background: var(--nn-raised);
+  border-color: transparent;
+}
+
+/* ── A passage to try ──────────────────────────────────────────────────── */
+
+.reading-sample {
+  grid-area: sample;
+  justify-content: space-between;
+}
+
+/* Large, because reading it aloud is the next thing you'd do with it. Clamped
+   to the lines that fit rather than scrolling. */
+.reading-sample-text {
+  margin: 0;
+  font-size: clamp(var(--nn-jp-body), 1rem + 0.5vw, 24px);
+  line-height: 1.9;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.reading-sample-go {
+  align-self: flex-start;
+}
+
+/* Stacked, the page scrolls — the paste box gets a real height of its own. */
+@media (max-width: 900px) {
   .reading-start {
+    flex: none;
     grid-template-columns: minmax(0, 1fr);
-    max-height: none;
+    grid-template-rows: none;
+    grid-template-areas: 'paste' 'drop' 'sample';
+  }
+
+  .reading-custom {
+    min-height: 18rem;
+  }
+
+  .reading-drop,
+  .reading-sample {
+    min-height: 12rem;
   }
 }

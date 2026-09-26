@@ -1,7 +1,14 @@
+/* ── Home: a personal headline over a bento of tiles ──────────────────────
+   The page used to be six same-sized cards with a tiny uppercase label on
+   each. Now what matters most gets the most room, colour means something
+   (ink = review, sakura = write, the note wall = everything collected), and
+   the record and the note wall sit straight on the page with no box at all. */
+
 .home {
+  --tile-r: var(--nn-r-tile);
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;
+  gap: 1.1rem;
   flex: 1;
   min-height: 0;
   visibility: hidden;
@@ -13,349 +20,610 @@
   animation: nn-fade 0.22s ease both;
 }
 
-/* ── Opening band: capture on the left, what to do next on the right ────────
-   The page used to open on a calendar, which is a report about study already
-   done. The first thing on screen is now the box you paste into, because that
-   is what the app is for. */
+/* ── Headline ─────────────────────────────────────────────────────────── */
 
-.hero {
-  display: grid;
-  /* min() so the columns can still shrink below their preferred width on a
-     phone — a bare minmax(36rem, …) cannot, and forces horizontal overflow. */
-  grid-template-columns: minmax(min(34rem, 100%), 1.9fr) minmax(min(19rem, 100%), 1fr);
-  gap: 1.25rem;
-  align-items: stretch;
-}
-
-.hero-capture,
-.rightnow {
+.home-head {
   display: flex;
   flex-direction: column;
-  gap: 0.8rem;
-  padding: 1.2rem 1.4rem 1.3rem;
-  background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-lg);
-  box-shadow: var(--nn-shadow);
+  gap: 0.15rem;
 }
 
-.hero-head {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  flex-wrap: wrap;
-}
-
-.hero-head h2 {
-  font-family: var(--nn-font-display);
-  font-size: 1.55rem;
-  font-weight: 400;
-  line-height: 1;
+.home-greeting {
   margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--nn-ink-3);
+}
+
+.home-headline {
+  font-family: var(--nn-font-ui);
+  font-weight: 800;
+  font-size: clamp(1.7rem, 1.1rem + 1.4vw, 2.5rem);
+  letter-spacing: -0.025em;
+  line-height: 1.15;
   color: var(--nn-ink);
 }
 
-.hero-head p {
-  margin: 0;
+.scribble {
+  position: relative;
+  white-space: nowrap;
 }
 
-/* Grows to whatever height the right-hand column takes, so the two cards end
-   flush instead of leaving a gap under the shorter one. */
-.hero-textarea {
+.scribble svg {
+  position: absolute;
+  left: -2%;
+  bottom: -0.2em;
+  width: 104%;
+  height: 0.34em;
+  overflow: visible;
+}
+
+.scribble path {
+  fill: none;
+  stroke: var(--nn-kaki);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: scribble-draw 0.7s 0.25s var(--nn-ease) forwards;
+}
+
+@keyframes scribble-draw {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scribble path {
+    animation: none;
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ── The bento ────────────────────────────────────────────────────────── */
+
+.bento {
   flex: 1;
-  min-height: 5rem;
-  resize: none;
+  min-height: 0;
+  display: grid;
+  gap: 1rem;
+  grid-template-columns:
+    minmax(0, 1.4fr)
+    minmax(0, 1fr)
+    minmax(min(17rem, 100%), 0.85fr);
+  grid-template-rows: minmax(15rem, 1.25fr) minmax(8.5rem, 1fr) minmax(11rem, 0.8fr);
+  grid-template-areas:
+    'capture featured stats'
+    'notes   notes    notes'
+    'year    year     tasks';
+}
+
+.tile {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 1.15rem 1.35rem 1.25rem;
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--tile-r);
+}
+
+/* ── Capture ──────────────────────────────────────────────────────────── */
+
+.capture {
+  grid-area: capture;
+  gap: 0.75rem;
+}
+
+.capture-text {
+  flex: 1;
+  min-height: 3.5rem;
   width: 100%;
-  padding: 0.9rem 1rem;
-  border-radius: var(--nn-r-md);
-  border: 1px solid var(--nn-line);
-  background: var(--nn-field);
+  padding: 0.85rem 1rem;
+  border-radius: 16px;
+  border: 1.5px solid transparent;
+  background: var(--nn-paper);
   color: var(--nn-jp);
   font-family: var(--nn-font-jp);
   font-size: var(--nn-jp-body);
   line-height: 1.85;
 }
 
-.hero-actions {
+.capture-actions {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.55rem;
   flex-wrap: wrap;
 }
 
-.hero-source {
+.capture-source {
   flex: 1;
-  min-width: 10rem;
-  padding: 0.55rem 0.9rem;
-  border-radius: var(--nn-r-pill);
-  border: 1px solid var(--nn-line);
-  background: var(--nn-field);
+  min-width: 9rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 12px;
+  border: 1.5px solid transparent;
+  background: var(--nn-paper);
   color: var(--nn-ink);
   font-family: var(--nn-font-ui);
   font-size: 13px;
 }
 
-/* ── Right Now ─────────────────────────────────────────────────────────── */
+/* ── Word of the day ──────────────────────────────────────────────────── */
 
-.rightnow-list {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.featured {
+  grid-area: featured;
+  gap: 0.35rem;
+  overflow: hidden;
 }
 
-.rightnow-tile {
+.featured-head {
   display: flex;
   align-items: center;
-  gap: 0.85rem;
-  padding: 0.55rem 0.85rem;
-  border-radius: var(--nn-r-md);
-  border: 1px solid var(--nn-line-soft);
-  background: var(--nn-paper);
-  text-decoration: none;
-  color: inherit;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.15s var(--nn-ease);
-}
-
-.rightnow-tile:hover {
-  border-color: var(--nn-kaki);
-  background: var(--nn-kaki-tint);
-  transform: translateX(3px);
-}
-
-.rightnow-count {
-  font-family: var(--nn-font-display);
-  font-size: 1.45rem;
-  line-height: 1;
-  min-width: 1.6ch;
-  text-align: center;
-  color: var(--nn-kaki);
-}
-
-.rightnow-text {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.rightnow-title {
-  font-weight: 600;
-  color: var(--nn-ink);
-}
-
-.rightnow-detail {
-  font-size: 12.5px;
-  color: var(--nn-ink-2);
-}
-
-/* Due work is the urgent kind; everything else is an observation about the
-   collection and should not shout in the same colour. */
-.rightnow-tile.s-untouched .rightnow-count,
-.rightnow-tile.s-struggling .rightnow-count {
-  color: var(--nn-yamabuki);
-}
-
-.rightnow-clear {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: center;
-  gap: 0.8rem;
-}
-
-/* ── Recently collected ────────────────────────────────────────────────────
-   The collection is the payoff of the whole app, and the home page showed
-   none of it. */
-
-.recent-block {
-  min-width: 0;
-  min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  padding: 1.15rem 1.4rem 1.3rem;
-  background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-lg);
-  box-shadow: var(--nn-shadow);
-}
-
-/* Tiles sized by useTileSize (--tile): as large as lets every kanji fit, down to
-   3.2rem. Past that, as many whole rows as the card has height for, clipped
-   rather than scrolled — a scrollbar on a preview reads as a broken widget, not
-   an invitation to scroll. Only the rows that fit are declared; every item
-   past them lands in an implicit row of zero height, so the clip always falls
-   between rows and never through the middle of a glyph. */
-.recent-kanji {
-  --tile: 3.2rem;
-  --rows: 3;
-  flex: 1 1 0;
-  min-height: 3.2rem;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, var(--tile));
-  grid-template-rows: repeat(var(--rows), var(--tile));
-  grid-auto-rows: 0;
-  gap: 0.5rem;
-  /* Exactly the rows in use (useTileSize), centred in whatever height is left.
-     "safe": with more kanji than fit, the hidden rows' gaps make the grid taller
-     than its box, and a plain centre would push the top row out of view. */
-  align-content: safe center;
-  /* The width rarely divides into whole tiles; spread the remainder between
-     them rather than leaving a strip down the right-hand side. */
   justify-content: space-between;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
+  gap: 0.5rem;
 }
 
-/* Items in the zero-height overflow rows must clip too, or their contents
-   paint over the rows that are showing. */
-.recent-kanji > li,
-.recent-words > li {
-  min-height: 0;
-  overflow: hidden;
+.featured-chip {
+  align-self: flex-start;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--nn-fuji);
+  background: var(--nn-fuji-tint);
+  padding: 0.25rem 0.65rem;
+  border-radius: 8px;
 }
 
-/* The "None yet" line spans the grid instead of sitting in one tile's cell. */
-.recent-kanji > li.muted {
-  grid-column: 1 / -1;
-  grid-row: 1 / span 2;
-}
-
-.recent-glyph {
-  display: grid;
-  place-items: center;
-  width: var(--tile);
-  height: var(--tile);
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease;
-  border-radius: var(--nn-r-md);
-  background: var(--nn-paper);
-  border: 1px solid var(--nn-line-soft);
-  font-family: var(--nn-font-jp);
-  /* Never below the 44px the design sets for kanji in lists. */
-  font-size: max(var(--nn-jp-xl), calc(var(--tile) * 0.62));
-  line-height: 1;
-  color: var(--nn-jp);
-  text-decoration: none;
-}
-
-/* Colour only, no lift: each tile's cell clips (that is what hides the
-   overflow rows), so a tile that moved would lose its top border. */
-.recent-glyph:hover {
-  border-color: var(--nn-kaki);
-  background: var(--nn-kaki-tint);
-}
-
-/* Whole rows up to the card's height, same clip-not-scroll rule as the kanji. */
-.recent-words {
-  flex: 1 1 0;
-  min-height: 2.05rem;
-  display: grid;
-  grid-template-rows: repeat(auto-fill, 2.2rem);
-  grid-auto-rows: 0;
-  row-gap: 0.25rem;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-}
-
-.recent-word {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  /* No height, padding or border of its own: the grid row sets its size, and
-     only a box with none of those can collapse to nothing in an overflow row.
-     The separator is drawn inside it instead, where the clip reaches it. */
-  position: relative;
-}
-
-.recent-word::after {
-  content: '';
-  position: absolute;
-  inset: auto 0 0;
-  border-bottom: 1px solid var(--nn-line-soft);
-}
-
-.recent-term {
-  color: var(--nn-jp);
+.featured-meta {
+  font-size: 12.5px;
+  color: var(--nn-ink-3);
   white-space: nowrap;
 }
 
-.recent-meaning {
+/* Word, meaning and sentence as one group, centred in whatever height the
+   tile gets — pinned top and bottom they left a hole in the middle. */
+.featured-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* safe: if it ever can't fit, lose the bottom rather than the headword. */
+  justify-content: safe center;
+  gap: 0.35rem;
+}
+
+.featured-word {
+  font-family: var(--nn-font-jp);
+  font-weight: 900;
+  /* From the screen's height, so a 720px laptop still fits the sentence. */
+  font-size: clamp(2.4rem, 5.6vh, 3.9rem);
+  line-height: 1.25;
+  letter-spacing: 0.02em;
+  color: var(--nn-jp);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Never below the 18px floor, however small the headword gets. */
+.featured-word rt {
+  font-size: max(18px, 0.3em);
+  font-weight: 500;
+  letter-spacing: 0.18em;
   color: var(--nn-ink-2);
-  font-size: 13.5px;
+  opacity: 1;
+}
+
+.featured-meaning {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--nn-ink);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* ── The record: a band across the page ──────────────────────────────────── */
-
-/* Natural height — seven rows of cells and a header — rather than stretched to
-   a row the way it was as a column, which left most of its card empty. How many
-   weeks show is worked out from the width (useActivityLayout, --weeks), and the
-   cell size from the screen's height (--cell). */
-.activity {
-  --cell: 14px;
-  --weeks: 26;
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 0.9rem 1.4rem;
-  background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-lg);
-  box-shadow: var(--nn-shadow);
+.featured-sentence {
+  margin: 0.6rem 0 0;
+  padding: 0.55rem 0.9rem;
+  border-radius: 16px;
+  background: var(--nn-paper);
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-body);
+  line-height: 1.85;
+  color: var(--nn-jp);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
-.activity-head {
-  flex: 0 0 9.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
+/* A kanji on its own is one glyph, not a word — it can go bigger. */
+.featured-glyph {
+  align-self: flex-start;
+  font-size: clamp(2.8rem, 8vh, 5.4rem);
+  line-height: 1.1;
+  text-decoration: none;
+  transition: color 0.15s ease;
 }
 
-.activity-totals {
-  display: flex;
-  flex-direction: column;
-  gap: 0.3rem;
-  margin: 0;
+.featured-glyph:hover {
+  color: var(--nn-kaki);
 }
 
-.activity-totals div {
+/* The readings in the sentence's paper well. */
+.featured-readings {
+  margin: 0.6rem 0 0;
+  padding: 0.5rem 0.9rem;
+  border-radius: 16px;
+  background: var(--nn-paper);
+  display: flex;
+  gap: 1.4rem;
+  /* One line: wrapped, the readings pushed the glyph out of a laptop-height tile. */
+  overflow: hidden;
+}
+
+.featured-readings div {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 0.6rem;
+  gap: 0.55rem;
+  min-width: 0;
+  flex: none;
 }
 
-.activity-totals dt {
-  font-family: var(--nn-font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+/* On readings are short; the kun list is the one that gives way. */
+.featured-readings div:last-child {
+  flex: 0 1 auto;
+}
+
+.featured-readings dt {
+  font-size: 12.5px;
+  font-weight: 700;
   color: var(--nn-ink-3);
 }
 
-.activity-totals dd {
+.featured-readings dd {
   margin: 0;
-  font-family: var(--nn-font-display);
-  font-size: 1.2rem;
+  font-family: var(--nn-font-jp);
+  font-size: var(--nn-jp-body);
+  line-height: 1.7;
+  color: var(--nn-jp);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.featured.is-empty {
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+
+.featured-invite {
+  margin: auto 0 0;
+  font-size: 15px;
+  color: var(--nn-ink-2);
+  max-width: 30ch;
+}
+
+/* ── Review and write ─────────────────────────────────────────────────── */
+
+.stats {
+  grid-area: stats;
+  min-height: 0;
+  display: grid;
+  grid-template-rows: 1fr 1fr;
+  gap: 1rem;
+}
+
+.stat {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: clamp(0.7rem, 1.6vh, 1.1rem) 1.3rem;
+  border-radius: var(--tile-r);
+  text-decoration: none;
+  transition: transform 0.2s var(--nn-ease);
+}
+
+.stat:hover {
+  transform: translateY(-2px);
+}
+
+/* Inverted in both themes: dark on the light theme, cream on the dark one. */
+.stat-review {
+  --stat-fg: var(--nn-paper);
+  background: var(--nn-ink);
+  color: var(--stat-fg);
+}
+
+.stat-write {
+  --stat-fg: var(--nn-ink);
+  background: var(--nn-kaki-tint);
+  color: var(--stat-fg);
+}
+
+.stat:hover,
+.stat:focus-visible {
+  color: var(--stat-fg);
+}
+
+.stat-ghost {
+  position: absolute;
+  right: -0.08em;
+  top: -0.18em;
+  font-family: var(--nn-font-jp);
+  font-weight: 900;
+  font-size: clamp(6rem, 17vh, 11rem);
   line-height: 1;
+  pointer-events: none;
+}
+
+.stat-review .stat-ghost {
+  color: color-mix(in srgb, var(--nn-paper) 9%, var(--nn-ink));
+}
+
+.stat-write .stat-ghost {
+  color: color-mix(in srgb, var(--nn-kaki) 14%, var(--nn-kaki-tint));
+}
+
+.stat-label,
+.stat-number,
+.stat-detail {
+  position: relative;
+}
+
+.stat-label {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.72;
+}
+
+.stat-number {
+  font-weight: 800;
+  font-size: clamp(1.9rem, 5.4vh, 4rem);
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-write .stat-number {
+  color: var(--nn-kaki);
+}
+
+.stat-detail {
+  font-size: 13px;
+  opacity: 0.72;
+  padding-right: 3.5rem;
+}
+
+.stat-go {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  width: 2.6rem;
+  height: 2.6rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 1.2rem;
+  font-weight: 700;
+  background: var(--nn-kaki);
+  color: var(--nn-on-accent);
+  transition: transform 0.2s var(--nn-ease);
+}
+
+.stat:hover .stat-go {
+  transform: translateX(3px);
+}
+
+/* ── The note wall ────────────────────────────────────────────────────── */
+
+.notes-area {
+  grid-area: notes;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.notes-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 0 0.2rem;
+}
+
+.notes-all {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--nn-ink-2);
+  text-decoration: none;
+}
+
+.notes-all:hover {
+  color: var(--nn-kaki);
+}
+
+/* As many whole notes as the space holds — Home.tsx counts them from this
+   box's size (NOTE there mirrors the 104px minimum and 14px gap) and renders
+   only those, so a note is never cut in half and the tilt never gets clipped.
+   The rows then stretch to share the height, so no strip is left empty. */
+.notes {
+  --columns: 4;
+  --rows: 1;
+  --note-scale: 1;
+  flex: 1 1 0;
+  min-height: 104px;
+  display: grid;
+  grid-template-columns: repeat(var(--columns), minmax(0, 1fr));
+  grid-template-rows: repeat(var(--rows), minmax(104px, 1fr));
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* A short wall: notes at the size Home.tsx worked out, text scaled with them. */
+.notes.is-fitted {
+  grid-template-columns: repeat(var(--columns), calc(148px * var(--note-scale)));
+  grid-template-rows: repeat(var(--rows), calc(104px * var(--note-scale)));
+  align-content: center;
+}
+
+/* The paper itself is .sticky (styles/sticky.css); the li carries the tilt and
+   the shadow — on the li, not the paper, whose clip-path would cut it off. */
+.note {
+  transform: rotate(var(--tilt, 0deg));
+  transition: transform 0.25s var(--nn-ease);
+  filter: drop-shadow(0 2px 0 rgba(90, 40, 55, 0.14));
+}
+
+.note:hover {
+  transform: rotate(0deg) translateY(-3px);
+}
+
+[data-theme='dark'] .note {
+  filter: drop-shadow(0 3px 0 rgba(0, 0, 0, 0.35));
+}
+
+.note-paper {
+  --fold: calc(16px * var(--note-scale));
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 0.6rem 0.75rem;
+  text-align: center;
+}
+
+.note-term {
+  max-width: 100%;
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
+  font-size: calc(22px * var(--note-scale));
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.note-glyph {
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
+  font-size: calc(40px * var(--note-scale));
+  line-height: 1.1;
+}
+
+.note-paper .sticky-caption {
+  font-size: calc(12.5px * min(var(--note-scale), 1.25));
+}
+
+/* The last note on a short wall: an empty outline that jumps to the paste box. */
+.note.is-more {
+  transform: none;
+  filter: none;
+}
+
+.note.is-more .note-paper {
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+  font: inherit;
+  background: transparent;
+  border: 2px dashed var(--nn-line);
+  border-radius: 10px;
+  clip-path: none;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.note.is-more .note-paper:hover {
+  border-color: var(--nn-kaki);
+  background: color-mix(in srgb, var(--nn-kaki-tint) 50%, transparent);
+}
+
+.note-plus {
+  font-size: calc(26px * var(--note-scale));
+  line-height: 1;
+  color: var(--nn-ink-3);
+}
+
+.note.is-more .note-caption {
+  font-size: calc(12.5px * min(var(--note-scale), 1.25));
+  font-weight: 600;
+  color: var(--nn-ink-2);
+}
+
+.notes-empty {
+  grid-column: 1 / -1;
+  align-self: center;
+  font-size: 14px;
+}
+
+/* ── The record: straight on the page, no box ─────────────────────────── */
+
+/* Seven rows of cells and a header column. How many weeks show is worked out
+   from the width (useActivityLayout, --weeks), the cell size from the screen's
+   height (--cell). */
+.year {
+  grid-area: year;
+  --cell: 14px;
+  --weeks: 26;
+  min-width: 0;
+  display: flex;
+  align-items: flex-end;
+  gap: 1.5rem;
+  padding: 0 0.2rem;
+}
+
+.year-head {
+  flex: 0 0 8.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.year-totals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  margin: 0;
+}
+
+.year-totals div {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+}
+
+.year-totals dd {
+  margin: 0;
+  min-width: 2.2ch;
+  font-size: 1.05rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
   color: var(--nn-ink);
+}
+
+.year-totals dt {
+  font-size: 13px;
+  color: var(--nn-ink-2);
+}
+
+.year-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--nn-ink-3);
 }
 
 /* Weekday labels down the left, month labels along the top, cells filling the
@@ -370,8 +638,7 @@
 }
 
 /* Months and cells share one track definition, or the labels drift out of line
-   with the columns they name. The weeks are chosen to fill the width, so the
-   few px left over spread into the gaps. */
+   with the columns they name. */
 .activity-months,
 .activity-grid {
   grid-column: 2;
@@ -387,11 +654,8 @@
 
 .activity-months span,
 .activity-weekdays span {
-  font-family: var(--nn-font-mono);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   color: var(--nn-ink-3);
   white-space: nowrap;
   line-height: var(--cell);
@@ -415,31 +679,25 @@
 
 /* A button, not a div: clicking a day selects it for the task panel, so it has
    to be focusable and reachable from the keyboard like any other control.
-   An empty day is an outline, not a fill. Filled pink, the empty days had the
-   same visual weight as the green ones and the strip read as mostly data. */
+   An empty day is a soft well, not an outline — a year of outlines read as
+   graph paper. */
 .activity-cell {
   width: var(--cell);
   height: var(--cell);
   padding: 0;
-  border-radius: 4px;
-  border: 1px solid var(--nn-line);
-  background: transparent;
+  border-radius: 5px;
+  border: 1.5px solid transparent;
+  background: color-mix(in srgb, var(--nn-line) 55%, transparent);
   cursor: pointer;
   transition: transform 0.12s var(--nn-ease);
 }
 
-.activity-cell.level-1,
-.activity-cell.level-2,
-.activity-cell.level-3 {
-  border-color: transparent;
-}
-
 .activity-cell.level-1 {
-  background: var(--nn-matcha-tint);
+  background: color-mix(in srgb, var(--nn-matcha) 35%, var(--nn-paper));
 }
 
 .activity-cell.level-2 {
-  background: color-mix(in srgb, var(--nn-matcha) 45%, var(--nn-matcha-tint));
+  background: color-mix(in srgb, var(--nn-matcha) 65%, var(--nn-paper));
 }
 
 .activity-cell.level-3 {
@@ -463,61 +721,80 @@
    task for Friday — but they shouldn't read as an empty record. */
 .activity-cell.is-future {
   background: transparent;
-  border-color: var(--nn-line-soft);
-  border-style: dashed;
+  border: 1.5px dashed var(--nn-line);
 }
 
 .activity-cell:hover {
-  border-color: var(--nn-ink-3);
   transform: scale(1.25);
 }
 
-.activity-hint {
-  margin: 0;
-  color: var(--nn-ink-3);
-}
+/* ── Tasks ────────────────────────────────────────────────────────────── */
 
-/* ── Below the record: three columns sharing the rest of the height ─────── */
-
-/* Each of the three can use whatever height it gets — tiles grow, the word list
-   shows more rows, the task list shows more tasks — so the row takes the rest
-   of the page and none of them is left mostly empty. */
-.home-lower {
-  display: grid;
-  grid-template-columns:
-    minmax(0, 1.2fr)
-    minmax(0, 1fr)
-    minmax(min(17rem, 100%), 21rem);
-  gap: 1.25rem;
-  align-items: stretch;
-  flex: 1;
+/* The task list must not size its row: the row's height comes from the
+   heatmap and the grid's floor below, and the list scrolls inside whatever that
+   leaves. Sized by its content, every new task made the whole bottom band
+   taller and squeezed the note wall above it. contain: size gives the panel no
+   intrinsic height, so it simply stretches to the row. */
+.bento > .panel {
+  grid-area: tasks;
+  contain: size;
   min-height: 0;
 }
 
+/* ── Narrow screens: one column, the page may scroll ──────────────────── */
+
 @media (max-width: 1100px) {
-  .hero,
-  .home-lower {
-    grid-template-columns: minmax(0, 1fr);
+  /* Stacked, the page scrolls — so nothing is squeezed to the window's height,
+     or the tiles collapse onto each other. */
+  .home,
+  .bento {
+    flex: none;
   }
 
-  .activity {
+  .bento {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: none;
+    grid-template-areas:
+      'capture'
+      'featured'
+      'stats'
+      'notes'
+      'year'
+      'tasks';
+  }
+
+  .capture {
+    min-height: 15rem;
+  }
+
+  .featured {
+    min-height: 16rem;
+  }
+
+  .stats {
+    grid-template-rows: none;
+    grid-template-columns: 1fr 1fr;
+    min-height: 10rem;
+  }
+
+  /* Stacked, nothing bounds the row's height, so the wall gets two rows. */
+  .notes {
+    flex: none;
+    height: calc(2 * 104px + 14px);
+  }
+
+  .year {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .activity-head {
+  .year-head {
     flex-basis: auto;
   }
 
-  /* Stacked, nothing bounds the row's height, so the previews go back to a
-     fixed three rows instead of flexing to fill it. */
-  .recent-kanji {
-    flex: none;
-    height: calc(3 * 3.2rem + 2 * 0.5rem);
-  }
-
-  .recent-words {
-    flex: none;
-    height: calc(3 * 2.2rem + 2 * 0.25rem);
+  /* Stacked, the row has nothing else to take its height from. */
+  .bento > .panel {
+    contain: none;
+    min-height: 14rem;
   }
 }

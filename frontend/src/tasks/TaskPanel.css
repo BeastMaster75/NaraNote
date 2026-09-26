@@ -14,11 +14,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.6rem;
-  padding: 1.1rem 1.2rem 1.25rem;
+  padding: 1.15rem 1.3rem 1.25rem;
   background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-lg);
-  box-shadow: var(--nn-shadow);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: 24px;
 }
 
 .panel-head {
@@ -49,13 +48,12 @@
 
 .filter {
   cursor: pointer;
-  font-family: var(--nn-font-mono);
-  font-size: 9.5px;
+  font-family: var(--nn-font-ui);
+  font-size: 12.5px;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.2rem 0.5rem;
-  border-radius: var(--nn-r-pill);
+  text-transform: capitalize;
+  padding: 0.2rem 0.6rem;
+  border-radius: 8px;
   border: 1px solid transparent;
   background: transparent;
   color: var(--nn-ink-3);
@@ -66,7 +64,7 @@
 }
 
 .filter.is-on {
-  background: var(--nn-sunk);
+  background: var(--nn-paper);
   color: var(--nn-ink);
 }
 
@@ -82,7 +80,6 @@
 }
 
 .date-filter strong {
-  font-family: var(--nn-font-mono);
   color: var(--nn-bengara);
 }
 
@@ -119,15 +116,14 @@
   font-size: 13px;
   color: var(--nn-ink);
   caret-color: var(--nn-kaki);
-  background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  background: var(--nn-paper);
+  border: 1.5px solid transparent;
+  border-radius: 12px;
 }
 
 .task-date {
   flex: 1.2;
-  font-family: var(--nn-font-mono);
-  font-size: 11px;
+  font-size: 12.5px;
 }
 
 .task-kanji-input {
@@ -182,11 +178,10 @@
 }
 
 .task-date-chip {
-  font-family: var(--nn-font-mono);
-  font-size: 9.5px;
-  letter-spacing: 0.04em;
-  padding: 1px 6px;
-  border-radius: var(--nn-r-pill);
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 6px;
   background: var(--nn-sunk);
   color: var(--nn-ink-3);
 }

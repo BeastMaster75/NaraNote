@@ -9,6 +9,8 @@ import { useUser } from './UserContext'
 export function RequireVerified() {
   const { me } = useUser()
 
-  if (!me.emailVerified) return <Navigate to="/verify-email" replace />
+  // Only an address can be unverified: a guest has none, and a guest saving their collection
+  // keeps using the app while the link is unclicked — the address is only pending.
+  if (me.email !== null && !me.emailVerified) return <Navigate to="/verify-email" replace />
   return <Outlet />
 }

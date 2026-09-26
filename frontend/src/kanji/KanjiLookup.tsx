@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import { Page } from '../components/Page'
+import { Highlighted } from '../components/Highlighted'
 import { StrokeAnimation } from '../components/StrokeAnimation'
 import './KanjiLookup.css'
+import { stickyClass } from '../components/sticky'
 
 type Sense = { partOfSpeech: string[]; glosses: string[] }
 type WordHit = { id: string; common: boolean; kanji: string | null; reading: string | null; senses: Sense[] }
@@ -170,11 +172,14 @@ function YourKanji() {
         Your Kanji <span className="your-kanji-count">{entries.length}</span>
       </h3>
       <ul className="your-kanji-grid">
-        {entries.map((entry) => (
+        {entries.map((entry, index) => (
           <li key={entry.literal}>
-            <Link to={`/kanji/${entry.literal}`} className="your-kanji-tile">
+            <Link
+              to={`/kanji/${entry.literal}`}
+              className={`your-kanji-tile ${stickyClass(index)}`}
+            >
               <span className="your-kanji-glyph">{entry.literal}</span>
-              <span className="your-kanji-meaning">{entry.meanings[0] ?? ''}</span>
+              <span className="sticky-caption">{entry.meanings[0] ?? ''}</span>
             </Link>
           </li>
         ))}
@@ -449,71 +454,76 @@ function KanjiPanel({
   return <KanjiDetail kanji={kanji} />
 }
 
+/**
+ * A bento, not one card with a dozen labels: the character and its facts across
+ * the top, then what the dictionary says, what is yours, and how to write it —
+ * each its own tile, so no section is a heading lost in a long column.
+ */
 function KanjiDetail({ kanji }: { kanji: KanjiResponse }) {
   return (
     <article className="kanji">
-      <div className="kanji-hero">
-        <div className="kanji-glyph">{kanji.literal}</div>
-        <dl className="kanji-facts">
-          <Fact label="Strokes" value={kanji.strokeCount} />
-          <Fact label="Grade" value={kanji.grade} />
-          <Fact label="JLPT" value={kanji.jlptLevel ? `N${kanji.jlptLevel}` : null} />
-          <Fact label="Frequency" value={kanji.frequency ? `#${kanji.frequency}` : null} />
-        </dl>
+      <section className="kanji-tile kanji-hero">
+        <div className="kanji-glyph jp" lang="ja">
+          {kanji.literal}
+        </div>
+        <div className="kanji-summary">
+          <p className="kanji-meanings">{kanji.meanings.join(', ') || '—'}</p>
+          <dl className="kanji-facts">
+            <Fact label="Strokes" value={kanji.strokeCount} />
+            <Fact label="Grade" value={kanji.grade} />
+            <Fact label="JLPT" value={kanji.jlptLevel ? `N${kanji.jlptLevel}` : null} />
+            <Fact label="Frequency" value={kanji.frequency ? `#${kanji.frequency}` : null} />
+          </dl>
+        </div>
         <LibraryToggle literal={kanji.literal} initial={kanji.yours.inLibrary} />
-      </div>
+      </section>
 
-      <div className="kanji-body">
-        <div className="kanji-text">
-          <Section title="Meaning">
-            <p className="kanji-meanings">{kanji.meanings.join(', ') || '—'}</p>
+      <section className="kanji-tile kanji-text">
+        <Section title="On'yomi">
+          <ReadingList readings={kanji.onReadings} />
+        </Section>
+
+        <Section title="Kun'yomi">
+          <ReadingList readings={kanji.kunReadings} />
+        </Section>
+
+        {kanji.radicals.length > 0 && (
+          <Section title="Built From">
+            <ul className="readings">
+              {kanji.radicals.map((radical) => (
+                <li key={radical}>
+                  {/* Many components are kanji in their own right, so they link
+                      onward. A few are radical-only forms with no entry. */}
+                  <Link to={`/kanji/${radical}`} className="radical jp-sm">
+                    {radical}
+                  </Link>
+                </li>
+              ))}
+            </ul>
           </Section>
+        )}
 
-          <Section title="On'yomi">
-            <ReadingList readings={kanji.onReadings} />
+        {kanji.nanori.length > 0 && (
+          <Section title="In Names">
+            <ReadingList readings={kanji.nanori} />
           </Section>
+        )}
+      </section>
 
-          <Section title="Kun'yomi">
-            <ReadingList readings={kanji.kunReadings} />
-          </Section>
+      <section className="kanji-tile kanji-yours">
+        <YoursPanel kanji={kanji} />
+      </section>
 
-          {kanji.radicals.length > 0 && (
-            <Section title="Built From">
-              <ul className="readings">
-                {kanji.radicals.map((radical) => (
-                  <li key={radical}>
-                    {/* Many components are kanji in their own right, so they link
-                        onward. A few are radical-only forms with no entry. */}
-                    <Link to={`/kanji/${radical}`} className="radical jp-sm">
-                      {radical}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </Section>
+      <section className="kanji-tile kanji-strokes">
+        <h3 className="tile-title">Stroke Order</h3>
+        <div className="kanji-strokes-stage">
+          {kanji.strokeOrderSvg ? (
+            <StrokeAnimation svg={kanji.strokeOrderSvg} />
+          ) : (
+            <p className="muted small">No diagram for this character.</p>
           )}
-
-          {kanji.nanori.length > 0 && (
-            <Section title="In Names">
-              <ReadingList readings={kanji.nanori} />
-            </Section>
-          )}
         </div>
-
-        <div className="kanji-yours">
-          <YoursPanel kanji={kanji} />
-        </div>
-
-        <div className="kanji-strokes">
-          <Section title="Stroke Order">
-            {kanji.strokeOrderSvg ? (
-              <StrokeAnimation svg={kanji.strokeOrderSvg} />
-            ) : (
-              <p className="muted small">No diagram for this character.</p>
-            )}
-          </Section>
-        </div>
-      </div>
+      </section>
     </article>
   )
 }
@@ -528,18 +538,21 @@ function YoursPanel({ kanji }: { kanji: KanjiResponse }) {
 
   if (nothingYet) {
     return (
-      <Section title="Yours">
-        <p className="muted small">
+      <>
+        <h3 className="tile-title">Yours</h3>
+        <p className="kanji-yours-empty muted">
           {inLibrary
-            ? 'In your library. Not practised yet.'
-            : 'Nothing yet — add it to your library to practise it.'}
+            ? 'In your library. Not practised yet — it will come up in Write.'
+            : 'Nothing yet. Add it to your library to practise it.'}
         </p>
-      </Section>
+      </>
     )
   }
 
   return (
     <>
+      <h3 className="tile-title">Yours</h3>
+
       {practice && (
         <Section title="Your Practice">
           <div className="practice-tally">
@@ -576,18 +589,24 @@ function YoursPanel({ kanji }: { kanji: KanjiResponse }) {
           <ul className="your-words">
             {words.map((word) => (
               <li key={word.term}>
-                <span className="your-word jp-sm jp-ruby">
-                  {word.reading ? (
-                    <ruby>
-                      {word.term}
-                      <rt>{word.reading}</rt>
-                    </ruby>
-                  ) : (
-                    word.term
-                  )}
+                <span className="your-word-head">
+                  <span className="your-word jp-sm jp-ruby">
+                    {word.reading ? (
+                      <ruby>
+                        {word.term}
+                        <rt>{word.reading}</rt>
+                      </ruby>
+                    ) : (
+                      word.term
+                    )}
+                  </span>
+                  <span className="your-word-meaning">{word.meaning}</span>
                 </span>
-                <span className="your-word-meaning">{word.meaning}</span>
-                {word.sentence && <span className="your-word-sentence jp-sm">{word.sentence}</span>}
+                {word.sentence && (
+                  <span className="your-word-sentence jp-sm">
+                    <Highlighted sentence={word.sentence} term={word.term} />
+                  </span>
+                )}
               </li>
             ))}
           </ul>
@@ -605,7 +624,7 @@ function YoursPanel({ kanji }: { kanji: KanjiResponse }) {
                   title={`${related.shared} component${related.shared === 1 ? '' : 's'} in common`}
                 >
                   {related.literal}
-                  {related.shared > 1 && <span className="shared-count">{related.shared}</span>}
+                  {related.shared > 1 && <span className="shared-count">×{related.shared}</span>}
                 </Link>
               </li>
             ))}
@@ -619,7 +638,7 @@ function YoursPanel({ kanji }: { kanji: KanjiResponse }) {
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div className="kanji-section">
-      <h3 className="kicker">{title}</h3>
+      <h4 className="field-label">{title}</h4>
       {children}
     </div>
   )
@@ -641,8 +660,9 @@ function ReadingList({ readings }: { readings: string[] }) {
 function Fact({ label, value }: { label: string; value: string | number | null }) {
   return (
     <div className="fact">
-      <dt>{label}</dt>
-      <dd>{value ?? '—'}</dd>
+      {/* dt before dd, as a <dl> requires; CSS shows the number first. */}
+      <dt className="field-label">{label}</dt>
+      <dd className="big-number">{value ?? '—'}</dd>
     </div>
   )
 }

@@ -9,8 +9,11 @@
   min-height: 0;
 }
 
-/* The one toolbar shape, before or after analysing — only its contents change. */
-.card.mining-bar {
+/* The one toolbar shape, before or after analysing — only its contents change.
+   Straight on the page, not in a card of its own: a box around one input and
+   two buttons was a box for the sake of it. */
+.mining-bar {
+  display: flex;
   flex-direction: row;
   align-items: center;
   flex-wrap: wrap;
@@ -30,11 +33,11 @@
   min-height: 0;
   width: 100%;
   resize: none;
-  padding: 1rem 1.1rem;
+  padding: 1.2rem 1.4rem;
   line-height: 1.9;
-  background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-md);
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-tile);
   caret-color: var(--nn-kaki);
 }
 
@@ -44,9 +47,9 @@
   font: inherit;
   font-size: 13px;
   color: var(--nn-ink);
-  background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-pill);
+  background: var(--nn-raised);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-control);
 }
 
 .mining-actions {
@@ -122,6 +125,27 @@
   height: 100%;
 }
 
+.card.mining-translation-panel.is-idle {
+  position: relative;
+  overflow: hidden;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  text-align: center;
+}
+
+.mining-translation-panel.is-idle p {
+  max-width: 34ch;
+}
+
+.mining-idle-glyph {
+  font-family: var(--nn-font-jp);
+  font-weight: 900;
+  font-size: clamp(5rem, 14vh, 9rem);
+  line-height: 1;
+  color: var(--nn-kaki-tint);
+}
+
 .mining-translation-input {
   flex: 1;
   min-height: 0;
@@ -131,9 +155,9 @@
   line-height: 1.7;
   font: inherit;
   color: var(--nn-ink);
-  background: var(--nn-field);
-  border: 1px solid var(--nn-line);
-  border-radius: var(--nn-r-md);
+  background: var(--nn-paper);
+  border: 1.5px solid transparent;
+  border-radius: 16px;
   caret-color: var(--nn-kaki);
 }
 
@@ -202,27 +226,26 @@
   overflow: hidden;
 }
 
-.card.mining-collected-card {
+/* Sticky notes (styles/sticky.css), like the collection everywhere else. Not
+   tilted: the row clips its overflow, which would cut the corners off. */
+.mining-collected-card {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.35rem;
+  gap: 0.3rem;
+  padding: 0.9rem 0.6rem 1rem;
   text-align: center;
-  text-decoration: none;
-  transition: border-color 120ms ease;
 }
 
-.card.mining-collected-card:hover {
-  border-color: var(--nn-kaki);
+.mining-collected-card:hover {
+  --fold: 26px;
 }
 
 .mining-collected-glyph {
-  font-family: var(--nn-font-jp-serif);
+  font-family: var(--nn-font-jp);
+  font-weight: 700;
   font-size: 44px;
   line-height: 1.1;
-  color: var(--nn-jp);
-}
-
-.mining-collected-meaning {
-  color: var(--nn-ink-3);
 }
 
 .mining-recent-text {
@@ -241,12 +264,10 @@
 }
 
 .mining-recent-source {
-  font-family: var(--nn-font-mono);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--nn-r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--nn-r-chip);
   background: var(--nn-kaki-tint);
   color: var(--nn-bengara);
   margin-left: auto;
@@ -301,13 +322,10 @@
 }
 
 .word-flag {
-  font-family: var(--nn-font-mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  padding: 0.15rem 0.5rem;
-  border-radius: var(--nn-r-pill);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 0.15rem 0.55rem;
+  border-radius: var(--nn-r-chip);
   background: var(--nn-matcha-tint);
   color: var(--nn-matcha);
 }
@@ -344,10 +362,10 @@
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
-  padding: 0.55rem 0.7rem;
-  background: var(--nn-sunk);
-  border: 1px solid transparent;
-  border-radius: var(--nn-r-md);
+  padding: 0.6rem 0.8rem;
+  background: var(--nn-paper);
+  border: 1.5px solid transparent;
+  border-radius: 14px;
 }
 
 .entry:hover {
@@ -371,10 +389,8 @@
 }
 
 .entry-common {
-  font-family: var(--nn-font-mono);
-  font-size: 9px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
+  font-size: 12px;
+  font-weight: 700;
   color: var(--nn-matcha);
 }
 
@@ -406,10 +422,9 @@
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
-  padding: 0.7rem 0.85rem;
-  border-radius: var(--nn-r-md);
-  background: var(--nn-sunk);
-  border-left: 3px solid var(--nn-kaki);
+  padding: 0.7rem 0.95rem;
+  border-radius: 16px;
+  background: var(--nn-paper);
 }
 
 .word-context p {

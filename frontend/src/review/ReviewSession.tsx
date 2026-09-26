@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Page } from '../components/Page'
+import { ttsUrl } from '../components/tts'
 import { useUser } from '../user/UserContext'
 import './ReviewSession.css'
 
@@ -22,15 +23,6 @@ const RATINGS: { rating: Rating; label: string; hint: string }[] = [
   { rating: 'GOOD', label: 'Good', hint: 'Knew it' },
   { rating: 'EASY', label: 'Easy', hint: 'Instantly' },
 ]
-
-/**
- * /api/tts responses are cached by the browser for a year (see TtsController) — the URL is
- * the cache key, and it never otherwise changes, so a word played before a server-side voice
- * change stays stuck on the old voice forever unless the URL changes too. Bump this to match
- * naranote.voicevox.speaker-id (application.yaml) whenever the default voice changes; the
- * backend doesn't read this param at all, it exists purely to bust stale client caches.
- */
-const VOICEVOX_SPEAKER_ID = 2
 
 export function ReviewSession() {
   const { me, loaded } = useUser()
@@ -75,9 +67,7 @@ export function ReviewSession() {
   // Japanese voice installed, which most don't.
   useEffect(() => {
     if (!revealed || !word) return
-    const audio = new Audio(
-      `/api/tts?text=${encodeURIComponent(word.reading || word.term)}&voice=${VOICEVOX_SPEAKER_ID}`,
-    )
+    const audio = new Audio(ttsUrl(word.reading || word.term))
     audio.play().catch(() => {})
     return () => audio.pause()
   }, [revealed, word])

@@ -81,7 +81,7 @@ export function TaskPanel({ tasks, selectedDate, onClearDate, onChanged }: TaskP
     <aside className="panel">
       <section className="panel-block">
         <div className="panel-head">
-          <h3 className="kicker">Your Tasks</h3>
+          <h3 className="tile-title">Tasks</h3>
           <div className="filters">
             {(['open', 'done', 'all'] as Filter[]).map((option) => (
               <button

@@ -18,6 +18,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/reading")
 public class ReadingEvaluationController {
 
+    private static final int MAX_EXPECTED_CHARS = 2000;
+
     private final ReadingEvaluationService evaluationService;
     private final CurrentUser currentUser;
 
@@ -33,6 +35,11 @@ public class ReadingEvaluationController {
             @RequestParam("expectedText") String expectedText) {
         if (expectedText.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing expected text.");
+        }
+        // Scoring aligns the passage against the transcript character by character, which
+        // grows with the product of the two. A chunk is a few sentences; this is far above it.
+        if (expectedText.length() > MAX_EXPECTED_CHARS) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "That passage is too long to check at once.");
         }
         try {
             return evaluationService.evaluate(

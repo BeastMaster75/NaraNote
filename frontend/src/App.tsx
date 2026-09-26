@@ -1,11 +1,14 @@
 import { Link, Outlet, Route, Routes } from 'react-router'
+import { GuestSavePrompt } from './components/GuestSavePrompt'
 import { NavRail } from './components/NavRail'
 import { Page } from './components/Page'
 import { KanjiLookup } from './kanji/KanjiLookup'
 import { KanjiSentences } from './kanji/KanjiSentences'
 import { MiningPage } from './mining/MiningPage'
+import { useCarryDemoKanji } from './lib/demoKanji'
 import { Home } from './pages/Home'
 import { Library } from './pages/Library'
+import { WelcomePage } from './pages/Welcome'
 import { PracticeSession } from './practice/PracticeSession'
 import { ReadingPage } from './reading/ReadingPage'
 import { ReadingSession } from './reading/ReadingSession'
@@ -42,6 +45,8 @@ function NotFound() {
  * belongs to the page.
  */
 function AppShell() {
+  useCarryDemoKanji()
+
   return (
     <div className="app">
       <NavRail />
@@ -49,6 +54,8 @@ function AppShell() {
       <div className="app-main">
         <Outlet />
       </div>
+
+      <GuestSavePrompt />
     </div>
   )
 }
@@ -56,15 +63,18 @@ function AppShell() {
 function App() {
   return (
     <Routes>
+      <Route path="/welcome" element={<WelcomePage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
+      {/* Outside RequireAuth: the emailed link may be opened in a browser that isn't signed
+          in (a guest saving their collection from their phone), and the token alone is
+          enough. Outside RequireVerified too — reaching it is the one thing an unverified
+          account is allowed to do. */}
+      <Route path="/verify-email" element={<VerifyEmailPage />} />
 
       <Route element={<RequireAuth />}>
-        {/* Outside RequireVerified on purpose — reaching it is the one thing an
-            unverified account is allowed to do. */}
-        <Route path="/verify-email" element={<VerifyEmailPage />} />
 
         <Route element={<RequireVerified />}>
           <Route element={<AppShell />}>

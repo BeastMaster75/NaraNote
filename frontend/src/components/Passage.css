@@ -7,8 +7,8 @@
   gap: 0.5rem;
   padding: 1.1rem 1.3rem;
   background: var(--nn-raised);
-  border: 1px solid var(--nn-line-soft);
-  border-radius: var(--nn-r-lg);
+  border: 1.5px solid var(--nn-line-soft);
+  border-radius: var(--nn-r-tile);
   flex: 1;
   min-height: 0;
   overflow-y: auto;
@@ -72,4 +72,51 @@
   background: var(--nn-kaki-tint);
   color: var(--nn-kaki);
   border-bottom-color: var(--nn-kaki);
+}
+
+/* Read's check result: a word that wasn't heard as written. Borders rather than
+   text-decoration — the kanji inside are buttons, and a decoration never reaches
+   into an inline-block. */
+.tok-mark {
+  border-bottom: 2px solid var(--nn-bengara);
+  background: var(--nn-bengara-tint);
+  border-radius: 3px 3px 0 0;
+}
+
+/* Skipped reads as "missing", not "wrong" — a gap in the line rather than a
+   filled mark. */
+.tok-mark.is-skipped {
+  border-bottom-style: dashed;
+  background: transparent;
+}
+
+.tok-say {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.15em;
+  height: 1.15em;
+  margin: 0 0.1em;
+  padding: 0;
+  vertical-align: middle;
+  cursor: pointer;
+  color: var(--nn-bengara);
+  background: transparent;
+  border: 0;
+  border-radius: 50%;
+}
+
+.tok-say svg {
+  width: 0.8em;
+  height: 0.8em;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.tok-say:hover,
+.tok-say:focus-visible {
+  background: var(--nn-raised);
 }

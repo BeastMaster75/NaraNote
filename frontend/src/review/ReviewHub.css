@@ -14,9 +14,22 @@
 }
 
 .card.track {
+  position: relative;
+  overflow: hidden;
   min-height: 0;
   gap: 1rem;
   padding: 1.3rem 1.5rem;
+}
+
+/* Colour says which track is which, as on Home: sakura for writing, the
+   inverted tile for words. */
+.card.track-writing {
+  background: var(--nn-kaki-tint);
+  border-color: transparent;
+}
+
+.card.track-words-tile {
+  border-color: transparent;
 }
 
 .track-head {
@@ -31,8 +44,8 @@
   flex: none;
   width: 2.6rem;
   height: 2.6rem;
-  border-radius: var(--nn-r-md);
-  background: var(--nn-kaki-tint);
+  border-radius: var(--nn-r-control);
+  background: var(--nn-raised);
   color: var(--nn-kaki);
 }
 
@@ -42,7 +55,7 @@
 }
 
 .track-title {
-  font-size: 1.45rem;
+  font-size: 1.6rem;
   color: var(--nn-ink);
 }
 
@@ -55,8 +68,11 @@
 }
 
 .track-count {
-  font-family: var(--nn-font-display);
-  font-size: 3.6rem;
+  font-family: var(--nn-font-ui);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(3.2rem, 8vh, 5rem);
   line-height: 0.9;
   color: var(--nn-kaki);
 }
@@ -119,10 +135,10 @@
   height: var(--tile);
   display: grid;
   place-items: center;
-  border-radius: var(--nn-r-md);
-  background: var(--nn-paper);
-  border: 1px solid var(--nn-line-soft);
+  border-radius: 16px;
+  background: var(--nn-raised);
   font-family: var(--nn-font-jp);
+  font-weight: 700;
   /* Never below the 44px the design sets for kanji in lists. */
   font-size: max(var(--nn-jp-xl), calc(var(--tile) * 0.62));
   line-height: 1;

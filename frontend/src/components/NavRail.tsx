@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Link, useNavigate } from 'react-router'
 import { useUser, type Theme } from '../user/UserContext'
 import { Logo } from './Logo'
@@ -74,10 +75,18 @@ export function NavRail() {
   const { me, save, logout } = useUser()
   const navigate = useNavigate()
   const initial = Array.from(me.displayName.trim())[0]?.toUpperCase() ?? '?'
+  const [confirmingLogout, setConfirmingLogout] = useState(false)
 
   async function handleLogout() {
+    // A guest's session is the only key to their notebook: logging out loses it for good,
+    // so that gets said first, with the way to keep it right beside.
+    if (me.guest && !confirmingLogout) {
+      setConfirmingLogout(true)
+      return
+    }
+    setConfirmingLogout(false)
     await logout()
-    navigate('/login', { replace: true })
+    navigate('/welcome', { replace: true })
   }
 
   return (
@@ -124,13 +133,24 @@ export function NavRail() {
         >
           <Icon d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9" size={17} />
         </button>
+        {/* For a guest, the avatar carries the standing, quiet version of the save prompt: a
+            tag on it rather than a row of its own, which the rail has no height left for. */}
         <NavLink
-          to="/settings"
+          to={me.guest ? '/settings#save' : '/settings'}
           className={({ isActive }) => ['rail-avatar', isActive && 'is-active'].filter(Boolean).join(' ')}
-          title={`${me.displayName} — Settings`}
-          aria-label={`Settings for ${me.displayName}`}
+          title={
+            me.guest
+              ? me.pendingEmail
+                ? `Guest notebook — confirm ${me.pendingEmail} to save it`
+                : 'Guest notebook — save it to an account'
+              : `${me.displayName} — Settings`
+          }
+          aria-label={
+            me.guest ? `Settings for ${me.displayName}, guest notebook not saved` : `Settings for ${me.displayName}`
+          }
         >
           {initial}
+          {me.guest && <span className="rail-avatar-tag">{me.pendingEmail ? 'Confirm' : 'Save'}</span>}
         </NavLink>
 
         {/* Attribution is a licence condition for KANJIDIC2, KanjiVG and JMdict, so
@@ -140,6 +160,43 @@ export function NavRail() {
           Credits
         </Link>
       </div>
+
+      {confirmingLogout && (
+        <div className="rail-confirm-backdrop" onClick={() => setConfirmingLogout(false)}>
+          <div
+            className="rail-confirm"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="logout-title"
+            onClick={(event) => event.stopPropagation()}
+            onKeyDown={(event) => event.key === 'Escape' && setConfirmingLogout(false)}
+          >
+            <h2 id="logout-title" className="rail-confirm-title">
+              Log Out of Your Guest Notebook?
+            </h2>
+            <p className="muted">
+              It lives only in this browser. Once you log out, it can’t be opened again — by
+              you or anyone.
+            </p>
+            <div className="rail-confirm-actions">
+              <Link
+                to="/settings#save"
+                className="btn is-primary"
+                onClick={() => setConfirmingLogout(false)}
+                autoFocus
+              >
+                Save It First
+              </Link>
+              <button type="button" className="btn is-danger" onClick={handleLogout}>
+                Log Out Anyway
+              </button>
+              <button type="button" className="btn" onClick={() => setConfirmingLogout(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </nav>
   )
 }
