@@ -1,0 +1,54 @@
+name: Bug report
+description: Something in NaraNote isn't working as it should.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. For security issues, please don't open an
+        issue — follow [SECURITY.md](../blob/main/SECURITY.md) instead.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What went wrong, and what did you expect to happen instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to the Mine page
+        2. Paste 昨日、古い川の近くで小さな猫を見た。
+        3. Click on …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Mining
+        - Reading aloud
+        - Kanji lookup / search
+        - Handwriting practice
+        - Review
+        - Anki export
+        - Home / tasks
+        - Accounts / sign-in
+        - Settings
+        - Self-hosting / deployment
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and OS
+      placeholder: e.g. Firefox 140 on Windows 11
+  - type: textarea
+    id: logs
+    attributes:
+      label: Screenshots or logs
+      description: Anything from the browser console or server logs that looks relevant.
